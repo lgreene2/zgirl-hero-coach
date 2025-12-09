@@ -8,6 +8,7 @@ import React, {
   KeyboardEvent,
   MouseEvent,
 } from "react";
+import InstallPWAButton from "../components/InstallPWAButton";
 
 type ChatMessage = {
   id: string;
