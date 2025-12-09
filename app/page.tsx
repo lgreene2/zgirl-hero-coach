@@ -300,13 +300,16 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
         {/* Title + subtitle */}
         <header className="mb-4">
-         <h1 className="text-3xl font-semibold tracking-tight text-slate-50">
-          Z-Girl: <span className="text-sky-400">Hero Coach</span>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-50">
+            Z-Girl: <span className="text-sky-400">Hero Coach</span>
           </h1>
           <p className="mt-2 text-sm text-slate-300">
-          Feeling stressed, tired, or stuck? Tell Z-Girl what&apos;s going on and
-          she&apos;ll help you <span className="text-sky-300 font-semibold">“Unwrap the Hero Within.”</span>
-        </p>
+            Feeling stressed, tired, or stuck? Tell Z-Girl what&apos;s going on and
+            she&apos;ll help you{" "}
+            <span className="text-sky-300 font-semibold">
+              “Unwrap the Hero Within.”
+            </span>
+          </p>
 
           <button
             onClick={handleClearConversationLink}
@@ -441,7 +444,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
         {/* Actions row */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={handleNewConversation}
@@ -544,15 +547,22 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
           </section>
         )}
 
-        {/* Footer */}
+        {/* Footer with PWA install */}
         <footer className="mt-4 border-t border-slate-800 pt-3">
-          <p className="text-[10px] leading-relaxed text-slate-500">
-            Z-Girl is here to encourage you and help you practice healthy coping
-            skills. She&apos;s not a therapist or doctor, and she can&apos;t give
-            medical, legal, or emergency help. If you&apos;re feeling overwhelmed
-            or unsafe, please reach out to a trusted adult, counselor, or local
-            professional right away.
-          </p>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <p className="text-[10px] leading-relaxed text-slate-500">
+              Z-Girl is here to encourage you and help you practice healthy coping
+              skills. She&apos;s not a therapist or doctor, and she can&apos;t give
+              medical, legal, or emergency help. If you&apos;re feeling overwhelmed
+              or unsafe, please reach out to a trusted adult, counselor, or local
+              professional right away.
+            </p>
+
+            {/* Small PWA install call-to-action */}
+            <div className="flex items-center justify-start md:justify-end">
+              <InstallPWAButton />
+            </div>
+          </div>
         </footer>
       </div>
     </main>
