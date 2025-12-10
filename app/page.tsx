@@ -99,30 +99,53 @@ const STARTER_SUGGESTIONS: string[] = [
 const MOODS = ["Stressed", "Sad", "Worried", "Angry", "Tired", "Excited"];
 
 // Floating helper quick tips
-const QUICK_TIPS: { id: string; title: string; body: string; suggestion?: string }[] = [
+const QUICK_TIPS: { id: string; title: string; body: string; suggestion?: string }[] =
+  [
+    {
+      id: "breathe-10",
+      title: "10-second breathing hero move",
+      body: "Breathe in for 4, hold for 2, out for 4. Try it twice and just notice how your body feels.",
+      suggestion: "Can you walk me through that 10-second breathing hero move again?",
+    },
+    {
+      id: "ground-3",
+      title: "Look around hero scan",
+      body: "Name 3 things you can see, 2 things you can feel, and 1 thing you can hear right now.",
+      suggestion: "Help me do the 3-2-1 grounding exercise.",
+    },
+    {
+      id: "tiny-win",
+      title: "Tiny hero win",
+      body: "Think of one tiny thing you did well today (even if it feels small). That still counts as a hero move.",
+      suggestion: "Can you help me notice a small win from today?",
+    },
+    {
+      id: "adult",
+      title: "Trusted adult check-in",
+      body: "If something feels heavy or scary, talking to a trusted adult is a powerful hero move, not a weakness.",
+      suggestion: "I think I might need to talk to an adult. How should I start?",
+    },
+  ];
+
+// Guided breathing steps
+const BREATHING_STEPS = [
   {
-    id: "breathe-10",
-    title: "10-second breathing hero move",
-    body: "Breathe in for 4, hold for 2, out for 4. Try it twice and just notice how your body feels.",
-    suggestion: "Can you walk me through that 10-second breathing hero move again?",
+    id: "inhale",
+    label: "Inhale",
+    subtitle: "Breathe in gently through your nose.",
+    countText: "4 seconds in",
   },
   {
-    id: "ground-3",
-    title: "Look around hero scan",
-    body: "Name 3 things you can see, 2 things you can feel, and 1 thing you can hear right now.",
-    suggestion: "Help me do the 3-2-1 grounding exercise.",
+    id: "hold",
+    label: "Hold",
+    subtitle: "Hold your breath softly. No need to strain.",
+    countText: "2 seconds hold",
   },
   {
-    id: "tiny-win",
-    title: "Tiny hero win",
-    body: "Think of one tiny thing you did well today (even if it feels small). That still counts as a hero move.",
-    suggestion: "Can you help me notice a small win from today?",
-  },
-  {
-    id: "adult",
-    title: "Trusted adult check-in",
-    body: "If something feels heavy or scary, talking to a trusted adult is a powerful hero move, not a weakness.",
-    suggestion: "I think I might need to talk to an adult. How should I start?",
+    id: "exhale",
+    label: "Exhale",
+    subtitle: "Breathe out slowly through your mouth.",
+    countText: "4 seconds out",
   },
 ];
 
@@ -143,7 +166,9 @@ export default function Home() {
   const [showVideoScript, setShowVideoScript] = useState(false);
   const [videoScript, setVideoScript] = useState("");
   const [showChat, setShowChat] = useState(false);
-  const [showTips, setShowTips] = useState(false); // floating helper
+  const [showTips, setShowTips] = useState(false);
+  const [showBreathing, setShowBreathing] = useState(false);
+  const [breathingStepIndex, setBreathingStepIndex] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -205,6 +230,18 @@ export default function Home() {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading]);
+
+  // Breathing step cycle
+  useEffect(() => {
+    if (!showBreathing) return;
+
+    setBreathingStepIndex(0);
+    const interval = setInterval(() => {
+      setBreathingStepIndex((prev) => (prev + 1) % BREATHING_STEPS.length);
+    }, 4000); // 4 seconds per step (fits 4-2-4 rhythm enough for youth)
+
+    return () => clearInterval(interval);
+  }, [showBreathing]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -374,6 +411,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
+  const currentBreathingStep = BREATHING_STEPS[breathingStepIndex];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       {/* HERO INTRO SECTION */}
@@ -487,30 +526,47 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </p>
             </header>
 
-            {/* Mood chips */}
-            <section className="mb-4">
-              <p className="text-xs text-slate-400 mb-2">
-                How are you feeling today? (Optional)
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {MOODS.map((mood) => {
-                  const isSelected = selectedMood === mood;
-                  return (
-                    <button
-                      key={mood}
-                      onClick={() => handleMoodClick(mood)}
-                      className={[
-                        "px-3 py-1 rounded-full border text-xs font-medium transition",
-                        isSelected
-                          ? "bg-sky-500/20 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.35)]"
-                          : "bg-slate-800/80 border-slate-700 text-slate-200 hover:border-sky-400/60 hover:text-sky-200",
-                      ].join(" ")}
-                    >
-                      {mood}
-                    </button>
-                  );
-                })}
+            {/* Mood chips + breathing CTA */}
+            <section className="mb-4 space-y-2">
+              <div>
+                <p className="text-xs text-slate-400 mb-2">
+                  How are you feeling today? (Optional)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {MOODS.map((mood) => {
+                    const isSelected = selectedMood === mood;
+                    return (
+                      <button
+                        key={mood}
+                        onClick={() => handleMoodClick(mood)}
+                        className={[
+                          "px-3 py-1 rounded-full border text-xs font-medium transition",
+                          isSelected
+                            ? "bg-sky-500/20 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.35)]"
+                            : "bg-slate-800/80 border-slate-700 text-slate-200 hover:border-sky-400/60 hover:text-sky-200",
+                        ].join(" ")}
+                      >
+                        {mood}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {selectedMood && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] text-slate-400">
+                    Feeling <span className="font-semibold text-slate-200">{selectedMood}</span>? Try a quick breathing hero move:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowBreathing(true)}
+                    className="inline-flex items-center gap-1 rounded-full bg-sky-500/90 px-3 py-1 text-[11px] font-semibold text-slate-950 shadow-md shadow-sky-500/40 hover:bg-sky-400 transition"
+                  >
+                    <span>Start breathing hero move</span>
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Error banner */}
@@ -836,6 +892,76 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
           />
         </button>
       </div>
+
+      {/* Fullscreen Hero Breathing Flow */}
+      {showBreathing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-sm px-4">
+          <div className="max-w-md w-full rounded-3xl border border-sky-500/40 bg-slate-900/90 shadow-[0_0_40px_rgba(56,189,248,0.6)] px-6 py-6 space-y-4 text-center">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] text-slate-400">
+                Z-Girl&apos;s Hero Breathing
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowBreathing(false)}
+                className="text-[11px] text-slate-400 hover:text-slate-100"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <h2 className="text-lg font-semibold text-slate-50">
+              Let&apos;s take a few hero breaths together
+            </h2>
+            <p className="text-xs text-slate-300">
+              You don&apos;t have to do it perfectly. Just follow the circle and the
+              words. If your mind wanders, that&apos;s okay—just gently come back.
+            </p>
+
+            {/* Glowing breathing orb */}
+            <div className="flex items-center justify-center py-2">
+              <div
+                className={[
+                  "relative h-36 w-36 sm:h-40 sm:w-40 rounded-full border border-sky-400/80 bg-slate-900 shadow-[0_0_40px_rgba(56,189,248,0.7)] flex items-center justify-center transition-transform duration-700 ease-out",
+                  currentBreathingStep.id === "inhale"
+                    ? "scale-110"
+                    : currentBreathingStep.id === "hold"
+                    ? "scale-100"
+                    : "scale-90",
+                ].join(" ")}
+              >
+                <div className="absolute inset-0 rounded-full bg-sky-400/20 blur-2xl animate-pulse" />
+                <div className="relative text-center space-y-1">
+                  <div className="text-sm font-semibold text-sky-100">
+                    {currentBreathingStep.label}
+                  </div>
+                  <div className="text-[11px] text-slate-100">
+                    {currentBreathingStep.countText}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-200">
+              {currentBreathingStep.subtitle}
+            </p>
+
+            <p className="text-[11px] text-slate-400">
+              Try a few full cycles. When you&apos;re ready, tap{" "}
+              <span className="font-semibold text-slate-200">Done</span> to go back
+              to chatting with Z-Girl.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowBreathing(false)}
+              className="mt-1 inline-flex items-center justify-center rounded-full bg-sky-400/90 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-md shadow-sky-500/40 hover:bg-sky-300 transition"
+            >
+              Done · Back to chat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
