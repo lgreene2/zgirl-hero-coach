@@ -34,7 +34,7 @@ let model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
 
 if (apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 }
 
 type FrontendMessage = {
