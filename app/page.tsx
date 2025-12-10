@@ -133,15 +133,14 @@ export default function Home() {
     }
   }, [heroMoments]);
 
-  // Auto-scroll when messages or loading change
+  // Auto-scroll
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-    if (loading) return;
+    if (!input.trim() || loading) return;
 
     setErrorBanner(null);
 
@@ -173,7 +172,8 @@ export default function Home() {
       }
 
       const data = await resp.json();
-      const assistantText = data.reply ?? "I’m here with you. Let’s try that again in a moment. 💙";
+      const assistantText =
+        data.reply ?? "I’m here with you. Let’s try that again in a moment. 💙";
 
       const assistantMessage: ChatMessage = {
         id: makeId("a"),
@@ -182,7 +182,7 @@ export default function Home() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setErrorBanner(
         "Z-Girl ran into a little tech glitch. Try again in a moment, or refresh if it keeps happening."
@@ -238,8 +238,7 @@ export default function Home() {
 
     setHeroMoments((prev) => {
       const updated = [moment, ...prev];
-      // keep top 20 to avoid huge storage
-      return updated.slice(0, 20);
+      return updated.slice(0, 20); // keep top 20
     });
   };
 
@@ -265,9 +264,7 @@ export default function Home() {
 
     const lines = [...userLines, ...assistantLines];
 
-    const moodLine = selectedMood
-      ? `Mood: ${selectedMood}\n`
-      : "";
+    const moodLine = selectedMood ? `Mood: ${selectedMood}\n` : "";
 
     const script = `Hero Video Script Idea
 =======================
@@ -285,7 +282,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(script).catch(() => {
-        // ignore clipboard errors
+        // ignore
       });
     }
   };
@@ -303,350 +300,373 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
   };
 
   return (
-  <div className="min-h-screen bg-slate-950 text-slate-50">
-    {!showChat && (
-      <section className="min-h-screen flex items-center justify-center px-6 py-10">
-        <div className="max-w-md w-full text-center space-y-6">
-          {/* Top badges */}
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide">
-            <span className="px-2 py-1 rounded-full border border-emerald-400/70 bg-emerald-400/10 text-emerald-300 inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE COACH
-            </span>
-            <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">
-              HOLIDAY HERO MODE
-            </span>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-3xl font-bold leading-tight">
-            Meet Z-Girl,{" "}
-            <span className="text-teal-300">Your Hero Coach</span>
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-sm text-slate-300">
-            Feeling stressed, overwhelmed, or stuck? Z-Girl helps you manage challenges
-            and <span className="text-teal-300 font-semibold">unwrap the hero within</span> — 
-            one small step at a time.
-          </p>
-
-          {/* Z-Girl portrait using the app icon */}
-          <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-            <div className="absolute inset-0 rounded-full bg-teal-500/25 blur-3xl" />
-            <div className="relative rounded-full overflow-hidden shadow-[0_0_35px_rgba(34,211,238,0.35)] border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
-              <img
-                src="/icons/zgirl-icon-1024.png"
-                alt="Z-Girl Hero Coach"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-
-          {/* CTA */}
-          <button
-            onClick={() => setShowChat(true)}
-            className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition"
-          >
-            Start Session
-          </button>
-
-          <p className="text-[10px] text-slate-500 leading-relaxed">
-            Private, judgment-free, hero-powered guidance. Z-Girl can&apos;t provide medical,
-            crisis, or emergency help.
-          </p>
-        </div>
-      </section>
-    )}
-    {showChat && (
-    <main className="min-h-screen bg-slate-950 text-slate-50 flex items-start justify-center px-4 py-10">
-      <div className="w-full max-w-4xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8">
-        {/* Top badges */}
-        <div className="flex flex-wrap items-center gap-2 text-xs mb-4">
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            LIVE COACH
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-sky-300 font-semibold">
-            HOLIDAY HERO MODE
-          </span>
-        </div>
-
-        {/* Title + subtitle */}
-        <header className="mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
-            Z-Girl: Hero Coach
-            <span className="block text-lg md:text-xl text-sky-300">
-              Unwrap the Hero Within
-            </span>
-          </h1>
-          <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
-            This is a cozy, kid-friendly space to talk about stress, big feelings,
-            family drama, school, and self-confidence. Z-Girl is here as a gentle
-            hero coach—not a doctor or therapist—to help you find your next small
-            hero move.
-          </p>
-        </header>
-
-        {/* Mood chips */}
-        <section className="mb-4">
-          <p className="text-xs text-slate-400 mb-2">
-            How are you feeling today? (Optional)
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {MOODS.map((mood) => {
-              const isSelected = selectedMood === mood;
-              return (
-                <button
-                  key={mood}
-                  onClick={() => handleMoodClick(mood)}
-                  className={[
-                    "px-3 py-1 rounded-full border text-xs font-medium transition",
-                    isSelected
-                      ? "bg-sky-500/20 border-sky-400 text-sky-200"
-                      : "bg-slate-800/80 border-slate-700 text-slate-200 hover:border-sky-400/60 hover:text-sky-200",
-                  ].join(" ")}
-                >
-                  {mood}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Error banner */}
-        {errorBanner && (
-          <div className="mb-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-            {errorBanner}
-          </div>
-        )}
-
-        {/* Chat + right panel layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-6">
-          {/* Chat column */}
-          <section className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950/60">
-            {/* Chat scroll area */}
-            <div
-              ref={scrollRef}
-              className="flex-1 min-h-[260px] max-h-[420px] overflow-y-auto px-3 pt-3 pb-2 space-y-2"
-            >
-              {messages.length === 0 && (
-                <div className="text-xs text-slate-400 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-3 mb-2">
-                  <p className="mb-1">
-                    👋 Hey! I&apos;m{" "}
-                    <span className="font-semibold text-sky-300">Z-Girl</span>, your
-                    hero coach. You can:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Tell me what&apos;s stressing you out</li>
-                    <li>Ask for help with big feelings or tricky situations</li>
-                    <li>Practice a quick &quot;hero move&quot; to feel a bit better</li>
-                  </ul>
-                </div>
-              )}
-
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={
-                    m.role === "user"
-                      ? "flex justify-end"
-                      : "flex justify-start"
-                  }
-                >
-                  <div
-                    className={[
-                      "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap",
-                      m.role === "user"
-                        ? "bg-sky-600 text-white rounded-br-sm"
-                        : "bg-slate-800 text-slate-50 rounded-bl-sm border border-slate-700/80",
-                    ].join(" ")}
-                  >
-                    {m.role === "assistant" && (
-                      <div className="mb-1 text-[10px] font-semibold text-sky-300">
-                        Z-GIRL
-                      </div>
-                    )}
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex items-center gap-2 text-xs text-slate-300">
-                  <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-                  Z-Girl is thinking about your next hero move…
-                </div>
-              )}
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      {/* HERO INTRO SECTION */}
+      {!showChat && (
+        <section className="min-h-screen flex items-center justify-center px-6 py-10">
+          <div className="max-w-md w-full text-center space-y-6">
+            {/* Top badges */}
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide">
+              <span className="px-2 py-1 rounded-full border border-emerald-400/70 bg-emerald-400/10 text-emerald-300 inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                LIVE COACH
+              </span>
+              <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">
+                HOLIDAY HERO MODE
+              </span>
             </div>
 
-            {/* Input area */}
-            <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={2}
-                className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
-                placeholder="Tell Z-Girl what’s going on, or ask a question…"
-              />
+            {/* Title */}
+            <h1 className="text-3xl font-bold leading-tight">
+              Meet Z-Girl,{" "}
+              <span className="text-teal-300">Your Hero Coach</span>
+            </h1>
 
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={loading || !input.trim()}
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-md shadow-sky-500/40 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sky-400 transition"
-                >
-                  <span>Send</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClearConversation}
-                  className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-                >
-                  Clear chat
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Right column: suggestions + hero moments + extras */}
-          <aside className="space-y-4 text-xs">
-            {/* Suggestions */}
-            <section
-              className="rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3 space-y-2"
-              onClick={handleCardClick}
-            >
-              <h2 className="text-[11px] font-semibold text-slate-200 mb-1">
-                Try one of these to start:
-              </h2>
-              <div className="grid grid-cols-1 gap-2">
-                {STARTER_SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className="w-full text-left rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 hover:border-sky-400/70 hover:bg-slate-900"
-                    data-text={s}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Hero moments */}
-            <section className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 px-3 py-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-[11px] font-semibold text-emerald-200">
-                  Saved Hero Moments
-                </h2>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handleSaveHeroMoment}
-                    className="text-[11px] rounded-full bg-emerald-400/90 px-3 py-1 font-semibold text-slate-950 hover:bg-emerald-300 transition"
-                  >
-                    Save last reply
-                  </button>
-                  {heroMoments.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearHeroMoments}
-                      className="text-[10px] text-emerald-200/80 hover:text-emerald-100 underline underline-offset-2"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {heroMoments.length === 0 ? (
-                <p className="text-[11px] text-emerald-100/80">
-                  After Z-Girl says something that really helps, tap{" "}
-                  <span className="font-semibold">Save last reply</span> and it will
-                  show up here as a &quot;hero moment&quot; you can revisit.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {heroMoments.map((moment) => (
-                    <div
-                      key={moment.id}
-                      className="rounded-xl bg-slate-900/90 border border-emerald-500/40 px-3 py-2"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-emerald-200">
-                          Z-Girl Hero Moment
-                        </span>
-                        {moment.mood && (
-                          <span className="text-[10px] rounded-full bg-emerald-500/10 border border-emerald-400/60 px-2 py-0.5 text-emerald-100">
-                            {moment.mood}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-emerald-50 whitespace-pre-wrap">
-                        {moment.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Hero video script generator */}
-            <section className="rounded-2xl border border-sky-500/50 bg-sky-500/5 px-3 py-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[11px] font-semibold text-sky-200">
-                  Turn this into a hero video script
-                </h2>
-                <button
-                  type="button"
-                  onClick={handleVideoScript}
-                  className="text-[11px] rounded-full bg-sky-400/90 px-3 py-1 font-semibold text-slate-950 hover:bg-sky-300 transition"
-                >
-                  Generate
-                </button>
-              </div>
-              <p className="text-[11px] text-sky-100/80">
-                We&apos;ll stitch together a short, cozy script idea based on your
-                recent chat with Z-Girl that could work for a talking video, reel,
-                or animated short.
-              </p>
-
-              {showVideoScript && (
-                <div className="mt-2 rounded-xl bg-slate-950/90 border border-sky-500/50 px-3 py-2 max-h-40 overflow-y-auto text-[11px] text-sky-50 whitespace-pre-wrap">
-                  {videoScript}
-                </div>
-              )}
-            </section>
-          </aside>
-        </div>
-
-        {/* Footer disclaimer */}
-        <footer className="mt-6 pt-4 border-t border-slate-800">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
-            <p className="max-w-xl leading-relaxed">
-              Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
-              <span className="font-semibold text-slate-300">The 4 Lessons</span>{" "}
-              universe. This app is for learning, encouragement, and reflection.
-              It&apos;s not a replacement for a counselor, therapist, doctor, or
-              emergency service. If you&apos;re feeling overwhelmed, in danger, or
-              unsafe, please reach out to a trusted adult, counselor, or local
-              professional right away.
+            {/* Subtitle */}
+            <p className="text-sm text-slate-300">
+              Feeling stressed, overwhelmed, or stuck? Z-Girl helps you manage
+              challenges and{" "}
+              <span className="text-teal-300 font-semibold">
+                unwrap the hero within
+              </span>{" "}
+              — one small step at a time.
             </p>
 
-            {/* Small PWA install call-to-action */}
-            <div className="flex items-center justify-start md:justify-end">
-              <InstallPWAButton />
+            {/* Z-Girl portrait using the app icon */}
+            <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
+              <div className="absolute inset-0 rounded-full bg-teal-500/25 blur-3xl" />
+              <div className="relative rounded-full overflow-hidden shadow-[0_0_35px_rgba(34,211,238,0.35)] border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
+                <img
+                  src="/icons/zgirl-icon-1024.png"
+                  alt="Z-Girl Hero Coach"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-          </div>
-        </footer>
-      </div>
-    </main>
-    )}
-  </div>
-);
 
+            {/* CTA: Start Session */}
+            <button
+              onClick={() => {
+                setShowChat(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition"
+            >
+              Start Session
+            </button>
+
+            {/* Skip intro */}
+            <button
+              onClick={() => {
+                setShowChat(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+            >
+              Skip intro · Go to chat
+            </button>
+
+            {/* Microcopy */}
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              Private, judgment-free, hero-powered guidance. Z-Girl can&apos;t
+              provide medical, crisis, or emergency help.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* CHAT APP SECTION */}
+      {showChat && (
+        <main className="min-h-screen bg-slate-950 text-slate-50 flex items-start justify-center px-4 py-10">
+          <div className="w-full max-w-4xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8">
+            {/* Top badges */}
+            <div className="flex flex-wrap items-center gap-2 text-xs mb-4">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                LIVE COACH
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-sky-300 font-semibold">
+                HOLIDAY HERO MODE
+              </span>
+            </div>
+
+            {/* Title + subtitle */}
+            <header className="mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
+                Z-Girl: Hero Coach
+                <span className="block text-lg md:text-xl text-sky-300">
+                  Unwrap the Hero Within
+                </span>
+              </h1>
+              <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
+                This is a cozy, kid-friendly space to talk about stress, big feelings,
+                family drama, school, and self-confidence. Z-Girl is here as a gentle
+                hero coach—not a doctor or therapist—to help you find your next small
+                hero move.
+              </p>
+            </header>
+
+            {/* Mood chips */}
+            <section className="mb-4">
+              <p className="text-xs text-slate-400 mb-2">
+                How are you feeling today? (Optional)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {MOODS.map((mood) => {
+                  const isSelected = selectedMood === mood;
+                  return (
+                    <button
+                      key={mood}
+                      onClick={() => setSelectedMood(isSelected ? null : mood)}
+                      className={[
+                        "px-3 py-1 rounded-full border text-xs font-medium transition",
+                        isSelected
+                          ? "bg-sky-500/20 border-sky-400 text-sky-200"
+                          : "bg-slate-800/80 border-slate-700 text-slate-200 hover:border-sky-400/60 hover:text-sky-200",
+                      ].join(" ")}
+                    >
+                      {mood}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Error banner */}
+            {errorBanner && (
+              <div className="mb-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                {errorBanner}
+              </div>
+            )}
+
+            {/* Chat + right panel layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-6">
+              {/* Chat column */}
+              <section className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950/60">
+                {/* Chat scroll area */}
+                <div
+                  ref={scrollRef}
+                  className="flex-1 min-h-[260px] max-h-[420px] overflow-y-auto px-3 pt-3 pb-2 space-y-2"
+                >
+                  {messages.length === 0 && (
+                    <div className="text-xs text-slate-400 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-3 mb-2">
+                      <p className="mb-1">
+                        👋 Hey! I&apos;m{" "}
+                        <span className="font-semibold text-sky-300">
+                          Z-Girl
+                        </span>
+                        , your hero coach. You can:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Tell me what&apos;s stressing you out</li>
+                        <li>Ask for help with big feelings or tricky situations</li>
+                        <li>Practice a quick &quot;hero move&quot; to feel a bit better</li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {messages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={
+                        m.role === "user"
+                          ? "flex justify-end"
+                          : "flex justify-start"
+                      }
+                    >
+                      <div
+                        className={[
+                          "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap",
+                          m.role === "user"
+                            ? "bg-sky-600 text-white rounded-br-sm"
+                            : "bg-slate-800 text-slate-50 rounded-bl-sm border border-slate-700/80",
+                        ].join(" ")}
+                      >
+                        {m.role === "assistant" && (
+                          <div className="mb-1 text-[10px] font-semibold text-sky-300">
+                            Z-GIRL
+                          </div>
+                        )}
+                        {m.text}
+                      </div>
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="flex items-center gap-2 text-xs text-slate-300">
+                      <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+                      Z-Girl is thinking about your next hero move…
+                    </div>
+                  )}
+                </div>
+
+                {/* Input area */}
+                <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={2}
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
+                    placeholder="Tell Z-Girl what’s going on, or ask a question…"
+                  />
+
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={loading || !input.trim()}
+                      className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-md shadow-sky-500/40 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sky-400 transition"
+                    >
+                      <span>Send</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleClearConversation}
+                      className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                    >
+                      Clear chat
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Right column: suggestions + hero moments + extras */}
+              <aside className="space-y-4 text-xs">
+                {/* Suggestions */}
+                <section
+                  className="rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3 space-y-2"
+                  onClick={handleCardClick}
+                >
+                  <h2 className="text-[11px] font-semibold text-slate-200 mb-1">
+                    Try one of these to start:
+                  </h2>
+                  <div className="grid grid-cols-1 gap-2">
+                    {STARTER_SUGGESTIONS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="w-full text-left rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 hover:border-sky-400/70 hover:bg-slate-900"
+                        data-text={s}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Hero moments */}
+                <section className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 px-3 py-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-[11px] font-semibold text-emerald-200">
+                      Saved Hero Moments
+                    </h2>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handleSaveHeroMoment}
+                        className="text-[11px] rounded-full bg-emerald-400/90 px-3 py-1 font-semibold text-slate-950 hover:bg-emerald-300 transition"
+                      >
+                        Save last reply
+                      </button>
+                      {heroMoments.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearHeroMoments}
+                          className="text-[10px] text-emerald-200/80 hover:text-emerald-100 underline underline-offset-2"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {heroMoments.length === 0 ? (
+                    <p className="text-[11px] text-emerald-100/80">
+                      After Z-Girl says something that really helps, tap{" "}
+                      <span className="font-semibold">Save last reply</span> and it
+                      will show up here as a &quot;hero moment&quot; you can revisit.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {heroMoments.map((moment) => (
+                        <div
+                          key={moment.id}
+                          className="rounded-xl bg-slate-900/90 border border-emerald-500/40 px-3 py-2"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-semibold text-emerald-200">
+                              Z-Girl Hero Moment
+                            </span>
+                            {moment.mood && (
+                              <span className="text-[10px] rounded-full bg-emerald-500/10 border border-emerald-400/60 px-2 py-0.5 text-emerald-100">
+                                {moment.mood}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-emerald-50 whitespace-pre-wrap">
+                            {moment.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* Hero video script generator */}
+                <section className="rounded-2xl border border-sky-500/50 bg-sky-500/5 px-3 py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[11px] font-semibold text-sky-200">
+                      Turn this into a hero video script
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={handleVideoScript}
+                      className="text-[11px] rounded-full bg-sky-400/90 px-3 py-1 font-semibold text-slate-950 hover:bg-sky-300 transition"
+                    >
+                      Generate
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-sky-100/80">
+                    We&apos;ll stitch together a short, cozy script idea based on your
+                    recent chat with Z-Girl that could work for a talking video, reel,
+                    or animated short.
+                  </p>
+
+                  {showVideoScript && (
+                    <div className="mt-2 rounded-xl bg-slate-950/90 border border-sky-500/50 px-3 py-2 max-h-40 overflow-y-auto text-[11px] text-sky-50 whitespace-pre-wrap">
+                      {videoScript}
+                    </div>
+                  )}
+                </section>
+              </aside>
+            </div>
+
+            {/* Footer disclaimer */}
+            <footer className="mt-6 pt-4 border-t border-slate-800">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
+                <p className="max-w-xl leading-relaxed">
+                  Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
+                  <span className="font-semibold text-slate-300">
+                    The 4 Lessons
+                  </span>{" "}
+                  universe. This app is for learning, encouragement, and reflection.
+                  It&apos;s not a replacement for a counselor, therapist, doctor, or
+                  emergency service. If you&apos;re feeling overwhelmed, in danger, or
+                  unsafe, please reach out to a trusted adult, counselor, or local
+                  professional right away.
+                </p>
+
+                <div className="flex items-center justify-start md:justify-end">
+                  <InstallPWAButton />
+                </div>
+              </div>
+            </footer>
+          </div>
+        </main>
+      )}
+    </div>
+  );
 }
