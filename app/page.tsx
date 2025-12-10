@@ -356,7 +356,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
             {/* Reassurance line for parents & educators */}
             <p className="text-[11px] text-slate-400 mt-1">
-              A gentle hero-coach for youth reflection — not a therapist or emergency service.
+              A gentle hero-coach for youth reflection — not a therapist or emergency
+              service.
             </p>
 
             {/* Title */}
@@ -375,10 +376,10 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               — one small step at a time.
             </p>
 
-            {/* Z-Girl portrait using the app icon */}
+            {/* Z-Girl portrait using the app icon with subtle pulse */}
             <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-              <div className="absolute inset-0 rounded-full bg-teal-500/25 blur-3xl" />
-              <div className="relative rounded-full overflow-hidden shadow-[0_0_35px_rgba(34,211,238,0.35)] border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
+              <div className="absolute inset-0 rounded-full bg-teal-500/25 blur-3xl animate-pulse" />
+              <div className="relative rounded-full overflow-hidden shadow-[0_0_35px_rgba(34,211,238,0.45)] border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 transition-transform duration-300 ease-out hover:scale-[1.03]">
                 <img
                   src="/icons/zgirl-icon-1024.png"
                   alt="Z-Girl Hero Coach"
@@ -393,7 +394,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 setShowChat(true);
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition"
+              className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
             >
               Start Session
             </button>
@@ -460,11 +461,11 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   return (
                     <button
                       key={mood}
-                      onClick={() => setSelectedMood(isSelected ? null : mood)}
+                      onClick={() => handleMoodClick(mood)}
                       className={[
                         "px-3 py-1 rounded-full border text-xs font-medium transition",
                         isSelected
-                          ? "bg-sky-500/20 border-sky-400 text-sky-200"
+                          ? "bg-sky-500/20 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.35)]"
                           : "bg-slate-800/80 border-slate-700 text-slate-200 hover:border-sky-400/60 hover:text-sky-200",
                       ].join(" ")}
                     >
@@ -519,7 +520,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     >
                       <div
                         className={[
-                          "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap",
+                          "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap transition-transform duration-200",
                           m.role === "user"
                             ? "bg-sky-600 text-white rounded-br-sm"
                             : "bg-slate-800 text-slate-50 rounded-bl-sm border border-slate-700/80",
@@ -535,10 +536,19 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     </div>
                   ))}
 
+                  {/* Typing indicator with animated dots */}
                   {loading && (
-                    <div className="flex items-center gap-2 text-xs text-slate-300">
-                      <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-                      Z-Girl is thinking about your next hero move…
+                    <div className="flex justify-start">
+                      <div className="max-w-[70%] rounded-2xl px-3 py-2 bg-slate-800/90 border border-slate-700 text-xs text-slate-200 flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-sky-300 animate-bounce [animation-delay:-0.2s]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-sky-300 animate-bounce [animation-delay:-0.1s]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-sky-300 animate-bounce" />
+                        </div>
+                        <span className="text-[11px] text-slate-200">
+                          Z-Girl is thinking about your next hero move…
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -560,7 +570,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       type="button"
                       onClick={handleSend}
                       disabled={loading || !input.trim()}
-                      className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-md shadow-sky-500/40 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sky-400 transition"
+                      className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-md shadow-sky-500/40 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sky-400 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
                     >
                       <span>Send</span>
                     </button>
@@ -591,7 +601,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       <button
                         key={s}
                         type="button"
-                        className="w-full text-left rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 hover:border-sky-400/70 hover:bg-slate-900"
+                        className="w-full text-left rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-[11px] text-slate-200 hover:border-sky-400/70 hover:bg-slate-900 transition"
                         data-text={s}
                       >
                         {s}
