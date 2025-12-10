@@ -9,6 +9,7 @@ import React, {
   MouseEvent,
 } from "react";
 import InstallPWAButton from "../components/InstallPWAButton";
+import Link from "next/link";
 
 type ChatMessage = {
   id: string;
@@ -683,25 +684,31 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </div>
 
             {/* Footer disclaimer */}
-            <footer className="mt-6 pt-4 border-t border-slate-800">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
-                <p className="max-w-xl leading-relaxed">
-                  Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
-                  <span className="font-semibold text-slate-300">
-                    The 4 Lessons
-                  </span>{" "}
-                  universe. This app is for learning, encouragement, and reflection.
-                  It&apos;s not a replacement for a counselor, therapist, doctor, or
-                  emergency service. If you&apos;re feeling overwhelmed, in danger, or
-                  unsafe, please reach out to a trusted adult, counselor, or local
-                  professional right away.
-                </p>
+          <footer className="mt-6 pt-4 border-t border-slate-800">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
+    <p className="max-w-xl leading-relaxed">
+      Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
+      <span className="font-semibold text-slate-300">
+        The 4 Lessons
+      </span>{" "}
+      universe. This app is for learning, encouragement, and reflection.
+      It&apos;s not a replacement for a counselor, therapist, doctor, or
+      emergency service. If you&apos;re feeling overwhelmed, in danger, or
+      unsafe, please reach out to a trusted adult, counselor, or local
+      professional right away.
+    </p>
 
-                <div className="flex items-center justify-start md:justify-end">
-                  <InstallPWAButton />
-                </div>
-              </div>
-            </footer>
+    <div className="flex flex-col items-start md:items-end gap-1">
+      <InstallPWAButton />
+      <Link
+        href="/safety"
+        className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+      >
+        Safety &amp; Use Guidelines
+      </Link>
+    </div>
+  </div>
+</footer>
           </div>
         </main>
       )}
