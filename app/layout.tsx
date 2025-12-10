@@ -2,6 +2,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react"; // ⬅️ new
 
 // Brand font (feels friendly + heroic)
 const nunito = Nunito({
@@ -11,7 +12,6 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  // ⚠️ Update this to your real deployed URL once you have it
   metadataBase: new URL("https://zgirl-hero-coach.vercel.app"),
 
   title: {
@@ -34,21 +34,19 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
 
   openGraph: {
     type: "website",
-    url: "/",
+    url: "https://zgirl-hero-coach.vercel.app", // ⬅️ full URL instead of "/"
     siteName: "Z-Girl: Hero Coach",
     title: "Z-Girl: Hero Coach – Holiday Live Coach Mode",
     description:
       'Feeling stressed, tired, or stuck? Z-Girl helps you practice healthy coping skills and “Unwrap the Hero Within” with gentle, music-powered coaching.',
     images: [
       {
-        url: "/og/zgirl-hero-coach.png", // put a 1200x630 preview image here
+        url: "/og/zgirl-hero-coach.png",
         width: 1200,
         height: 630,
         alt: "Z-Girl: Hero Coach – Unwrap the Hero Within",
@@ -82,8 +80,8 @@ export default function RootLayout({
         className={`${nunito.className} bg-slate-950 text-slate-50 antialiased min-h-screen`}
       >
         {children}
+        <Analytics /> {/* ⬅️ Vercel Analytics hook */}
       </body>
     </html>
   );
 }
-
