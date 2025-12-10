@@ -98,6 +98,34 @@ const STARTER_SUGGESTIONS: string[] = [
 
 const MOODS = ["Stressed", "Sad", "Worried", "Angry", "Tired", "Excited"];
 
+// Floating helper quick tips
+const QUICK_TIPS: { id: string; title: string; body: string; suggestion?: string }[] = [
+  {
+    id: "breathe-10",
+    title: "10-second breathing hero move",
+    body: "Breathe in for 4, hold for 2, out for 4. Try it twice and just notice how your body feels.",
+    suggestion: "Can you walk me through that 10-second breathing hero move again?",
+  },
+  {
+    id: "ground-3",
+    title: "Look around hero scan",
+    body: "Name 3 things you can see, 2 things you can feel, and 1 thing you can hear right now.",
+    suggestion: "Help me do the 3-2-1 grounding exercise.",
+  },
+  {
+    id: "tiny-win",
+    title: "Tiny hero win",
+    body: "Think of one tiny thing you did well today (even if it feels small). That still counts as a hero move.",
+    suggestion: "Can you help me notice a small win from today?",
+  },
+  {
+    id: "adult",
+    title: "Trusted adult check-in",
+    body: "If something feels heavy or scary, talking to a trusted adult is a powerful hero move, not a weakness.",
+    suggestion: "I think I might need to talk to an adult. How should I start?",
+  },
+];
+
 function makeId(suffix = ""): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return (crypto as any).randomUUID();
@@ -115,6 +143,7 @@ export default function Home() {
   const [showVideoScript, setShowVideoScript] = useState(false);
   const [videoScript, setVideoScript] = useState("");
   const [showChat, setShowChat] = useState(false);
+  const [showTips, setShowTips] = useState(false); // floating helper
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -335,6 +364,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
     if (dataText) {
       handleSuggestionClick(dataText);
     }
+  };
+
+  const handleQuickTipClick = (suggestion?: string) => {
+    if (!suggestion) return;
+    handleSuggestionClick(suggestion);
+    setShowTips(false);
+    setShowChat(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   return (
@@ -726,6 +763,79 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
           </div>
         </main>
       )}
+
+      {/* Floating hero helper (shows on both intro & chat) */}
+      <div className="fixed bottom-4 right-4 z-40">
+        {/* Tips panel */}
+        {showTips && (
+          <div className="mb-3 w-72 max-w-[80vw] rounded-2xl border border-slate-700 bg-slate-900/95 shadow-lg shadow-sky-500/20 px-3 py-3 text-xs text-slate-100">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full overflow-hidden border border-sky-400/70 shadow-[0_0_12px_rgba(56,189,248,0.4)]">
+                  <img
+                    src="/icons/zgirl-icon-192.png"
+                    alt="Z-Girl avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-[11px] font-semibold text-sky-200">
+                  Z-Girl&apos;s Hero Tips
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTips(false)}
+                className="text-[11px] text-slate-400 hover:text-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-300 mb-2">
+              Need a quick hero move idea? Tap one of these, and I can help you use it
+              in chat.
+            </p>
+
+            <div className="space-y-1.5 max-h-44 overflow-y-auto">
+              {QUICK_TIPS.map((tip) => (
+                <button
+                  key={tip.id}
+                  type="button"
+                  onClick={() => handleQuickTipClick(tip.suggestion)}
+                  className="w-full text-left rounded-xl bg-slate-800/80 border border-slate-700 px-3 py-2 hover:border-sky-400/70 hover:bg-slate-800 transition"
+                >
+                  <div className="text-[11px] font-semibold text-sky-200">
+                    {tip.title}
+                  </div>
+                  <div className="text-[11px] text-slate-200 mt-0.5">
+                    {tip.body}
+                  </div>
+                  {tip.suggestion && (
+                    <div className="mt-1 text-[10px] text-sky-300 underline underline-offset-2">
+                      Use this in chat →
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Floating button */}
+        <button
+          type="button"
+          onClick={() => setShowTips((prev) => !prev)}
+          className="relative h-12 w-12 rounded-full border border-sky-400/70 bg-slate-900/90 shadow-[0_0_20px_rgba(56,189,248,0.6)] flex items-center justify-center overflow-hidden transition-transform duration-200 hover:scale-105 active:scale-95"
+          aria-label="Open Z-Girl hero tips"
+        >
+          <div className="absolute inset-0 rounded-full bg-sky-400/10 animate-pulse" />
+          <img
+            src="/icons/zgirl-icon-192.png"
+            alt="Z-Girl helper"
+            className="relative h-9 w-9 rounded-full object-cover border border-slate-900"
+          />
+        </button>
+      </div>
     </div>
   );
 }
