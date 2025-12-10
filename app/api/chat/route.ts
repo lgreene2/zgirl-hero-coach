@@ -2,30 +2,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Core safety + persona prompt (backend side)
+// Frontend also sends a system prompt, so think of this as a second safety belt.
 const systemSafety = `
-You are Z-Girl, a warm, upbeat, age-appropriate "hero coach" based on The 4 Lessons universe.
-You talk to kids, teens, and caring adults about stress, big feelings, family drama, school, and self-confidence.
+You are Z-Girl, a warm, upbeat Black teen superhero and digital "hero coach" from The 4 Lessons universe.
+Your audience is primarily kids and teens (about 10–16 years old), and sometimes caring adults.
 
-Tone:
-- Encouraging, kind, non-judgmental
-- Uses hero metaphors ("hero moves", "power-ups", "villains like Fear or Shame") in a gentle, non-cheesy way
-- NEVER gives medical, legal, or emergency advice
-- NEVER claims to replace a counselor, therapist, doctor, or trusted adult
-- Reassures the user that it's okay to have big feelings
+You:
+- Are kind, affirming, and never judgmental.
+- Use simple, clear language and occasional gentle hero metaphors (hero move, power-up, shield, inner villain).
+- NEVER give medical, diagnostic, medication, or legal advice.
+- NEVER encourage self-harm, revenge, violence, or breaking the law.
+- NEVER promise to keep secrets about serious danger.
 
-Behavior:
-- Ask 1–2 clarifying questions before giving longer advice
-- Keep responses short and digestible (3–6 sentences max)
-- Offer 1 concrete "hero move" (small step the user can take)
-- Sometimes suggest a "breathing power-up" or "pause moment" when user is very stressed
+If the user is struggling but not in crisis:
+- Validate their feelings first.
+- Ask up to 1–2 short clarifying questions if needed.
+- Keep answers short (about 3–6 sentences).
+- Offer exactly one small, realistic "hero move" they can try next.
 
-Safety:
-- If user mentions self-harm, abuse, or being in danger, gently encourage them to reach out to a trusted adult or emergency help in their area.
-- Remind them you are just a digital hero coach for support, not a crisis service.
-
-Seasonal:
-- If the user mentions holidays, family gatherings, or winter break, you may reference the song "Unwrap the Hero Within" as a fun theme, but do not push it.
-- Connect "unwrapping the hero within" to noticing their strengths, courage, and kindness.
+If the user mentions self-harm, suicide, wanting to die, killing themselves, cutting,
+overdose, serious plans to hurt someone else, or feeling unsafe because of abuse or violence:
+- Be gentle and serious.
+- Say you are just a digital hero coach, not a doctor, therapist, or emergency service.
+- Encourage them strongly to reach out to a trusted adult (parent/caregiver, school counselor,
+  teacher, coach, or another adult they trust).
+- If they are in immediate danger, tell them to contact emergency services in their area
+  (for example, 911 in the United States) or a local crisis hotline right away.
+- Do NOT give specific methods or instructions about self-harm or violence.
 `.trim();
 
 const apiKey = process.env.GEMINI_API_KEY || "";
@@ -34,7 +38,47 @@ let model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
 
 if (apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
+  // Use latest flash model so we don't have to chase version numbers
   model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+}
+
+// Simple keyword-based safety check.
+// This is NOT a full classifier, but it gives us a conservative backstop.
+const CRISIS_PATTERNS: RegExp[] = [
+  /kill myself/i,
+  /killing myself/i,
+  /want to die/i,
+  /want to end it/i,
+  /end my life/i,
+  /suicide/i,
+  /suicidal/i,
+  /self[-\s]?harm/i,
+  /cutting myself/i,
+  /hurt myself on purpose/i,
+  /overdose/i,
+  /hurt (them|him|her|someone) badly/i,
+  /they (hit|beat|hurt) me/i,
+  /being abused/i,
+  /sexual abuse/i,
+];
+
+function looksLikeCrisis(text: string): boolean {
+  const lower = text.toLowerCase();
+  return CRISIS_PATTERNS.some((re) => re.test(lower));
+}
+
+function crisisResponse(): string {
+  return (
+    "I’m really glad you told me this. Your safety matters a lot to me. 💙\n\n" +
+    "I’m just a digital hero coach, so I can’t handle emergencies or keep you safe by myself. " +
+    "This is a really important time to bring a *real-life* hero onto your team.\n\n" +
+    "Please reach out to a trusted adult as soon as you can — a parent or caregiver, " +
+    "school counselor, teacher, coach, or another adult you feel safe with. " +
+    "If you feel in immediate danger or like you might seriously hurt yourself or someone else, " +
+    "contact emergency services in your area right away (for example, 911 in the United States) " +
+    "or a local crisis hotline.\n\n" +
+    "You’re not alone in this, even if it feels that way right now. Reaching out is a powerful hero move."
+  );
 }
 
 type FrontendMessage = {
@@ -55,31 +99,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json().catch(() => null) as
+    const body = (await req.json().catch(() => null)) as
       | { systemPrompt?: string; messages?: FrontendMessage[] }
       | null;
 
     const messages = body?.messages ?? [];
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      // Nothing to send yet — just gently prompt the user
+      // No conversation yet; gently nudge the user to start
       return NextResponse.json(
         {
           reply:
-            "Hey hero, I’m here. Tell me what’s going on, and we’ll take one small step together. 💙",
+            "Hey hero, I’m here whenever you’re ready. Tell me what’s going on, and we’ll take one small step together. 💙",
         },
         { status: 200 }
       );
     }
 
-    // Convert the chat history into a single text prompt for Gemini
+    // Convert the conversation into a plain-text history for Gemini
     const historyText = messages
       .map((m) =>
-        m.role === "assistant"
-          ? `Z-Girl: ${m.content}`
-          : `User: ${m.content}`
+        m.role === "assistant" ? `Z-Girl: ${m.content}` : `User: ${m.content}`
       )
       .join("\n");
+
+    const userLast = messages[messages.length - 1]?.content ?? "";
+
+    // If the latest user message looks like crisis / severe risk,
+    // we still call the model (for logging/consistency),
+    // but we will override the reply with our own crisis message.
+    const shouldForceCrisis = looksLikeCrisis(historyText);
 
     const finalPrompt = `
 ${systemSafety}
@@ -87,23 +136,30 @@ ${systemSafety}
 Conversation so far:
 ${historyText}
 
-Now respond as Z-Girl in 3–6 sentences, speaking directly to the user.
-Offer one small "hero move" they can try next.
+Now respond as Z-Girl. Keep it to about 3–6 sentences.
+Validate the user's feelings, speak gently, and offer exactly ONE small "hero move" they can try next.
+Avoid medical or legal advice. Do not mention that you are an AI; just speak as Z-Girl.
+
+User's latest message:
+${userLast}
+
 Z-Girl:
     `.trim();
 
     const result = await model.generateContent(finalPrompt);
-    const text = result.response
-      .text()
-      .trim() || "I’m here with you. Let’s try that again in a moment. 💙";
+    const rawText =
+      result.response.text().trim() ||
+      "I’m here with you. Let’s try that again in a moment. 💙";
 
-    return NextResponse.json({ reply: text }, { status: 200 });
+    const safeText = shouldForceCrisis ? crisisResponse() : rawText;
+
+    return NextResponse.json({ reply: safeText }, { status: 200 });
   } catch (err) {
     console.error("Z-Girl /api/chat error:", err);
     return NextResponse.json(
       {
         reply:
-          "My hero-signal glitched while talking to Gemini. Try again in a moment, or let a grown-up dev know if it keeps happening. 🛠️",
+          "My hero-signal glitched while talking to Gemini. Try again in a moment, or let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
       },
       { status: 500 }
     );
