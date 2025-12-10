@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import React, {
@@ -8,8 +7,8 @@ import React, {
   KeyboardEvent,
   MouseEvent,
 } from "react";
-import InstallPWAButton from "../components/InstallPWAButton";
 import Link from "next/link";
+import InstallPWAButton from "../components/InstallPWAButton";
 
 type ChatMessage = {
   id: string;
@@ -87,7 +86,7 @@ HOLIDAY / SEASONAL MODE
 
 OVERALL GOAL
 Help the user feel seen, calmer, and a little more hopeful, and help them choose one small
-next "hero move" they can actually do in their real life.`
+next "hero move" they can actually do in their real life.`;
 
 const STARTER_SUGGESTIONS: string[] = [
   "I’m feeling stressed about school.",
@@ -355,8 +354,13 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </span>
             </div>
 
+            {/* Reassurance line for parents & educators */}
+            <p className="text-[11px] text-slate-400 mt-1">
+              A gentle hero-coach for youth reflection — not a therapist or emergency service.
+            </p>
+
             {/* Title */}
-            <h1 className="text-3xl font-bold leading-tight">
+            <h1 className="text-3xl font-bold leading-tight mt-2">
               Meet Z-Girl,{" "}
               <span className="text-teal-300">Your Hero Coach</span>
             </h1>
@@ -684,31 +688,31 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </div>
 
             {/* Footer disclaimer */}
-          <footer className="mt-6 pt-4 border-t border-slate-800">
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
-    <p className="max-w-xl leading-relaxed">
-      Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
-      <span className="font-semibold text-slate-300">
-        The 4 Lessons
-      </span>{" "}
-      universe. This app is for learning, encouragement, and reflection.
-      It&apos;s not a replacement for a counselor, therapist, doctor, or
-      emergency service. If you&apos;re feeling overwhelmed, in danger, or
-      unsafe, please reach out to a trusted adult, counselor, or local
-      professional right away.
-    </p>
+            <footer className="mt-6 pt-4 border-t border-slate-800">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
+                <p className="max-w-xl leading-relaxed">
+                  Z-Girl is a fictional &quot;hero coach&quot; based on{" "}
+                  <span className="font-semibold text-slate-300">
+                    The 4 Lessons
+                  </span>{" "}
+                  universe. This app is for learning, encouragement, and reflection.
+                  It&apos;s not a replacement for a counselor, therapist, doctor, or
+                  emergency service. If you&apos;re feeling overwhelmed, in danger, or
+                  unsafe, please reach out to a trusted adult, counselor, or local
+                  professional right away.
+                </p>
 
-    <div className="flex flex-col items-start md:items-end gap-1">
-      <InstallPWAButton />
-      <Link
-        href="/safety"
-        className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-      >
-        Safety &amp; Use Guidelines
-      </Link>
-    </div>
-  </div>
-</footer>
+                <div className="flex flex-col items-start md:items-end gap-1">
+                  <InstallPWAButton />
+                  <Link
+                    href="/safety"
+                    className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                  >
+                    Safety &amp; Use Guidelines
+                  </Link>
+                </div>
+              </div>
+            </footer>
           </div>
         </main>
       )}
