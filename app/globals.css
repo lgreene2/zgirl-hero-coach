@@ -18,6 +18,54 @@
     --foreground: #ededed;
   }
 }
+/* --- Z-Girl Hero Animations --- */
+
+@keyframes heroGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(14, 234, 226, 0);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(14, 234, 226, 0.35);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes heroButtonPulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.01);
+  }
+}
+
+@keyframes heroSpeakingRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(14, 234, 226, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(14, 234, 226, 0);
+  }
+}
+
+/* apply to avatar wrapper */
+.zgirl-hero-avatar {
+  border-radius: 9999px;
+  animation: heroGlow 3.2s ease-in-out infinite;
+}
+
+/* apply to "Start Session" button */
+.zgirl-hero-button {
+  animation: heroButtonPulse 2.8s ease-in-out infinite;
+}
+
+/* extra ring when she's "speaking" */
+.zgirl-hero-avatar--speaking {
+  animation:
+    heroGlow 3.2s ease-in-out infinite,
+    heroSpeakingRing 1.4s ease-out infinite;
+}
 
 body {
   background: var(--background);
