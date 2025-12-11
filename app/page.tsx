@@ -179,13 +179,33 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // NEW: sound effect refs
+const startupSoundRef = useRef<HTMLAudioElement | null>(null);
+const replyChimeRef = useRef<HTMLAudioElement | null>(null);
+
+// Load audio once on mount
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  startupSoundRef.current = new Audio("/sounds/zgirl-startup.mp3");
+  replyChimeRef.current = new Audio("/sounds/zgirl-chime.wav");
+
+  if (replyChimeRef.current) replyChimeRef.current.volume = 0.85;
+  if (startupSoundRef.current) startupSoundRef.current.volume = 0.85;
+}, []);
+
   // Play Z-Girl greeting (and animate avatar) using Web Speech
   const playGreeting = useCallback(() => {
   if (typeof window === "undefined") return;
   if (!("speechSynthesis" in window)) return;
 
-  const synth = window.speechSynthesis;
+  // NEW: startup sparkle
+  if (startupSoundRef.current) {
+    startupSoundRef.current.currentTime = 0;
+    startupSoundRef.current.play().catch(() => {});
+  }
 
+  const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(
     "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
   );
@@ -359,7 +379,14 @@ export default function Home() {
         text: assistantText,
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+    // NEW: chime when Z-Girl replies
+      if (replyChimeRef.current) {
+      replyChimeRef.current.currentTime = 0;
+      replyChimeRef.current.play().catch(() => {});
+    }
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
     } catch (err) {
       console.error(err);
       setErrorBanner(
