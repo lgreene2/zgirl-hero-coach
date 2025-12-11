@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-
 import React, {
-  useEffect,
   useState,
+  useEffect,
   useRef,
+  useCallback,
   KeyboardEvent,
   MouseEvent,
 } from "react";
@@ -101,33 +100,37 @@ const STARTER_SUGGESTIONS: string[] = [
 const MOODS = ["Stressed", "Sad", "Worried", "Angry", "Tired", "Excited"];
 
 // Floating helper quick tips
-const QUICK_TIPS: { id: string; title: string; body: string; suggestion?: string }[] =
-  [
-    {
-      id: "breathe-10",
-      title: "10-second breathing hero move",
-      body: "Breathe in for 4, hold for 2, out for 4. Try it twice and just notice how your body feels.",
-      suggestion: "Can you walk me through that 10-second breathing hero move again?",
-    },
-    {
-      id: "ground-3",
-      title: "Look around hero scan",
-      body: "Name 3 things you can see, 2 things you can feel, and 1 thing you can hear right now.",
-      suggestion: "Help me do the 3-2-1 grounding exercise.",
-    },
-    {
-      id: "tiny-win",
-      title: "Tiny hero win",
-      body: "Think of one tiny thing you did well today (even if it feels small). That still counts as a hero move.",
-      suggestion: "Can you help me notice a small win from today?",
-    },
-    {
-      id: "adult",
-      title: "Trusted adult check-in",
-      body: "If something feels heavy or scary, talking to a trusted adult is a powerful hero move, not a weakness.",
-      suggestion: "I think I might need to talk to an adult. How should I start?",
-    },
-  ];
+const QUICK_TIPS: {
+  id: string;
+  title: string;
+  body: string;
+  suggestion?: string;
+}[] = [
+  {
+    id: "breathe-10",
+    title: "10-second breathing hero move",
+    body: "Breathe in for 4, hold for 2, out for 4. Try it twice and just notice how your body feels.",
+    suggestion: "Can you walk me through that 10-second breathing hero move again?",
+  },
+  {
+    id: "ground-3",
+    title: "Look around hero scan",
+    body: "Name 3 things you can see, 2 things you can feel, and 1 thing you can hear right now.",
+    suggestion: "Help me do the 3-2-1 grounding exercise.",
+  },
+  {
+    id: "tiny-win",
+    title: "Tiny hero win",
+    body: "Think of one tiny thing you did well today (even if it feels small). That still counts as a hero move.",
+    suggestion: "Can you help me notice a small win from today?",
+  },
+  {
+    id: "adult",
+    title: "Trusted adult check-in",
+    body: "If something feels heavy or scary, talking to a trusted adult is a powerful hero move, not a weakness.",
+    suggestion: "I think I might need to talk to an adult. How should I start?",
+  },
+];
 
 // Guided breathing steps
 const BREATHING_STEPS = [
@@ -172,70 +175,45 @@ export default function Home() {
   const [showBreathing, setShowBreathing] = useState(false);
   const [breathingStepIndex, setBreathingStepIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Play Z-Girl greeting (and animate avatar) using Web Speech
   const playGreeting = useCallback(() => {
-  if (typeof window === "undefined") return;
-  if (!("speechSynthesis" in window)) return;
+    if (typeof window === "undefined") return;
+    if (!("speechSynthesis" in window)) return;
 
-  const utterance = new SpeechSynthesisUtterance(
-    "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
-  );
+    const utterance = new SpeechSynthesisUtterance(
+      "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
+    );
 
-  utterance.onstart = () => {
-    setIsSpeaking(true);
-  };
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
 
-  const markDone = () => {
-    setIsSpeaking(false);
-  };
+    const markDone = () => {
+      setIsSpeaking(false);
+    };
 
-  utterance.onend = markDone;
-  utterance.onerror = markDone;
+    utterance.onend = markDone;
+    utterance.onerror = markDone;
 
-  // Stop anything already speaking, then play this one
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}, []);
-
- useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  const alreadyPlayed = window.sessionStorage.getItem("zgirlGreetingPlayed");
-  if (alreadyPlayed) return;
-
-  playGreeting();
-  window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
-}, [playGreeting]);
-
-  if (!("speechSynthesis" in window)) return;
-
-  const utterance = new SpeechSynthesisUtterance(
-    "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
-  );
-
-  utterance.onstart = () => {
-    setIsSpeaking(true);
-  };
-
-  const markDone = () => {
-    setIsSpeaking(false);
-    window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
-  };
-
-  utterance.onend = markDone;
-  utterance.onerror = markDone;
-
-  // Small delay so it doesn't collide with page load
-  const timer = window.setTimeout(() => {
+    // Stop anything already speaking, then play this one
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  }, 800);
+  }, []);
 
-  return () => {
-    window.clearTimeout(timer);
-  };
-}, []);
+  // Auto-play greeting once per session
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const alreadyPlayed = window.sessionStorage.getItem("zgirlGreetingPlayed");
+    if (alreadyPlayed) return;
+
+    playGreeting();
+    window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
+  }, [playGreeting]);
 
   // Load stored conversation on mount
   useEffect(() => {
@@ -302,7 +280,7 @@ export default function Home() {
     setBreathingStepIndex(0);
     const interval = setInterval(() => {
       setBreathingStepIndex((prev) => (prev + 1) % BREATHING_STEPS.length);
-    }, 4000); // 4 seconds per step (fits 4-2-4 rhythm enough for youth)
+    }, 4000); // 4 seconds per step
 
     return () => clearInterval(interval);
   }, [showBreathing]);
@@ -502,8 +480,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
             {/* Title */}
             <h1 className="text-3xl font-bold leading-tight mt-2">
-              Meet Z-Girl,{" "}
-              <span className="text-teal-300">Your Hero Coach</span>
+              Meet Z-Girl, <span className="text-teal-300">Your Hero Coach</span>
             </h1>
 
             {/* Subtitle */}
@@ -516,64 +493,64 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               — one small step at a time.
             </p>
 
-       {/* Z-Girl portrait with hero glow animation */}
-<div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-  <div
-    className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${
-      isSpeaking ? "zgirl-hero-avatar--speaking" : ""
-    }`}
-  >
-    <img
-      src="/icons/zgirl-icon-1024.png"
-      alt="Z-Girl Hero Coach"
-      className="h-full w-full rounded-full object-cover"
-    />
-  </div>
-</div>
+            {/* Z-Girl portrait with hero glow animation */}
+            <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
+              <div
+                className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${
+                  isSpeaking ? "zgirl-hero-avatar--speaking" : ""
+                }`}
+              >
+                <img
+                  src="/icons/zgirl-icon-1024.png"
+                  alt="Z-Girl Hero Coach"
+                  className="h-full w-full rounded-full object-cover"
+                />
+              </div>
+            </div>
 
-         {/* CTA: Start Session */}
-<button
-  onClick={() => {
-    setShowChat(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }}
-  className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
->
-  Start Session
-</button>
+            {/* CTA: Start Session */}
+            <button
+              onClick={() => {
+                setShowChat(true);
+                setTimeout(() => inputRef.current?.focus(), 50);
+              }}
+              className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
+            >
+              Start Session
+            </button>
 
-<div className="flex flex-col items-center gap-1">
-  {/* Skip intro */}
-  <button
-    onClick={() => {
-      setShowChat(true);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }}
-    className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-  >
-    Skip intro · Go to chat
-  </button>
+            <div className="flex flex-col items-center gap-1">
+              {/* Skip intro */}
+              <button
+                onClick={() => {
+                  setShowChat(true);
+                  setTimeout(() => inputRef.current?.focus(), 50);
+                }}
+                className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+              >
+                Skip intro · Go to chat
+              </button>
 
-  {/* Play greeting again */}
-  <div className="mt-2 flex justify-center">
-    <button
-      type="button"
-      onClick={playGreeting}
-      className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-100"
-    >
-      <span aria-hidden="true">🔊</span>
-      <span>Play Z-Girl’s welcome again</span>
-    </button>
-  </div>
-</div>
-  {/* Learn more link */}
-  <Link
-    href="/hero"
-    className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
-  >
-    Learn more about Z-Girl &amp; this app
-  </Link>
-</div>
+              {/* Play greeting again */}
+              <div className="mt-2 flex justify-center">
+                <button
+                  type="button"
+                  onClick={playGreeting}
+                  className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-100"
+                >
+                  <span aria-hidden="true">🔊</span>
+                  <span>Play Z-Girl’s welcome again</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Learn more link */}
+            <Link
+              href="/hero"
+              className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+            >
+              Learn more about Z-Girl &amp; this app
+            </Link>
 
             {/* Microcopy */}
             <p className="text-[10px] text-slate-500 leading-relaxed">
@@ -645,7 +622,11 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               {selectedMood && (
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[11px] text-slate-400">
-                    Feeling <span className="font-semibold text-slate-200">{selectedMood}</span>? Try a quick breathing hero move:
+                    Feeling{" "}
+                    <span className="font-semibold text-slate-200">
+                      {selectedMood}
+                    </span>
+                    ? Try a quick breathing hero move:
                   </p>
                   <button
                     type="button"
@@ -678,15 +659,15 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     <div className="text-xs text-slate-400 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-3 mb-2">
                       <p className="mb-1">
                         👋 Hey! I&apos;m{" "}
-                        <span className="font-semibold text-sky-300">
-                          Z-Girl
-                        </span>
-                        , your hero coach. You can:
+                        <span className="font-semibold text-sky-300">Z-Girl</span>,
+                        your hero coach. You can:
                       </p>
                       <ul className="list-disc list-inside space-y-1">
                         <li>Tell me what&apos;s stressing you out</li>
                         <li>Ask for help with big feelings or tricky situations</li>
-                        <li>Practice a quick &quot;hero move&quot; to feel a bit better</li>
+                        <li>
+                          Practice a quick &quot;hero move&quot; to feel a bit better
+                        </li>
                       </ul>
                     </div>
                   )}
@@ -894,21 +875,21 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   professional right away.
                 </p>
 
-             <div className="flex flex-col items-start md:items-end gap-1">
-  <InstallPWAButton />
-  <Link
-    href="/hero"
-    className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
-  >
-    About Z-Girl Hero Coach
-  </Link>
-  <Link
-    href="/safety"
-    className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-  >
-    Safety &amp; Use Guidelines
-  </Link>
-</div>
+                <div className="flex flex-col items-start md:items-end gap-1">
+                  <InstallPWAButton />
+                  <Link
+                    href="/hero"
+                    className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+                  >
+                    About Z-Girl Hero Coach
+                  </Link>
+                  <Link
+                    href="/safety"
+                    className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+                  >
+                    Safety &amp; Use Guidelines
+                  </Link>
+                </div>
               </div>
             </footer>
           </div>
