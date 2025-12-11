@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect, useRef, useCallback } from "react";
+
 import React, {
   useEffect,
   useState,
@@ -173,13 +175,39 @@ export default function Home() {
   
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const playGreeting = useCallback(() => {
+  if (typeof window === "undefined") return;
+  if (!("speechSynthesis" in window)) return;
 
-  useEffect(() => {
+  const utterance = new SpeechSynthesisUtterance(
+    "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
+  );
+
+  utterance.onstart = () => {
+    setIsSpeaking(true);
+  };
+
+  const markDone = () => {
+    setIsSpeaking(false);
+  };
+
+  utterance.onend = markDone;
+  utterance.onerror = markDone;
+
+  // Stop anything already speaking, then play this one
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}, []);
+
+ useEffect(() => {
   if (typeof window === "undefined") return;
 
-  // Only play once per browser session
   const alreadyPlayed = window.sessionStorage.getItem("zgirlGreetingPlayed");
   if (alreadyPlayed) return;
+
+  playGreeting();
+  window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
+}, [playGreeting]);
 
   if (!("speechSynthesis" in window)) return;
 
@@ -526,6 +554,18 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
     Skip intro · Go to chat
   </button>
 
+  {/* Play greeting again */}
+  <div className="mt-2 flex justify-center">
+    <button
+      type="button"
+      onClick={playGreeting}
+      className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-100"
+    >
+      <span aria-hidden="true">🔊</span>
+      <span>Play Z-Girl’s welcome again</span>
+    </button>
+  </div>
+</div>
   {/* Learn more link */}
   <Link
     href="/hero"
