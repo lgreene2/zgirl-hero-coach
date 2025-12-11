@@ -169,9 +169,45 @@ export default function Home() {
   const [showTips, setShowTips] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
   const [breathingStepIndex, setBreathingStepIndex] = useState(0);
-
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  // Only play once per browser session
+  const alreadyPlayed = window.sessionStorage.getItem("zgirlGreetingPlayed");
+  if (alreadyPlayed) return;
+
+  if (!("speechSynthesis" in window)) return;
+
+  const utterance = new SpeechSynthesisUtterance(
+    "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
+  );
+
+  utterance.onstart = () => {
+    setIsSpeaking(true);
+  };
+
+  const markDone = () => {
+    setIsSpeaking(false);
+    window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
+  };
+
+  utterance.onend = markDone;
+  utterance.onerror = markDone;
+
+  // Small delay so it doesn't collide with page load
+  const timer = window.setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 800);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, []);
 
   // Load stored conversation on mount
   useEffect(() => {
@@ -454,7 +490,11 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
        {/* Z-Girl portrait with hero glow animation */}
 <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-  <div className="zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full">
+  <div
+    className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${
+      isSpeaking ? "zgirl-hero-avatar--speaking" : ""
+    }`}
+  >
     <img
       src="/icons/zgirl-icon-1024.png"
       alt="Z-Girl Hero Coach"
