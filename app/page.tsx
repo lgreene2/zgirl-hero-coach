@@ -181,28 +181,60 @@ export default function Home() {
 
   // Play Z-Girl greeting (and animate avatar) using Web Speech
   const playGreeting = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!("speechSynthesis" in window)) return;
+  if (typeof window === "undefined") return;
+  if (!("speechSynthesis" in window)) return;
 
-    const utterance = new SpeechSynthesisUtterance(
-      "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
-    );
+  const synth = window.speechSynthesis;
 
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-    };
+  const utterance = new SpeechSynthesisUtterance(
+    "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time."
+  );
 
-    const markDone = () => {
-      setIsSpeaking(false);
-    };
+  // Try to pick a female-sounding voice if available
+  const voices = synth.getVoices();
 
-    utterance.onend = markDone;
-    utterance.onerror = markDone;
+  if (voices && voices.length > 0) {
+    const preferredNames = [
+      "Google US English",      // Chrome female voice
+      "Google UK English Female",
+      "Microsoft Zira",
+      "Microsoft Aria",
+      "Microsoft Jenny",
+      "Samantha",               // macOS
+      "Serena",
+      "Zira",
+      "Jenny",
+      "Aria",
+    ];
 
-    // Stop anything already speaking, then play this one
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }, []);
+    // 1) try exact / partial name matches
+    let chosen =
+      voices.find((v) =>
+        preferredNames.some((name) => v.name.toLowerCase().includes(name.toLowerCase()))
+      ) ||
+      // 2) fallback: any voice whose name hints at "female"
+      voices.find((v) => /female|woman|girl/i.test(v.name));
+
+    if (chosen) {
+      utterance.voice = chosen;
+    }
+  }
+
+  utterance.onstart = () => {
+    setIsSpeaking(true);
+  };
+
+  const markDone = () => {
+    setIsSpeaking(false);
+  };
+
+  utterance.onend = markDone;
+  utterance.onerror = markDone;
+
+  // Stop anything already speaking, then play this one
+  synth.cancel();
+  synth.speak(utterance);
+}, []);
 
   // Auto-play greeting once per session
   useEffect(() => {
