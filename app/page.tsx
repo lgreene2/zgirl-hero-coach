@@ -452,17 +452,16 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               — one small step at a time.
             </p>
 
-            {/* Z-Girl portrait using the app icon with subtle pulse */}
-            <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-              <div className="absolute inset-0 rounded-full bg-teal-500/25 blur-3xl animate-pulse" />
-              <div className="relative rounded-full overflow-hidden shadow-[0_0_35px_rgba(34,211,238,0.45)] border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 transition-transform duration-300 ease-out hover:scale-[1.03]">
-                <img
-                  src="/icons/zgirl-icon-1024.png"
-                  alt="Z-Girl Hero Coach"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
+       {/* Z-Girl portrait with hero glow animation */}
+<div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
+  <div className="zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full">
+    <img
+      src="/icons/zgirl-icon-1024.png"
+      alt="Z-Girl Hero Coach"
+      className="h-full w-full rounded-full object-cover"
+    />
+  </div>
+</div>
 
          {/* CTA: Start Session */}
 <button
