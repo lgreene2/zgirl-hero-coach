@@ -464,27 +464,37 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             </div>
 
-            {/* CTA: Start Session */}
-            <button
-              onClick={() => {
-                setShowChat(true);
-                setTimeout(() => inputRef.current?.focus(), 50);
-              }}
-              className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
-            >
-              Start Session
-            </button>
+         {/* CTA: Start Session */}
+<button
+  onClick={() => {
+    setShowChat(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }}
+  className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
+>
+  Start Session
+</button>
 
-            {/* Skip intro */}
-            <button
-              onClick={() => {
-                setShowChat(true);
-                setTimeout(() => inputRef.current?.focus(), 50);
-              }}
-              className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-            >
-              Skip intro · Go to chat
-            </button>
+<div className="flex flex-col items-center gap-1">
+  {/* Skip intro */}
+  <button
+    onClick={() => {
+      setShowChat(true);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }}
+    className="text-[11px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+  >
+    Skip intro · Go to chat
+  </button>
+
+  {/* Learn more link */}
+  <Link
+    href="/hero"
+    className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+  >
+    Learn more about Z-Girl &amp; this app
+  </Link>
+</div>
 
             {/* Microcopy */}
             <p className="text-[10px] text-slate-500 leading-relaxed">
@@ -805,15 +815,21 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   professional right away.
                 </p>
 
-                <div className="flex flex-col items-start md:items-end gap-1">
-                  <InstallPWAButton />
-                  <Link
-                    href="/safety"
-                    className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
-                  >
-                    Safety &amp; Use Guidelines
-                  </Link>
-                </div>
+             <div className="flex flex-col items-start md:items-end gap-1">
+  <InstallPWAButton />
+  <Link
+    href="/hero"
+    className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+  >
+    About Z-Girl Hero Coach
+  </Link>
+  <Link
+    href="/safety"
+    className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+  >
+    Safety &amp; Use Guidelines
+  </Link>
+</div>
               </div>
             </footer>
           </div>
