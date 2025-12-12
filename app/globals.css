@@ -87,3 +87,15 @@ body {
   50% { transform: translateY(-6px); }
   100% { transform: translateY(0); }
 }
+/* --- Z-Girl Speaking Enhancements --- */
+.zgirl-hero-avatar--speaking img {
+  transform: scale(1.01);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zgirl-hero-avatar,
+  .zgirl-hero-button,
+  .zgirl-hero-avatar--speaking {
+    animation: none !important;
+  }
+}
