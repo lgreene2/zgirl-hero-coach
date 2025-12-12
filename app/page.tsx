@@ -1120,6 +1120,13 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
           </div>
         </div>
       )}
+   
+    {/* 🔊 Global Audio Elements */}
+    <audio ref={sendSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
+    <audio ref={heroMomentSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
+    <audio ref={startupSoundRef} src="/sounds/zgirl-startup.mp3" preload="auto" />
+    <audio ref={replyChimeRef} src="/sounds/zgirl-chime.wav" preload="auto" />
+    
     </div>
   );
 }
