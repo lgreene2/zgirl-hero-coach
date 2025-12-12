@@ -179,6 +179,10 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // 🔊 Sound effects
+  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
+  const heroMomentSoundRef = useRef<HTMLAudioElement | null>(null);
+
   // NEW: sound effect refs
 const startupSoundRef = useRef<HTMLAudioElement | null>(null);
 const replyChimeRef = useRef<HTMLAudioElement | null>(null);
@@ -337,10 +341,13 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [showBreathing]);
 
-  const handleSend = async () => {
+   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
+    // Clear any old error + video script for a fresh “episode”
     setErrorBanner(null);
+    setShowVideoScript(false);
+    setVideoScript("");
 
     const userMessage: ChatMessage = {
       id: makeId("u"),
@@ -352,6 +359,16 @@ useEffect(() => {
     setMessages(nextMessages);
     setInput("");
     setLoading(true);
+
+    // 🔊 Play soft “send” sound
+    if (sendSoundRef.current) {
+      try {
+        sendSoundRef.current.currentTime = 0;
+        await sendSoundRef.current.play();
+      } catch {
+        // ignore autoplay errors (mobile / browser restrictions)
+      }
+    }
 
     try {
       const resp = await fetch("/api/chat", {
@@ -371,7 +388,8 @@ useEffect(() => {
 
       const data = await resp.json();
       const assistantText =
-        data.reply ?? "I’m here with you. Let’s try that again in a moment. 💙";
+        data.reply ??
+        "I’m here with you. Let’s try that again in a moment. 💙";
 
       const assistantMessage: ChatMessage = {
         id: makeId("a"),
@@ -379,18 +397,11 @@ useEffect(() => {
         text: assistantText,
       };
 
-    // NEW: chime when Z-Girl replies
-      if (replyChimeRef.current) {
-      replyChimeRef.current.currentTime = 0;
-      replyChimeRef.current.play().catch(() => {});
-    }
-
-    setMessages((prev) => [...prev, assistantMessage]);
-
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       console.error(err);
       setErrorBanner(
-        "Z-Girl ran into a little tech glitch. Try again in a moment, or refresh if it keeps happening."
+        "Z-Girl had trouble reaching her hero HQ. Please check your connection and try again."
       );
     } finally {
       setLoading(false);
@@ -426,25 +437,37 @@ useEffect(() => {
   };
 
   const handleSaveHeroMoment = () => {
-    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+    if (messages.length === 0) return;
+
+    const lastAssistant = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant");
+
     if (!lastAssistant) {
       setErrorBanner(
-        "I need a message from Z-Girl to save as a hero moment. Ask her something first. 💬"
+        "Ask Z-Girl something first, then you can save a hero moment from her reply."
       );
       return;
     }
 
-    const moment: HeroMoment = {
-      id: makeId("hm"),
+    const newMoment: HeroMoment = {
+      id: makeId("h"),
       text: lastAssistant.text,
       mood: selectedMood,
       createdAt: Date.now(),
     };
 
-    setHeroMoments((prev) => {
-      const updated = [moment, ...prev];
-      return updated.slice(0, 20); // keep top 20
-    });
+    setHeroMoments((prev) => [newMoment, ...prev]);
+
+    // ✨ Play hero-moment chime
+    if (heroMomentSoundRef.current) {
+      try {
+        heroMomentSoundRef.current.currentTime = 0;
+        heroMomentSoundRef.current.play();
+      } catch {
+        // ignore autoplay errors
+      }
+    }
   };
 
   const handleClearHeroMoments = () => {
