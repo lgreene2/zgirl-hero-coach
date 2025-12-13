@@ -167,6 +167,8 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [rateLimitUntil, setRateLimitUntil] = useState<number | null>(null);
+  const [pendingRetry, setPendingRetry] = useState<string | null>(null);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [heroMoments, setHeroMoments] = useState<HeroMoment[]>([]);
   const [showVideoScript, setShowVideoScript] = useState(false);
@@ -194,11 +196,12 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
   const [autoSendVoice, setAutoSendVoice] = useState(false);
-    const sendingRef = useRef(false);
-const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<any>(null);
   const silenceStopTimerRef = useRef<number | null>(null);
 
-  // Keep voice transcription stable (avoid repeated interim appends)
+  
+  const pointerDownRef = useRef(false);
+// Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
   const voiceFinalRef = useRef<string>("");
   const voiceHadResultRef = useRef<boolean>(false);
@@ -579,14 +582,27 @@ const recognitionRef = useRef<any>(null);
         : "";
 
     try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
+      const resp = await fetch('/api/chat', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemPrompt: SYSTEM_PROMPT + langInstruction,
           messages: nextMessages.map((m) => ({ role: m.role, content: m.text })),
         }),
       });
+
+      if (resp.status === 429) {
+        let retryAfter = 20;
+        try {
+          const h = resp.headers.get("Retry-After");
+          if (h) retryAfter = Math.max(1, parseInt(h, 10) || retryAfter);
+        } catch {}
+        setRateLimitUntil(Date.now() + retryAfter * 1000);
+        setPendingRetry(userMessage.text);
+        setErrorBanner(`Hero HQ is busy — try again in ${retryAfter}s.`);
+        setLoading(false);
+        return;
+      }
 
       if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
 
@@ -988,10 +1004,30 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </section>
 
             {errorBanner && (
-              <div className="mb-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100" role="alert">
+          <div
+            className="mb-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100"
+            role="alert"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 {errorBanner}
+                {rateLimitSecondsLeft > 0 && (
+                  <span className="ml-2 opacity-80">({rateLimitSecondsLeft}s)</span>
+                )}
               </div>
-            )}
+
+              {pendingRetry && rateLimitSecondsLeft === 0 && (
+                <button
+                  type="button"
+                  onClick={handleRetrySend}
+                  className="shrink-0 rounded-full border border-amber-300/30 bg-amber-400/20 px-3 py-1 text-[11px] font-semibold text-amber-100 hover:bg-amber-400/30"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-6">
               <section className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950/60">
@@ -1103,7 +1139,24 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       {/* NEW: voice input mic button */}
                       <button
                         type="button"
-                        onClick={toggleListening}
+                        onPointerDown={(e) => {
+              pointerDownRef.current = true;
+              e.preventDefault();
+              startListening();
+            }}
+            onPointerUp={() => {
+              stopListening();
+              window.setTimeout(() => (pointerDownRef.current = false), 0);
+            }}
+            onPointerLeave={() => {
+              stopListening();
+              window.setTimeout(() => (pointerDownRef.current = false), 0);
+            }}
+            onClick={() => {
+              // Keyboard / non-pointer click fallback
+              if (pointerDownRef.current) return;
+              toggleListening();
+            }}
                         disabled={!speechRecOk || !voiceInputEnabled}
                         className={[
                           "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition",
