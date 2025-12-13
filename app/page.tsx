@@ -326,25 +326,56 @@ export default function Home() {
     };
 
     rec.onresult = (event: any) => {
-      setVoiceDebug(`rec.onresult fired (results: ${event?.results?.length ?? 0})`);
+      // Build transcript safely:
+      // - Keep a stable base captured at the moment listening starts
+      // - Accumulate only FINAL chunks in a ref
+      // - Show INTERIM live without appending repeatedly
+      const base = voiceBaseInputRef.current || "";
 
       let interim = "";
-      let finalText = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0]?.transcript ?? "";
-        if (event.results[i].isFinal) finalText += transcript;
-        else interim += transcript;
+      let finalChunk = "";
+
+      const results = event?.results;
+      const startIndex = typeof event?.resultIndex === "number" ? event.resultIndex : 0;
+
+      if (results && typeof results.length === "number") {
+        for (let i = startIndex; i < results.length; i++) {
+          const res = results[i];
+          const t = res?.[0]?.transcript ? String(res[0].transcript) : "";
+          if (!t) continue;
+          if (res.isFinal) finalChunk += t;
+          else interim += t;
+        }
       }
 
-      // Show interim in input without overwriting user typing too aggressively
-      if (interim && !finalText) setInput((prev) => (prev ? `${prev} ${interim}` : interim));
+      // Mark that we got voice content in this session
+      if (interim.trim() || finalChunk.trim()) voiceHadResultRef.current = true;
 
-      if (finalText) {
-        setInput((prev) => {
-          const next = prev ? `${prev} ${finalText}` : finalText;
-          return next.replace(/\s+/g, " ").trim();
-        });
-        if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
+      // Accumulate FINAL text only (stable)
+      if (finalChunk) {
+        // Add spacing carefully so we don't jam words
+        const add = finalChunk.trim();
+        if (add) {
+          voiceFinalRef.current = (voiceFinalRef.current ? (voiceFinalRef.current + " ") : "") + add;
+        }
+      }
+
+      const live = (voiceFinalRef.current + (interim ? (" " + interim.trim()) : "")).trim();
+      const combined =
+        (base + (base && live ? " " : "") + live).replace(/\s+/g, " ").trim();
+
+      setInput(combined);
+
+      // Reset silence timer whenever we receive results
+      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = window.setTimeout(() => {
+        try {
+          rec.stop();
+        } catch {}
+      }, 2500);
+
+      if (finalChunk && liveRegionRef.current) {
+        liveRegionRef.current.textContent = "Captured voice input.";
       }
     };
 
