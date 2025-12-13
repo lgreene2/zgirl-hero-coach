@@ -152,24 +152,6 @@ function isSpeechRecognitionSupported(): boolean {
   return typeof window !== "undefined" && (("SpeechRecognition" in window) || ("webkitSpeechRecognition" in window));
 }
 
-const MIC_PERMISSION_KEY = "zgirl-mic-permission-v1";
-
-async function requestMicPermission(): Promise<boolean> {
-  if (typeof window === "undefined") return false;
-  // SpeechRecognition uses the mic; this forces a permissions prompt in many browsers
-  try {
-    if (!navigator.mediaDevices?.getUserMedia) return true;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    // Immediately stop tracks (we only needed permission)
-    stream.getTracks().forEach((t) => t.stop());
-    window.localStorage.setItem(MIC_PERMISSION_KEY, "granted");
-    return true;
-  } catch {
-    window.localStorage.setItem(MIC_PERMISSION_KEY, "denied");
-    return false;
-  }
-}
-
 type VoiceSettingsPersist = {
   voiceEnabled: boolean;
   autoSpeakReplies: boolean;
@@ -178,11 +160,6 @@ type VoiceSettingsPersist = {
   speechPitch: number;
   speechLang: LangOption["code"];
   selectedVoiceName: string;
-
-  // Voice input settings (persisted)
-  voiceInputEnabled?: boolean;
-  autoSendVoice?: boolean;
-  confirmBeforeSendVoice?: boolean;
 };
 
 export default function Home() {
@@ -216,18 +193,8 @@ export default function Home() {
   // Speech recognition (verbal input)
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
-  const [pendingVoiceSend, setPendingVoiceSend] = useState<string | null>(null);
   const [autoSendVoice, setAutoSendVoice] = useState(false);
-  const [confirmBeforeSendVoice, setConfirmBeforeSendVoice] = useState(true);
   const recognitionRef = useRef<any>(null);
-
-  const pendingVoiceSendRef = useRef<string>("");
-  const silenceStopTimerRef = useRef<number | null>(null);
-  const isListeningRef = useRef<boolean>(false);
-  const startFailTimerRef = useRef<number | null>(null);
-  const autoSendVoiceRef = useRef<boolean>(false);
-  const confirmBeforeSendVoiceRef = useRef<boolean>(true);
-  const loadingRef = useRef<boolean>(false);
 
   // Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
@@ -259,9 +226,6 @@ export default function Home() {
         if (typeof parsed.speechPitch === "number") setSpeechPitch(parsed.speechPitch);
         if (typeof parsed.speechLang === "string") setSpeechLang(parsed.speechLang as any);
         if (typeof parsed.selectedVoiceName === "string") setSelectedVoiceName(parsed.selectedVoiceName);
-        if (typeof parsed.voiceInputEnabled === "boolean") setVoiceInputEnabled(parsed.voiceInputEnabled);
-        if (typeof parsed.autoSendVoice === "boolean") setAutoSendVoice(parsed.autoSendVoice);
-        if (typeof parsed.confirmBeforeSendVoice === "boolean") setConfirmBeforeSendVoice(parsed.confirmBeforeSendVoice);
       }
 
       const mutedRaw = window.localStorage.getItem(MUTED_MESSAGES_KEY);
@@ -285,15 +249,11 @@ export default function Home() {
       speechPitch,
       speechLang,
       selectedVoiceName,
-
-      voiceInputEnabled,
-      autoSendVoice,
-      confirmBeforeSendVoice,
     };
     try {
       window.localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(payload));
     } catch {}
-  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName, voiceInputEnabled, autoSendVoice, confirmBeforeSendVoice]);
+  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName]);
 
   // Persist muted map
   useEffect(() => {
@@ -320,67 +280,33 @@ export default function Home() {
     if (!isSpeechRecognitionSupported()) return;
     if (typeof window === "undefined") return;
 
-    let rec: any = null;
-    try {
-      const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SR) return;
-      rec = new SR();
-    } catch {
-      // If SpeechRecognition constructor fails, voice input won't work
-      return;
-    }
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const rec = new SR();
     rec.continuous = false;
     rec.interimResults = true;
     rec.lang = speechLang;
 
     rec.onstart = () => {
       setIsListening(true);
-      if (startFailTimerRef.current) {
-        window.clearTimeout(startFailTimerRef.current);
-        startFailTimerRef.current = null;
-      }
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input started. Speak now.";
-
-      // Auto-stop after short silence (resets on each result)
-      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
-      silenceStopTimerRef.current = window.setTimeout(() => {
-        try {
-          rec.stop();
-        } catch {}
-      }, 2500);
     };
 
-    rec.onerror = (event: any) => {
+    rec.onerror = () => {
       setIsListening(false);
-      const code = event?.error ? String(event.error) : "unknown";
-      const msg = event?.message ? String(event.message) : "";
-      setErrorBanner(`Voice input error (${code}). ${msg}`.trim());
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped due to an error.";
     };
 
     rec.onend = () => {
       setIsListening(false);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped.";
-      if (startFailTimerRef.current) {
-        window.clearTimeout(startFailTimerRef.current);
-        startFailTimerRef.current = null;
-      }
 
-      // Optional: auto-send when speech stops (with kid-safe confirmation)
-      if (silenceStopTimerRef.current) {
-        window.clearTimeout(silenceStopTimerRef.current);
-        silenceStopTimerRef.current = null;
-      }
-
-      if (autoSendVoiceRef.current && voiceHadResultRef.current) {
+      // Optional: auto-send when speech stops
+      if (autoSendVoice && voiceHadResultRef.current) {
+        // Give React state a tick to settle
         setTimeout(() => {
+          // Only send if not already sending
           const current = (inputRef.current?.value ?? "").toString().trim();
-          if (!current || loadingRef.current) return;
-
-          if (confirmBeforeSendVoiceRef.current) {
-            pendingVoiceSendRef.current = current;
-            setPendingVoiceSend(current);
-          } else {
+          if (current && !loading) {
             handleSendRef.current();
           }
         }, 150);
@@ -411,21 +337,13 @@ export default function Home() {
 
       setInput(combined);
 
-      // Reset silence timer whenever we receive voice results
-      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
-      silenceStopTimerRef.current = window.setTimeout(() => {
-        try {
-          rec.stop();
-        } catch {}
-      }, 2500);
-
       if (finalChunk && liveRegionRef.current) {
         liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
       }
     };
 
     recognitionRef.current = rec;
-  }, [speechLang]);
+  }, [speechLang, autoSendVoice, loading]);
 
   // audio volumes
   useEffect(() => {
@@ -439,23 +357,6 @@ export default function Home() {
   }, []);
 
   const stopSpeaking = useCallback(() => {
-
-  useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
-
-  useEffect(() => {
-    autoSendVoiceRef.current = autoSendVoice;
-  }, [autoSendVoice]);
-
-  useEffect(() => {
-    confirmBeforeSendVoiceRef.current = confirmBeforeSendVoice;
-  }, [confirmBeforeSendVoice]);
-
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
-
     if (typeof window === "undefined") return;
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
@@ -506,27 +407,13 @@ export default function Home() {
     const chosen = resolveVoice(speechLang);
     if (chosen) utterance.voice = chosen;
 
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      // Echo prevention: if mic is listening, stop it before we speak
-      if (isListeningRef.current) {
-        try {
-          recognitionRef.current?.stop?.();
-        } catch {}
-      }
-    };
+    utterance.onstart = () => setIsSpeaking(true);
     const done = () => setIsSpeaking(false);
     utterance.onend = done;
     utterance.onerror = done;
 
-    try {
-      synth.cancel();
-      // Some browsers may be paused until resume() is called after user gesture
-      if (typeof synth.resume === "function") synth.resume();
-      synth.speak(utterance);
-    } catch {
-      setIsSpeaking(false);
-    }
+    synth.cancel();
+    synth.speak(utterance);
   }, [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]);
 
   const speakMessage = useCallback((m: ChatMessage) => {
@@ -542,52 +429,23 @@ export default function Home() {
 
   const startListening = useCallback(() => {
     if (!voiceInputEnabled) return;
-    if (!isSpeechRecognitionSupported()) {
-      setErrorBanner("Voice input isn’t supported in this browser. Try Chrome desktop or Edge.");
-      return;
-    }
-
+    if (!isSpeechRecognitionSupported()) return;
     const rec = recognitionRef.current;
-    if (!rec) {
-      setErrorBanner("Voice input isn’t available right now (SpeechRecognition not initialized). Try refreshing the page.");
-      return;
-    }
+    if (!rec) return;
 
-    setErrorBanner(null);
-
-    // Capture whatever is currently in the input as the "base"
+    // Capture whatever is currently in the input as the "base" (so interim doesn't multiply)
     const base = (inputRef.current?.value ?? input ?? "").toString();
     voiceBaseInputRef.current = base;
     voiceFinalRef.current = "";
     voiceHadResultRef.current = false;
 
-    // Echo prevention: stop any speaking before listening
-    stopSpeaking();
-
-    // UI feedback immediately (Chrome sometimes delays onstart)
-    setIsListening(true);
-
-    // If onstart never fires, show a targeted hint
-    if (startFailTimerRef.current) window.clearTimeout(startFailTimerRef.current);
-    startFailTimerRef.current = window.setTimeout(() => {
-      // If we still appear to be listening but never got a result, recognition likely failed silently
-      if (!voiceHadResultRef.current) {
-        setIsListening(false);
-        setErrorBanner(
-          "Voice input didn’t start (no speech detected). Try: 1) click the page once then press Speak, 2) reload, 3) turn off extensions (ad/privacy blockers), or 4) try Microsoft Edge."
-        );
-      }
-    }, 1400);
-
     try {
       rec.lang = speechLang;
       rec.start();
-    } catch (e: any) {
-      setIsListening(false);
-      const msg = e?.message ? String(e.message) : "";
-      setErrorBanner(`Voice input couldn’t start. ${msg}`.trim());
+    } catch {
+      // Some browsers throw if start() called twice
     }
-  }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
+  }, [speechLang, voiceInputEnabled, input]);
 
   const stopListening = useCallback(() => {
     const rec = recognitionRef.current;
@@ -671,7 +529,6 @@ export default function Home() {
     setErrorBanner(null);
     setShowVideoScript(false);
     setVideoScript("");
-    setPendingVoiceSend(null);
 
     const userMessage: ChatMessage = { id: makeId("u"), role: "user", text: input.trim() };
     const nextMessages = [...messages, userMessage];
@@ -871,17 +728,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </p>
 
             <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-              <div className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${isSpeaking ? "zgirl-hero-avatar--speaking" : ""} ${isListening ? "zgirl-hero-avatar--listening" : ""}`}>
-                <div className="relative h-full w-full rounded-full overflow-hidden">
-                  <img src="/icons/zgirl-icon-1024.png" alt="Z-Girl Hero Coach" className="h-full w-full rounded-full object-cover" />
-                  <div
-                    aria-hidden="true"
-                    className={[
-                      "zgirl-mouth absolute left-1/2 -translate-x-1/2 bottom-[22%] w-7 h-2 rounded-full bg-slate-950/80",
-                      isSpeaking ? "animate-pulse scale-y-125" : "opacity-0",
-                    ].join(" ")}
-                  />
-                </div>
+              <div className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${isSpeaking ? "zgirl-hero-avatar--speaking" : ""}`}>
+                <img src="/icons/zgirl-icon-1024.png" alt="Z-Girl Hero Coach" className="h-full w-full rounded-full object-cover" />
               </div>
             </div>
 
@@ -929,17 +777,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     aria-label="Auto send voice input"
                   />
                   <span>Auto-send</span>
-                </label>
-
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={confirmBeforeSendVoice}
-                    onChange={() => setConfirmBeforeSendVoice((v) => !v)}
-                    disabled={!speechRecOk || !voiceInputEnabled || !autoSendVoice}
-                    aria-label="Confirm before sending voice input"
-                  />
-                  <span>Confirm</span>
                 </label>
               </div>
 
@@ -1214,53 +1051,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
                   <label className="sr-only" htmlFor="zgirl-chat-input">Message Z-Girl</label>
 
-                  {pendingVoiceSend && (
-                    <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-100">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-semibold text-amber-100">Did I hear you right?</div>
-                          <div className="mt-0.5 text-amber-50/90 line-clamp-3">
-                            “{pendingVoiceSend}”
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingVoiceSend(null);
-                              // keep text in input for editing
-                              inputRef.current?.focus();
-                            }}
-                            className="text-[11px] text-amber-100/90 hover:text-amber-50 underline underline-offset-2"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingVoiceSend(null);
-                              handleSendRef.current();
-                            }}
-                            className="rounded-full bg-amber-400 px-3 py-1 text-[11px] font-semibold text-slate-950 hover:bg-amber-300 transition"
-                          >
-                            Yes, send
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <textarea
                     id="zgirl-chat-input"
                     ref={inputRef}
                     value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      if (pendingVoiceSend) setPendingVoiceSend(null);
-                    }}
+                    onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     rows={2}
-                    className={`w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400 ${isListening ? "ring-2 ring-amber-400/70 border-amber-400/70" : ""}`}
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
                     placeholder="Tell Z-Girl what’s going on, or ask a question…"
                   />
 
@@ -1291,7 +1089,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                         title={isListening ? "Listening… click to stop" : "Click to speak"}
                       >
                         {isListening ? "🎙️ Listening…" : "🎙️ Speak"}
-                      {isListening && <span className="text-[10px] text-amber-200">Listening: ON</span>}
                       </button>
                     </div>
 
