@@ -27,6 +27,9 @@ type HeroMoment = {
 const STORAGE_KEY = "zgirl-hero-chat-v1";
 const HERO_KEY = "zgirl-hero-moments-v1";
 
+// NEW: Persisted voice settings
+const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
+
 const SYSTEM_PROMPT = `You are Z-Girl, a warm, upbeat Black teen superhero from The 4 Lessons universe. 
 You are a *digital hero coach* for kids and teens, and sometimes for caring adults who want to support them.
 
@@ -49,7 +52,6 @@ BOUNDARIES (VERY IMPORTANT)
 - You NEVER give medical advice, clinical diagnoses, medication advice, or legal instructions.
 - You NEVER tell someone to hide serious harm from a trusted adult.
 - You NEVER encourage self-harm, revenge, violence, or breaking laws.
-- You NEVER say you can keep someone completely safe or fix everything.
 
 CRISIS & SAFETY (CRITICAL)
 If the user mentions:
@@ -58,36 +60,23 @@ If the user mentions:
 - being abused, assaulted, or feeling unsafe at home, at school, or in a relationship
 
 THEN you MUST:
-1) Respond gently and seriously, e.g.:
-   - "I’m really glad you told me. Your safety matters a lot."
-2) Clearly say that you are just a digital hero coach and *not* an emergency service.
-3) Encourage them to reach out to:
-   - a parent or caregiver they trust,
-   - a school counselor, teacher, or coach,
-   - another trusted adult in their life.
-4) If they are in immediate danger, tell them to contact emergency services in their area
-   (for example, 911 in the United States) or a local crisis hotline.
+1) Respond gently and seriously
+2) Clearly say that you are just a digital hero coach and not an emergency service
+3) Encourage them to reach out to a trusted adult
+4) If immediate danger: contact emergency services (911 in the U.S.) or local hotline
 
 CONVERSATION STYLE
-- Ask 1–2 short clarifying questions before giving long advice, unless the situation is clearly urgent.
-- Keep responses focused and digestible: usually 3–6 sentences.
-- Include one concrete "hero move" the user can try (a small step, not a huge life change).
-- When the user is very stressed, often suggest a simple regulation skill:
-  - breathing exercise
-  - grounding ("name 3 things you can see right now")
-  - taking a short break or getting a drink of water
-- Validate feelings first ("It makes sense you feel that way") before giving suggestions.
-- Avoid lecture-y or preachy tones. You are a partner, not a parent.
+- Ask 1–2 short clarifying questions before giving long advice, unless urgent.
+- Keep responses focused (3–6 sentences).
+- Include one concrete "hero move" they can try.
+- Validate feelings first.
 
 HOLIDAY / SEASONAL MODE
-- If the user mentions holidays, winter break, family gatherings, or the song
-  "Unwrap the Hero Within", you can lean into that theme.
-- Connect "unwrapping the hero within" to noticing their strengths, courage, and kindness.
-- Keep it gentle and inclusive; do not assume specific religious beliefs.
+- If the user mentions holidays or "Unwrap the Hero Within", connect it to courage/kindness.
+- Keep it inclusive.
 
 OVERALL GOAL
-Help the user feel seen, calmer, and a little more hopeful, and help them choose one small
-next "hero move" they can actually do in their real life.`;
+Help the user feel seen, calmer, and choose one small next hero move.`;
 
 const STARTER_SUGGESTIONS: string[] = [
   "I’m feeling stressed about school.",
@@ -99,7 +88,6 @@ const STARTER_SUGGESTIONS: string[] = [
 
 const MOODS = ["Stressed", "Sad", "Worried", "Angry", "Tired", "Excited"];
 
-// Floating helper quick tips
 const QUICK_TIPS: {
   id: string;
   title: string;
@@ -132,7 +120,6 @@ const QUICK_TIPS: {
   },
 ];
 
-// Guided breathing steps
 const BREATHING_STEPS = [
   {
     id: "inhale",
@@ -181,6 +168,16 @@ function isSpeechSupported(): boolean {
   );
 }
 
+type VoiceSettingsPersist = {
+  voiceEnabled: boolean;
+  autoSpeakReplies: boolean;
+  soundsEnabled: boolean;
+  speechRate: number;
+  speechPitch: number;
+  speechLang: LangOption["code"];
+  selectedVoiceName: string;
+};
+
 export default function Home() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -196,7 +193,7 @@ export default function Home() {
   const [breathingStepIndex, setBreathingStepIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // ✅ Voice & accessibility controls
+  // ✅ Voice & accessibility controls (persisted)
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [autoSpeakReplies, setAutoSpeakReplies] = useState(false); // safer default
   const [soundsEnabled, setSoundsEnabled] = useState(true);
@@ -205,6 +202,11 @@ export default function Home() {
   const [speechLang, setSpeechLang] = useState<LangOption["code"]>("en-US");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>("");
+
+  // NEW: per-message mute state (assistant messages only)
+  const [mutedMessageIds, setMutedMessageIds] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -215,6 +217,52 @@ export default function Home() {
   const heroMomentSoundRef = useRef<HTMLAudioElement | null>(null);
   const startupSoundRef = useRef<HTMLAudioElement | null>(null);
   const replyChimeRef = useRef<HTMLAudioElement | null>(null);
+
+  // ✅ Load persisted voice settings once
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(VOICE_SETTINGS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<VoiceSettingsPersist>;
+      if (typeof parsed.voiceEnabled === "boolean") setVoiceEnabled(parsed.voiceEnabled);
+      if (typeof parsed.autoSpeakReplies === "boolean") setAutoSpeakReplies(parsed.autoSpeakReplies);
+      if (typeof parsed.soundsEnabled === "boolean") setSoundsEnabled(parsed.soundsEnabled);
+      if (typeof parsed.speechRate === "number") setSpeechRate(parsed.speechRate);
+      if (typeof parsed.speechPitch === "number") setSpeechPitch(parsed.speechPitch);
+      if (typeof parsed.speechLang === "string") setSpeechLang(parsed.speechLang as any);
+      if (typeof parsed.selectedVoiceName === "string") setSelectedVoiceName(parsed.selectedVoiceName);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // ✅ Persist voice settings when they change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const payload: VoiceSettingsPersist = {
+      voiceEnabled,
+      autoSpeakReplies,
+      soundsEnabled,
+      speechRate,
+      speechPitch,
+      speechLang,
+      selectedVoiceName,
+    };
+    try {
+      window.localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+  }, [
+    voiceEnabled,
+    autoSpeakReplies,
+    soundsEnabled,
+    speechRate,
+    speechPitch,
+    speechLang,
+    selectedVoiceName,
+  ]);
 
   // Voice list loader (some browsers load voices async)
   useEffect(() => {
@@ -257,19 +305,16 @@ export default function Home() {
     (langCode: string): SpeechSynthesisVoice | undefined => {
       if (!voices.length) return undefined;
 
-      // Filter by language first (if possible)
       const byLang = voices.filter((v) =>
         (v.lang || "").toLowerCase().startsWith(langCode.slice(0, 2).toLowerCase())
       );
       const pool = byLang.length ? byLang : voices;
 
-      // If user selected a voice explicitly, honor it
       if (selectedVoiceName) {
         const exact = pool.find((v) => v.name === selectedVoiceName);
         if (exact) return exact;
       }
 
-      // Prefer female-sounding names (best-effort)
       const preferredNames = [
         "Google UK English Female",
         "Google US English",
@@ -283,16 +328,47 @@ export default function Home() {
         "Aria",
       ];
 
-      const byPreferred =
+      const chosen =
         pool.find((v) =>
           preferredNames.some((n) => v.name.toLowerCase().includes(n.toLowerCase()))
         ) ||
         pool.find((v) => /female|woman|girl/i.test(v.name)) ||
         pool[0];
 
-      return byPreferred;
+      return chosen;
     },
     [voices, selectedVoiceName]
+  );
+
+  // NEW: per-message safe speak (respects mute)
+  const speakMessage = useCallback(
+    (m: ChatMessage) => {
+      if (m.role !== "assistant") return;
+      if (mutedMessageIds[m.id]) return;
+
+      if (!voiceEnabled) return;
+      if (!isSpeechSupported()) return;
+      if (typeof window === "undefined") return;
+
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(m.text);
+
+      utterance.rate = Math.min(2, Math.max(0.5, speechRate));
+      utterance.pitch = Math.min(2, Math.max(0, speechPitch));
+      utterance.lang = speechLang;
+
+      const chosen = resolveVoice(speechLang);
+      if (chosen) utterance.voice = chosen;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      const done = () => setIsSpeaking(false);
+      utterance.onend = done;
+      utterance.onerror = done;
+
+      synth.cancel();
+      synth.speak(utterance);
+    },
+    [mutedMessageIds, voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]
   );
 
   const speakText = useCallback(
@@ -322,13 +398,21 @@ export default function Home() {
     [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]
   );
 
-  // Play Z-Girl greeting (respects voice toggle + rate/pitch/lang)
+  const toggleMuteMessage = useCallback((id: string) => {
+    setMutedMessageIds((prev) => {
+      const next = { ...prev };
+      next[id] = !Boolean(prev[id]);
+      return next;
+    });
+    // If user mutes while speaking, stop immediately for best UX
+    stopSpeaking();
+  }, [stopSpeaking]);
+
   const playGreeting = useCallback(() => {
     if (soundsEnabled && startupSoundRef.current) {
       startupSoundRef.current.currentTime = 0;
       startupSoundRef.current.play().catch(() => {});
     }
-
     const greeting =
       "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time.";
     speakText(greeting);
@@ -422,17 +506,15 @@ export default function Home() {
     setInput("");
     setLoading(true);
 
-    // 🔊 send sound
     if (soundsEnabled && sendSoundRef.current) {
       try {
         sendSoundRef.current.currentTime = 0;
         await sendSoundRef.current.play();
       } catch {
-        // ignore autoplay errors
+        // ignore
       }
     }
 
-    // Add language steering to the system prompt (assistant text language)
     const langMeta = LANG_OPTIONS.find((l) => l.code === speechLang);
     const langInstruction =
       langMeta && !langMeta.code.startsWith("en")
@@ -451,9 +533,7 @@ export default function Home() {
         }),
       });
 
-      if (!resp.ok) {
-        throw new Error(`Server error: ${resp.status}`);
-      }
+      if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
 
       const data = await resp.json();
       const assistantText =
@@ -467,18 +547,23 @@ export default function Home() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // 🔔 reply chime + auto-speak (optional)
+      // 🔔 reply chime
       if (soundsEnabled && replyChimeRef.current) {
         replyChimeRef.current.currentTime = 0;
         replyChimeRef.current.play().catch(() => {});
       }
 
+      // 🗣 auto-speak (respects per-message mute; new messages default unmuted)
       if (voiceEnabled && autoSpeakReplies) {
-        // slight delay so users hear the chime, then speech
-        setTimeout(() => speakText(assistantText), 250);
+        setTimeout(() => {
+          // if user immediately muted it, don't speak
+          if (!mutedMessageIds[assistantMessage.id]) {
+            speakText(assistantText);
+          }
+        }, 250);
       }
 
-      // a11y: announce new assistant message (screen readers)
+      // a11y: announce new assistant message
       if (liveRegionRef.current) {
         liveRegionRef.current.textContent = `Z-Girl says: ${assistantText}`;
       }
@@ -497,10 +582,7 @@ export default function Home() {
       e.preventDefault();
       handleSend();
     }
-    // Escape stops speech quickly
-    if (e.key === "Escape") {
-      stopSpeaking();
-    }
+    if (e.key === "Escape") stopSpeaking();
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -517,9 +599,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
   };
 
@@ -527,7 +607,6 @@ export default function Home() {
     if (messages.length === 0) return;
 
     const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-
     if (!lastAssistant) {
       setErrorBanner(
         "Ask Z-Girl something first, then you can save a hero moment from her reply."
@@ -544,20 +623,15 @@ export default function Home() {
 
     setHeroMoments((prev) => [newMoment, ...prev]);
 
-    // ✨ hero moment chime
     if (soundsEnabled && heroMomentSoundRef.current) {
       try {
         heroMomentSoundRef.current.currentTime = 0;
         heroMomentSoundRef.current.play();
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
   };
 
-  const handleClearHeroMoments = () => {
-    setHeroMoments([]);
-  };
+  const handleClearHeroMoments = () => setHeroMoments([]);
 
   const handleVideoScript = () => {
     if (messages.length === 0) {
@@ -575,16 +649,14 @@ export default function Home() {
       .filter((m) => m.role === "assistant")
       .map((m) => `Z-Girl: ${m.text}`);
 
-    const lines = [...userLines, ...assistantLines];
     const moodLine = selectedMood ? `Mood: ${selectedMood}\n` : "";
-
     const script = `Hero Video Script Idea
 =======================
 
 ${moodLine}Scene: Cozy animated holiday room with gentle snowfall outside. 
 Soft instrumental version of "Unwrap the Hero Within" is playing in the background.
 
-${lines.join("\n")}
+${[...userLines, ...assistantLines].join("\n")}
 
 Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 "Unwrap the Hero Within."`;
@@ -618,7 +690,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
   const currentBreathingStep = BREATHING_STEPS[breathingStepIndex];
   const speechOk = typeof window === "undefined" ? true : isSpeechSupported();
 
-  // For voice picker: list voices matching current language first
   const voiceOptions = (() => {
     const base = voices || [];
     const primary = base.filter((v) =>
@@ -628,9 +699,13 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
     return [...primary, ...rest];
   })();
 
+  const assistantMessages = messages.filter((m) => m.role === "assistant");
+  const lastAssistantId = assistantMessages.length
+    ? assistantMessages[assistantMessages.length - 1].id
+    : null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
-      {/* SR-only live region for announcements */}
       <div
         ref={liveRegionRef}
         className="sr-only"
@@ -638,11 +713,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         aria-atomic="true"
       />
 
-      {/* HERO INTRO SECTION */}
       {!showChat && (
         <section className="min-h-screen flex items-center justify-center px-6 py-10">
           <div className="max-w-md w-full text-center space-y-6">
-            {/* Top badges */}
             <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide">
               <span className="px-2 py-1 rounded-full border border-emerald-400/70 bg-emerald-400/10 text-emerald-300 inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -653,18 +726,15 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </span>
             </div>
 
-            {/* Reassurance line */}
             <p className="text-[11px] text-slate-400 mt-1">
               A gentle hero-coach for youth reflection — not a therapist or emergency
               service.
             </p>
 
-            {/* Title */}
             <h1 className="text-3xl font-bold leading-tight mt-2">
               Meet Z-Girl, <span className="text-teal-300">Your Hero Coach</span>
             </h1>
 
-            {/* Subtitle */}
             <p className="text-sm text-slate-300">
               Feeling stressed, overwhelmed, or stuck? Z-Girl helps you manage
               challenges and{" "}
@@ -674,7 +744,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               — one small step at a time.
             </p>
 
-            {/* Z-Girl portrait with hero glow animation */}
             <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
               <div
                 className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${
@@ -689,7 +758,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             </div>
 
-            {/* Voice controls (intro) */}
             <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-3 text-left space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-[11px] font-semibold text-slate-200">
@@ -822,7 +890,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             </div>
 
-            {/* CTA: Start Session */}
             <button
               onClick={() => {
                 setShowChat(true);
@@ -848,7 +915,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 Skip intro · Go to chat
               </button>
 
-              {/* Play greeting again */}
               <div className="mt-2 flex justify-center">
                 <button
                   type="button"
@@ -863,7 +929,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             </div>
 
-            {/* Learn more link */}
             <div className="relative z-10 mt-3">
               <Link
                 href="/hero"
@@ -881,11 +946,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </section>
       )}
 
-      {/* CHAT APP SECTION */}
       {showChat && (
         <main className="min-h-screen bg-slate-950 text-slate-50 flex items-start justify-center px-4 py-10">
           <div className="w-full max-w-4xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8">
-            {/* Top badges */}
             <div className="flex flex-wrap items-center gap-2 text-xs mb-4">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -896,146 +959,21 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </span>
             </div>
 
-            {/* Title + subtitle */}
             <header className="mb-4">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
-                    Z-Girl: Hero Coach
-                    <span className="block text-lg md:text-xl text-sky-300">
-                      Unwrap the Hero Within
-                    </span>
-                  </h1>
-                  <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
-                    This is a cozy, kid-friendly space to talk about stress, big feelings,
-                    family drama, school, and self-confidence. Z-Girl is here as a gentle
-                    hero coach—not a doctor or therapist—to help you find your next small
-                    hero move.
-                  </p>
-                </div>
-
-                {/* Voice controls (chat header) */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-3 space-y-2 min-w-[260px]">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] font-semibold text-slate-200">
-                      Voice
-                    </div>
-                    <button
-                      type="button"
-                      onClick={stopSpeaking}
-                      className="text-[11px] text-red-300 hover:text-red-200 underline underline-offset-2"
-                      aria-label="Stop speaking"
-                    >
-                      ⏹ Stop
-                    </button>
-                  </div>
-
-                  {!speechOk && (
-                    <div className="text-[11px] text-amber-100 border border-amber-500/40 bg-amber-500/10 rounded-xl px-3 py-2">
-                      Voice isn’t supported here. Chat still works great.
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={voiceEnabled}
-                        onChange={() => setVoiceEnabled((v) => !v)}
-                        disabled={!speechOk}
-                        aria-label="Enable voice"
-                      />
-                      <span>On</span>
-                    </label>
-
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={autoSpeakReplies}
-                        onChange={() => setAutoSpeakReplies((v) => !v)}
-                        disabled={!speechOk || !voiceEnabled}
-                        aria-label="Auto speak replies"
-                      />
-                      <span>Auto</span>
-                    </label>
-
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={soundsEnabled}
-                        onChange={() => setSoundsEnabled((v) => !v)}
-                        aria-label="Enable sounds"
-                      />
-                      <span>Sounds</span>
-                    </label>
-                  </div>
-
-                  <label className="text-[11px] text-slate-300">
-                    Language
-                    <select
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-[12px] text-slate-50"
-                      value={speechLang}
-                      onChange={(e) => {
-                        setSpeechLang(e.target.value as any);
-                        setSelectedVoiceName("");
-                        stopSpeaking();
-                      }}
-                      aria-label="Select language"
-                    >
-                      {LANG_OPTIONS.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="text-[11px] text-slate-300">
-                      Rate {speechRate.toFixed(2)}
-                      <input
-                        className="zgirl-range mt-1 w-full"
-                        type="range"
-                        min={0.5}
-                        max={2}
-                        step={0.05}
-                        value={speechRate}
-                        onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                        disabled={!speechOk || !voiceEnabled}
-                        aria-label="Speech rate"
-                      />
-                    </label>
-
-                    <label className="text-[11px] text-slate-300">
-                      Pitch {speechPitch.toFixed(2)}
-                      <input
-                        className="zgirl-range mt-1 w-full"
-                        type="range"
-                        min={0}
-                        max={2}
-                        step={0.05}
-                        value={speechPitch}
-                        onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-                        disabled={!speechOk || !voiceEnabled}
-                        aria-label="Speech pitch"
-                      />
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={playGreeting}
-                    disabled={!speechOk || !voiceEnabled}
-                    className="w-full mt-1 inline-flex items-center justify-center rounded-full bg-sky-400/90 px-3 py-1.5 text-[11px] font-semibold text-slate-950 shadow-md shadow-sky-500/40 hover:bg-sky-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Play greeting"
-                  >
-                    ▶️ Play Greeting
-                  </button>
-                </div>
-              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
+                Z-Girl: Hero Coach
+                <span className="block text-lg md:text-xl text-sky-300">
+                  Unwrap the Hero Within
+                </span>
+              </h1>
+              <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
+                This is a cozy, kid-friendly space to talk about stress, big feelings,
+                family drama, school, and self-confidence. Z-Girl is here as a gentle
+                hero coach—not a doctor or therapist—to help you find your next small
+                hero move.
+              </p>
             </header>
 
-            {/* Mood chips + breathing CTA */}
             <section className="mb-4 space-y-2">
               <div>
                 <p className="text-xs text-slate-400 mb-2">
@@ -1083,7 +1021,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               )}
             </section>
 
-            {/* Error banner */}
             {errorBanner && (
               <div
                 className="mb-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100"
@@ -1093,11 +1030,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             )}
 
-            {/* Chat + right panel layout */}
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-6">
-              {/* Chat column */}
               <section className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950/60">
-                {/* Chat scroll area */}
                 <div
                   ref={scrollRef}
                   className="flex-1 min-h-[260px] max-h-[420px] overflow-y-auto px-3 pt-3 pb-2 space-y-2"
@@ -1122,34 +1056,64 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     </div>
                   )}
 
-                  {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={
-                        m.role === "user"
-                          ? "flex justify-end"
-                          : "flex justify-start"
-                      }
-                    >
-                      <div
-                        className={[
-                          "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap transition-transform duration-200",
-                          m.role === "user"
-                            ? "bg-sky-600 text-white rounded-br-sm"
-                            : "bg-slate-800 text-slate-50 rounded-bl-sm border border-slate-700/80",
-                        ].join(" ")}
-                      >
-                        {m.role === "assistant" && (
-                          <div className="mb-1 text-[10px] font-semibold text-sky-300">
-                            Z-GIRL
-                          </div>
-                        )}
-                        {m.text}
-                      </div>
-                    </div>
-                  ))}
+                  {messages.map((m) => {
+                    const isMuted = m.role === "assistant" ? Boolean(mutedMessageIds[m.id]) : false;
+                    const isLastAssistant = m.role === "assistant" && lastAssistantId === m.id;
 
-                  {/* Typing indicator */}
+                    return (
+                      <div
+                        key={m.id}
+                        className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
+                      >
+                        <div
+                          className={[
+                            "max-w-[85%] rounded-2xl px-3 py-2 text-xs md:text-sm whitespace-pre-wrap transition-transform duration-200",
+                            m.role === "user"
+                              ? "bg-sky-600 text-white rounded-br-sm"
+                              : "bg-slate-800 text-slate-50 rounded-bl-sm border border-slate-700/80",
+                          ].join(" ")}
+                        >
+                          {m.role === "assistant" && (
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <div className="text-[10px] font-semibold text-sky-300">
+                                Z-GIRL
+                              </div>
+
+                              {/* NEW: per-message actions */}
+                              <div className="flex items-center gap-2 text-[10px]">
+                                <button
+                                  type="button"
+                                  onClick={() => speakMessage(m)}
+                                  disabled={!speechOk || !voiceEnabled || isMuted}
+                                  className="text-sky-200 hover:text-sky-100 disabled:opacity-50 disabled:cursor-not-allowed underline underline-offset-2"
+                                  aria-label={isLastAssistant ? "Speak last reply" : "Speak reply"}
+                                  title={isMuted ? "This message is muted" : "Speak this reply"}
+                                >
+                                  {isLastAssistant ? "🔊 Speak last" : "🔊 Speak"}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => toggleMuteMessage(m.id)}
+                                  className={[
+                                    "underline underline-offset-2",
+                                    isMuted ? "text-amber-200 hover:text-amber-100" : "text-slate-300 hover:text-slate-100",
+                                  ].join(" ")}
+                                  aria-label={isMuted ? "Unmute message" : "Mute message"}
+                                  title={isMuted ? "Unmute this message" : "Mute this message"}
+                                >
+                                  {isMuted ? "🔇 Muted" : "🔈 Mute"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {m.text}
+                        </div>
+                      </div>
+                    );
+                  })}
+
                   {loading && (
                     <div className="flex justify-start">
                       <div className="max-w-[70%] rounded-2xl px-3 py-2 bg-slate-800/90 border border-slate-700 text-xs text-slate-200 flex items-center gap-2">
@@ -1166,7 +1130,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   )}
                 </div>
 
-                {/* Input area */}
                 <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
                   <label className="sr-only" htmlFor="zgirl-chat-input">
                     Message Z-Girl
@@ -1219,9 +1182,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 </div>
               </section>
 
-              {/* Right column */}
               <aside className="space-y-4 text-xs">
-                {/* Suggestions */}
                 <section
                   className="rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-3 space-y-2"
                   onClick={handleCardClick}
@@ -1243,7 +1204,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   </div>
                 </section>
 
-                {/* Hero moments */}
                 <section className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 px-3 py-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-[11px] font-semibold text-emerald-200">
@@ -1301,7 +1261,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   )}
                 </section>
 
-                {/* Hero video script */}
                 <section className="rounded-2xl border border-sky-500/50 bg-sky-500/5 px-3 py-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <h2 className="text-[11px] font-semibold text-sky-200">
@@ -1330,7 +1289,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </aside>
             </div>
 
-            {/* Footer disclaimer */}
             <footer className="mt-6 pt-4 border-t border-slate-800">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[10px] text-slate-500">
                 <p className="max-w-xl leading-relaxed">
@@ -1366,7 +1324,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </main>
       )}
 
-      {/* Floating hero helper */}
       <div className="fixed bottom-4 right-4 z-40">
         {showTips && (
           <div className="mb-3 w-72 max-w-[80vw] rounded-2xl border border-slate-700 bg-slate-900/95 shadow-lg shadow-sky-500/20 px-3 py-3 text-xs text-slate-100">
@@ -1438,7 +1395,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </button>
       </div>
 
-      {/* Fullscreen Hero Breathing Flow */}
       {showBreathing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-sm px-4">
           <div className="max-w-md w-full rounded-3xl border border-sky-500/40 bg-slate-900/90 shadow-[0_0_40px_rgba(56,189,248,0.6)] px-6 py-6 space-y-4 text-center">
@@ -1505,7 +1461,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </div>
       )}
 
-      {/* 🔊 Global Audio Elements */}
       <audio ref={sendSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
       <audio ref={heroMomentSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
       <audio ref={startupSoundRef} src="/sounds/zgirl-startup.mp3" preload="auto" />
