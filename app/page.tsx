@@ -224,6 +224,7 @@ export default function Home() {
   const pendingVoiceSendRef = useRef<string>("");
   const silenceStopTimerRef = useRef<number | null>(null);
   const isListeningRef = useRef<boolean>(false);
+  const startFailTimerRef = useRef<number | null>(null);
   const autoSendVoiceRef = useRef<boolean>(false);
   const confirmBeforeSendVoiceRef = useRef<boolean>(true);
   const loadingRef = useRef<boolean>(false);
@@ -319,8 +320,15 @@ export default function Home() {
     if (!isSpeechRecognitionSupported()) return;
     if (typeof window === "undefined") return;
 
-    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
+    let rec: any = null;
+    try {
+      const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SR) return;
+      rec = new SR();
+    } catch {
+      // If SpeechRecognition constructor fails, voice input won't work
+      return;
+    }
     rec.continuous = false;
     rec.interimResults = true;
     rec.lang = speechLang;
@@ -523,9 +531,16 @@ export default function Home() {
 
   const startListening = useCallback(async () => {
     if (!voiceInputEnabled) return;
-    if (!isSpeechRecognitionSupported()) return;
+    if (!isSpeechRecognitionSupported()) {
+      setErrorBanner("Voice input isn’t supported in this browser. Try Chrome desktop or Edge.");
+      return;
+    }
+
     const rec = recognitionRef.current;
-    if (!rec) return;
+    if (!rec) {
+      setErrorBanner("Voice input isn’t available right now (SpeechRecognition not initialized). Try refreshing the page or using Chrome/Edge desktop.");
+      return;
+    }
 
     setErrorBanner(null);
 
@@ -546,10 +561,27 @@ export default function Home() {
     // If Z-Girl is currently speaking, stop speech to avoid mic echo
     stopSpeaking();
 
+    // Optimistically show listening state; onstart should confirm it
+    setIsListening(true);
+
+    // If onstart never fires, reset and show guidance
+    if (startFailTimerRef.current) window.clearTimeout(startFailTimerRef.current);
+    startFailTimerRef.current = window.setTimeout(() => {
+      if (!isListeningRef.current) return;
+      // If we never got any results and still "listening", something blocked SpeechRecognition
+      if (!voiceHadResultRef.current) {
+        setIsListening(false);
+        setErrorBanner(
+          "Voice input didn’t start. In Chrome, SpeechRecognition sometimes fails if extensions/privacy settings block it. Try: 1) refresh, 2) disable extensions, 3) try Incognito, or 4) use Edge."
+        );
+      }
+    }, 1200);
+
     try {
       rec.lang = speechLang;
       rec.start();
     } catch {
+      setIsListening(false);
       setErrorBanner("Voice input couldn't start. Try clicking the page once, then press Speak again.");
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input failed to start.";
     }
