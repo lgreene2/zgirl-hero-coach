@@ -79,7 +79,7 @@ function crisisResponse(): string {
     "or a local crisis hotline.\n\n" +
     "You’re not alone in this, even if it feels that way right now. Reaching out is a powerful hero move."
   );
-
+}
 
 function isRateLimitError(err: any): { retryAfterSec: number | null; message: string } | null {
   const msg = String(err?.message || err || "");
