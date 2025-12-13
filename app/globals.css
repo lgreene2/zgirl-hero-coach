@@ -87,15 +87,9 @@ body {
   50% { transform: translateY(-6px); }
   100% { transform: translateY(0); }
 }
-/* --- Z-Girl Speaking Enhancements --- */
-.zgirl-hero-avatar--speaking img {
-  transform: scale(1.01);
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .zgirl-hero-avatar,
-  .zgirl-hero-button,
-  .zgirl-hero-avatar--speaking {
-    animation: none !important;
-  }
-}
+
+/* subtle scrollbars for tips panel */
+.zgirl-scroll::-webkit-scrollbar{width:10px}
+.zgirl-scroll::-webkit-scrollbar-thumb{background:rgba(56,189,248,.25);border-radius:999px}
+.zgirl-scroll::-webkit-scrollbar-track{background:rgba(2,6,23,.4)}
