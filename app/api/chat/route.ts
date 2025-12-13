@@ -39,7 +39,7 @@ let model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
 if (apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
   // Use latest flash model so we don't have to chase version numbers
-  model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-flash-latest" });
+  model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 }
 
 // Simple keyword-based safety check.
@@ -81,39 +81,30 @@ function crisisResponse(): string {
   );
 }
 
-function isRateLimitError(err: any): { retryAfterSec: number | null; message: string } | null {
+function isRateLimitError(err: any): { retryAfterSec: number; message: string } | null {
   const msg = String(err?.message || err || "");
   const status = err?.status || err?.response?.status;
-
-  // GoogleGenerativeAI errors often include "429" and/or "quota" text.
-  const looks429 = status === 429 || /\b429\b/.test(msg) || /quota/i.test(msg) || /rate limit/i.test(msg);
+  const looks429 =
+    status === 429 || /\b429\b/.test(msg) || /quota/i.test(msg) || /rate limit/i.test(msg);
   if (!looks429) return null;
 
-  // Try to read Retry-After from known shapes; otherwise choose a safe default.
   const retryAfterRaw =
     err?.response?.headers?.get?.("retry-after") ||
     err?.response?.headers?.["retry-after"] ||
-    err?.headers?.["retry-after"] ||
     err?.headers?.get?.("retry-after") ||
+    err?.headers?.["retry-after"] ||
     null;
 
-  let retryAfterSec: number | null = null;
+  let retryAfterSec = 20;
   if (retryAfterRaw != null) {
     const n = Number(retryAfterRaw);
     if (Number.isFinite(n) && n > 0) retryAfterSec = Math.floor(n);
   }
 
-  if (retryAfterSec == null) {
-    // Heuristic: Gemini free tier commonly asks for ~20s after quota bursts (as shown in logs)
-    retryAfterSec = 20;
-  }
-
   return {
     retryAfterSec,
-    message:
-      "I’m getting a lot of hero-signals at once right now. Please wait a moment and try again. 💙",
+    message: "I’m getting a lot of hero-signals at once right now. Please wait a moment and try again. 💙",
   };
-}
 }
 
 type FrontendMessage = {
@@ -181,41 +172,30 @@ ${userLast}
 Z-Girl:
     `.trim();
 
-    let rawText = "";
-try {
-  const result = await model.generateContent(finalPrompt);
-  rawText =
-    result.response.text().trim() ||
-    "I’m here with you. Let’s try that again in a moment. 💙";
+    const result = await model.generateContent(finalPrompt);
+    const rawText =
+      result.response.text().trim() ||
+      "I’m here with you. Let’s try that again in a moment. 💙";
+
+    const safeText = shouldForceCrisis ? crisisResponse() : rawText;
+
+    return NextResponse.json({ reply: safeText }, { status: 200 });
 } catch (err: any) {
   const rl = isRateLimitError(err);
   if (rl) {
     return NextResponse.json(
       { reply: rl.message, rateLimited: true, retryAfterSec: rl.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec ?? 20) } }
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
     );
   }
-  console.error("Gemini generateContent failed:", err);
+
+  console.error("Z-Girl /api/chat error:", err);
   return NextResponse.json(
     {
       reply:
-        "Z-Girl had trouble reaching her hero HQ. Please check your connection and try again.",
+        "My hero-signal glitched while talking to Gemini. Please try again in a moment — and let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
     },
     { status: 500 }
   );
 }
-
-const safeText = shouldForceCrisis ? crisisResponse() : rawText;
-
-    return NextResponse.json({ reply: safeText }, { status: 200 });
-  } catch (err) {
-    console.error("Z-Girl /api/chat error:", err);
-    return NextResponse.json(
-      {
-        reply:
-          "My hero-signal glitched while talking to Gemini. Try again in a moment, or let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
-      },
-      { status: 500 }
-    );
-  }
 }
