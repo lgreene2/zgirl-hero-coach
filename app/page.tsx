@@ -467,8 +467,14 @@ export default function Home() {
     utterance.onend = done;
     utterance.onerror = done;
 
-    synth.cancel();
-    synth.speak(utterance);
+    try {
+      synth.cancel();
+      // Some browsers may be paused until resume() is called after user gesture
+      if (typeof synth.resume === "function") synth.resume();
+      synth.speak(utterance);
+    } catch {
+      setIsSpeaking(false);
+    }
   }, [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]);
 
   const speakMessage = useCallback((m: ChatMessage) => {
