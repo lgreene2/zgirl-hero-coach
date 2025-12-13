@@ -167,7 +167,6 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [voiceDebug, setVoiceDebug] = useState<string>("");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [heroMoments, setHeroMoments] = useState<HeroMoment[]>([]);
   const [showVideoScript, setShowVideoScript] = useState(false);
@@ -194,9 +193,10 @@ export default function Home() {
   // Speech recognition (verbal input)
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
+  const [autoSendVoice, setAutoSendVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const silenceStopTimerRef = useRef<number | null>(null);
-  const isListeningRef = useRef<boolean>(false);
+
+  // Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
   const voiceFinalRef = useRef<string>("");
   const voiceHadResultRef = useRef<boolean>(false);
@@ -204,6 +204,7 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const liveRegionRef = useRef<HTMLDivElement | null>(null);
+  const handleSendRef = useRef<() => void>(() => {});
 
   // Sounds
   const sendSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -280,39 +281,14 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setVoiceDebug("SpeechRecognition constructor not found on window.");
-      return;
-    }
-    let rec: any;
-    try {
-      rec = new SR();
-    } catch (e: any) {
-      const msg = e?.message ? String(e.message) : String(e);
-      setVoiceDebug(`SpeechRecognition init failed: ${msg}`);
-      return;
-    }
+    const rec = new SR();
     rec.continuous = false;
     rec.interimResults = true;
     rec.lang = speechLang;
 
     rec.onstart = () => {
-      // Echo prevention: stop any speaking before listening begins
-      try {
-        if (typeof window !== "undefined" && window.speechSynthesis?.speaking) {
-          window.speechSynthesis.cancel();
-        }
-      } catch {}
-
       setIsListening(true);
-      playListeningStartChime();
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input started. Speak now.";
-
-      // Auto-stop after short silence (resets on each result)
-      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
-      silenceStopTimerRef.current = window.setTimeout(() => {
-        try { rec.stop(); } catch {}
-      }, 2500);
     };
 
     rec.onerror = () => {
@@ -322,76 +298,74 @@ export default function Home() {
 
     rec.onend = () => {
       setIsListening(false);
-      setVoiceDebug("rec.onend fired");
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped.";
+
+      // Optional: auto-send when speech stops
+      if (autoSendVoice && voiceHadResultRef.current) {
+        // Give React state a tick to settle
+        setTimeout(() => {
+          // Only send if not already sending
+          const current = (inputRef.current?.value ?? "").toString().trim();
+          if (current && !loading) {
+            handleSendRef.current();
+          }
+        }, 150);
+      }
     };
 
     rec.onresult = (event: any) => {
-      setVoiceDebug(`rec.onresult fired (results: ${event?.results?.length ?? 0})`);
-
+      // IMPORTANT: Prevent duplicated words by separating:
+      // - base (captured once when listening starts)
+      // - finalSoFar (accumulated FINAL only)
+      // - interim (live preview only)
+      const base = voiceBaseInputRef.current || "";
       let interim = "";
-      let finalText = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0]?.transcript ?? "";
-        if (event.results[i].isFinal) finalText += transcript;
-        else interim += transcript;
+      let finalChunk = "";
+
+      const results = event?.results;
+      const startIndex = typeof event?.resultIndex === "number" ? event.resultIndex : 0;
+
+      if (results && typeof results.length === "number") {
+        for (let i = startIndex; i < results.length; i++) {
+          const res = results[i];
+          const t = res?.[0]?.transcript ? String(res[0].transcript) : "";
+          if (!t) continue;
+          if (res.isFinal) finalChunk += t;
+          else interim += t;
+        }
       }
 
-      // Show interim in input without overwriting user typing too aggressively
-      if (interim && !finalText) setInput((prev) => (prev ? `${prev} ${interim}` : interim));
+      if (interim.trim() || finalChunk.trim()) voiceHadResultRef.current = true;
 
-      if (finalText) {
-        setInput((prev) => {
-          const next = prev ? `${prev} ${finalText}` : finalText;
-          return next.replace(/\s+/g, " ").trim();
-        });
-        if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
+      // Accumulate FINAL text only (stable; no repeats)
+      if (finalChunk) {
+        const add = finalChunk.replace(/\s+/g, " ").trim();
+        if (add) {
+          voiceFinalRef.current = (voiceFinalRef.current ? (voiceFinalRef.current + " ") : "") + add;
+        }
+      }
+
+      const live = (voiceFinalRef.current + (interim ? (" " + interim.replace(/\s+/g, " ").trim()) : "")).trim();
+      const combined =
+        (base + (base && live ? " " : "") + live).replace(/\s+/g, " ").trim();
+
+      setInput(combined);
+
+      // Reset silence timer whenever we receive results
+      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = window.setTimeout(() => {
+        try { recognitionRef.current?.stop?.(); } catch {}
+      }, 2500);
+
+      if (finalChunk && liveRegionRef.current) {
+        liveRegionRef.current.textContent = "Captured voice input.";
       }
     };
 
     recognitionRef.current = rec;
-  }, [speechLang]);
+  }, [speechLang, autoSendVoice, loading]);
 
-  
-  const playListeningStartChime = useCallback(() => {
-    if (!soundsEnabled) return;
-    if (typeof window === "undefined") return;
-
-    // Lightweight WebAudio "ping" (no external asset required)
-    try {
-      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-
-      const now = ctx.currentTime;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      // Soft, kid-friendly "ping"
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, now); // A5
-      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.06);
-
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.16);
-
-      window.setTimeout(() => {
-        try { ctx.close(); } catch {}
-      }, 220);
-    } catch {
-      // no-op
-    }
-  }, [soundsEnabled]);
-
-// audio volumes
+  // audio volumes
   useEffect(() => {
     const setVol = (ref: { current: HTMLAudioElement | null }, v: number) => {
       if (ref.current) ref.current.volume = v;
@@ -401,10 +375,6 @@ export default function Home() {
     setVol(replyChimeRef, 0.85);
     setVol(startupSoundRef, 0.85);
   }, []);
-
-  useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
 
   const stopSpeaking = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -479,87 +449,34 @@ export default function Home() {
 
   const startListening = useCallback(() => {
     if (!voiceInputEnabled) return;
-    if (!isSpeechRecognitionSupported()) {
-      setErrorBanner("Voice input isn’t supported in this browser/device.");
-      setVoiceDebug("SpeechRecognition not supported.");
-      return;
-    }
+    if (!isSpeechRecognitionSupported()) return;
     const rec = recognitionRef.current;
-    if (!rec) {
-      setErrorBanner("Voice input not initialized yet. Refresh the page and try again.");
-      setVoiceDebug("recognitionRef.current is null.");
-      return;
-    }
+    if (!rec) return;
 
-    setErrorBanner(null);
-    setVoiceDebug("startListening() called; attempting rec.start()…");
-
+    // Capture whatever is currently in the input as the "base" (so interim doesn't multiply)
     const base = (inputRef.current?.value ?? input ?? "").toString();
     voiceBaseInputRef.current = base;
     voiceFinalRef.current = "";
     voiceHadResultRef.current = false;
 
-    stopSpeaking();
-
-    setIsListening(true);
-
-    window.setTimeout(() => {
-      if (isListeningRef.current && !voiceHadResultRef.current) {
-        setVoiceDebug((prev) => (prev ? prev + " | " : "") + "no onstart/result within 1.2s");
-      }
-    }, 1200);
-
     try {
       rec.lang = speechLang;
       rec.start();
-    } catch (e: any) {
-      const msg = e?.message ? String(e.message) : String(e);
-      setIsListening(false);
-      setErrorBanner("Voice input couldn't start. Try Incognito or disable extensions.");
-      setVoiceDebug(`rec.start() threw: ${msg}`);
+    } catch {
+      // Some browsers throw if start() called twice
     }
-  }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
+  }, [speechLang, voiceInputEnabled, input]);
 
   const stopListening = useCallback(() => {
     const rec = recognitionRef.current;
     if (!rec) return;
     try { rec.stop(); } catch {}
-    if (silenceStopTimerRef.current) {
-      window.clearTimeout(silenceStopTimerRef.current);
-      silenceStopTimerRef.current = null;
-    }
   }, []);
 
-  const handleMicClick = () => {
-    // IMPORTANT (Chrome): SpeechRecognition must be started directly from the user click handler.
-    const rec = recognitionRef.current;
-    if (!rec) {
-      setErrorBanner("Voice input isn't available right now. Try refreshing the page.");
-      return;
-    }
-
-    setErrorBanner(null);
-
-    if (isListeningRef.current) {
-      // Stop listening on second click
-      try { rec.stop(); } catch {}
-      return;
-    }
-
-    // Capture current input as base before SR begins
-    const base = (inputRef.current?.value ?? input ?? "").toString();
-    voiceBaseInputRef.current = base;
-    voiceFinalRef.current = "";
-    voiceHadResultRef.current = false;
-
-    try {
-      rec.lang = speechLang;
-      rec.start(); // MUST be synchronous inside click
-    } catch (e: any) {
-      console.error("SpeechRecognition start error:", e);
-      setErrorBanner("Voice input couldn't start. Try clicking the page once, then press Speak again.");
-    }
-  };
+  const toggleListening = useCallback(() => {
+    if (isListening) stopListening();
+    else startListening();
+  }, [isListening, startListening, stopListening]);
 
   const playGreeting = useCallback(() => {
     if (soundsEnabled && startupSoundRef.current) {
@@ -691,6 +608,14 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleSendRef.current = () => {
+      // call the latest handleSend
+      void handleSend();
+    };
+  }, [handleSend]);
+
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -861,6 +786,17 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <label className="inline-flex items-center gap-2">
                   <input type="checkbox" checked={voiceInputEnabled} onChange={() => setVoiceInputEnabled((v) => !v)} disabled={!speechRecOk} aria-label="Enable voice input" />
                   <span>Voice input</span>
+                </label>
+
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoSendVoice}
+                    onChange={() => setAutoSendVoice((v) => !v)}
+                    disabled={!speechRecOk || !voiceInputEnabled}
+                    aria-label="Auto send voice input"
+                  />
+                  <span>Auto-send</span>
                 </label>
               </div>
 
@@ -1142,7 +1078,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     rows={2}
-                    className={`w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400 ${isListening ? "ring-2 ring-amber-400/70 border-amber-400/70" : ""}`}
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
                     placeholder="Tell Z-Girl what’s going on, or ask a question…"
                   />
 
@@ -1160,7 +1096,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       {/* NEW: voice input mic button */}
                       <button
                         type="button"
-                        onClick={handleMicClick}
+                        onClick={toggleListening}
                         disabled={!speechRecOk || !voiceInputEnabled}
                         className={[
                           "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition",
