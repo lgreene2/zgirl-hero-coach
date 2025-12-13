@@ -18,6 +18,54 @@
     --foreground: #ededed;
   }
 }
+/* --- Z-Girl Hero Animations --- */
+
+@keyframes heroGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(14, 234, 226, 0);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(14, 234, 226, 0.35);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes heroButtonPulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.01);
+  }
+}
+
+@keyframes heroSpeakingRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(14, 234, 226, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(14, 234, 226, 0);
+  }
+}
+
+/* apply to avatar wrapper */
+.zgirl-hero-avatar {
+  border-radius: 9999px;
+  animation: heroGlow 3.2s ease-in-out infinite;
+}
+
+/* apply to "Start Session" button */
+.zgirl-hero-button {
+  animation: heroButtonPulse 2.8s ease-in-out infinite;
+}
+
+/* extra ring when she's "speaking" */
+.zgirl-hero-avatar--speaking {
+  animation:
+    heroGlow 3.2s ease-in-out infinite,
+    heroSpeakingRing 1.4s ease-out infinite;
+}
 
 body {
   background: var(--background);
@@ -25,11 +73,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   @apply bg-slate-950 text-slate-50;
 }
+/* --- Extra Z-Girl floating + glow motion --- */
 
-/* --- Z-Girl Hero Animations --- */
-@keyframes heroGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(14, 234, 226, 0); transform: translateY(0); }
-  50% { box-shadow: 0 0 40px rgba(14, 234, 226, 0.35); transform: translateY(-2px); }
+.zgirl-hero-avatar {
+  animation:
+    heroGlow 3.2s ease-in-out infinite,
+    zgirlFloat 4s ease-in-out infinite;
+  box-shadow: 0 0 25px rgba(34, 211, 238, 0.35);
 }
 
 @keyframes zgirlFloat {
@@ -38,74 +88,123 @@ body {
   100% { transform: translateY(0); }
 }
 
-@keyframes heroSpeakingRing {
-  0% { box-shadow: 0 0 0 0 rgba(14, 234, 226, 0.55); }
-  100% { box-shadow: 0 0 0 16px rgba(14, 234, 226, 0); }
-}
-
-/* apply to avatar wrapper */
-.zgirl-hero-avatar {
-  border-radius: 9999px;
-  animation: heroGlow 3.2s ease-in-out infinite, zgirlFloat 4s ease-in-out infinite;
-  box-shadow: 0 0 25px rgba(34, 211, 238, 0.35);
-}
-
-/* extra ring when she's "speaking" */
-.zgirl-hero-avatar--speaking {
-  animation:
-    heroGlow 3.2s ease-in-out infinite,
-    zgirlFloat 4s ease-in-out infinite,
-    heroSpeakingRing 1.2s ease-out infinite;
-}
-
-/* mouth "talking" animation (apply to a small element under the avatar) */
-@keyframes zgirlMouthTalk {
-  0%, 100% { transform: scaleX(1) scaleY(1); opacity: 0.85; }
-  50% { transform: scaleX(1.35) scaleY(0.6); opacity: 1; }
-}
-
-.zgirl-mouth {
-  width: 34px;
-  height: 10px;
-  border-radius: 9999px;
-  background: rgba(56, 189, 248, 0.9);
-  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
-}
-
-.zgirl-mouth--speaking {
-  animation: zgirlMouthTalk 0.22s infinite ease-in-out;
-}
-
-/* apply to "Start Session" button */
-.zgirl-hero-button {
-  animation: heroButtonPulse 2.8s ease-in-out infinite;
-}
-
-@keyframes heroButtonPulse {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-1px) scale(1.01); }
-}
 
 /* subtle scrollbars for tips panel */
-.zgirl-scroll::-webkit-scrollbar { width: 10px; }
-.zgirl-scroll::-webkit-scrollbar-thumb { background: rgba(56,189,248,.25); border-radius: 999px; }
-.zgirl-scroll::-webkit-scrollbar-track { background: rgba(2,6,23,.4); }
+.zgirl-scroll::-webkit-scrollbar{width:10px}
+.zgirl-scroll::-webkit-scrollbar-thumb{background:rgba(56,189,248,.25);border-radius:999px}
+.zgirl-scroll::-webkit-scrollbar-track{background:rgba(2,6,23,.4)}
+
+/* Z-Girl speaking ring animation */
+.zgirl-hero-avatar--speaking {
+  box-shadow:
+    0 0 0 4px rgba(56, 189, 248, 0.35),
+    0 0 30px rgba(56, 189, 248, 0.75);
+  animation: zgirlPulseRing 1.2s infinite ease-in-out;
+}
+
+@keyframes zgirlPulseRing {
+  0% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.85; }
+}
 
 /* Accessible range styling */
-.zgirl-range { accent-color: rgb(56, 189, 248); }
-
-/* Better keyboard focus */
-:focus-visible {
-  outline: 2px solid rgba(56, 189, 248, 0.9);
-  outline-offset: 2px;
+.zgirl-range {
+  accent-color: rgb(56, 189, 248);
 }
 
 /* Reduced motion: keep UI calm */
 @media (prefers-reduced-motion: reduce) {
-  .zgirl-hero-avatar,
-  .zgirl-hero-avatar--speaking,
-  .zgirl-hero-button,
-  .zgirl-mouth--speaking {
+  .zgirl-hero-avatar--speaking {
+    animation: none !important;
+  }
+  .animate-pulse,
+  .animate-bounce {
+    animation: none !important;
+  }
+}
+
+
+/* =========================
+   G Commit – UI Polish Layer
+   ========================= */
+
+@keyframes zgirlSoftPulse {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-1px) scale(1.01); opacity: 0.98; }
+}
+
+@keyframes zgirlShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+.zgirl-soft-pulse {
+  animation: zgirlSoftPulse 3.6s ease-in-out infinite;
+}
+
+.zgirl-glow-btn {
+  position: relative;
+  isolation: isolate;
+}
+
+.zgirl-glow-btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(56,189,248,.35), rgba(14,234,226,.25), rgba(56,189,248,.35));
+  background-size: 220% 220%;
+  filter: blur(10px);
+  opacity: 0.0;
+  transition: opacity .25s ease;
+  z-index: -1;
+}
+
+.zgirl-glow-btn:hover::before,
+.zgirl-glow-btn:focus-visible::before {
+  opacity: 1;
+  animation: zgirlShimmer 2.4s linear infinite;
+}
+
+/* Modal */
+.zgirl-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  padding: 18px;
+}
+
+.zgirl-modal {
+  width: min(860px, 96vw);
+  max-height: min(86vh, 900px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.92);
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+.zgirl-modal h3 {
+  letter-spacing: 0.2px;
+}
+
+.zgirl-pill {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zgirl-soft-pulse,
+  .zgirl-glow-btn::before {
     animation: none !important;
   }
 }

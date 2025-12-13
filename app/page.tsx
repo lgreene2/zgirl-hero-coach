@@ -167,7 +167,10 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [rateLimitSecondsLeft, setRateLimitSecondsLeft] = useState<number>(0);
+  const [showParentPanel, setShowParentPanel] = useState(false);
+  const parentPanelCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [heroMoments, setHeroMoments] = useState<HeroMoment[]>([]);
   const [showVideoScript, setShowVideoScript] = useState(false);
@@ -216,7 +219,31 @@ export default function Home() {
 
   // Load persisted voice settings
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    
+// Wire welcome audio to speaking animation (ring + mouth)
+if (typeof window !== "undefined") {
+  try {
+    if (!welcomeAudioRef.current) {
+      // Uses an existing asset if you have it; otherwise no-op.
+      // Put a file at /public/audio/welcome.mp3 to enable.
+      welcomeAudioRef.current = new Audio("/audio/welcome.mp3");
+      welcomeAudioRef.current.preload = "auto";
+    }
+    const a = welcomeAudioRef.current;
+    const onPlay = () => setIsSpeaking(true);
+    const onEnd = () => setIsSpeaking(false);
+    a?.addEventListener?.("play", onPlay);
+    a?.addEventListener?.("ended", onEnd);
+    a?.addEventListener?.("pause", onEnd);
+    return () => {
+      a?.removeEventListener?.("play", onPlay);
+      a?.removeEventListener?.("ended", onEnd);
+      a?.removeEventListener?.("pause", onEnd);
+    };
+  } catch {}
+}
+
+if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(VOICE_SETTINGS_KEY);
       if (raw) {
@@ -258,18 +285,6 @@ export default function Home() {
   }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName]);
 
   // Persist muted map
-
-// Rate-limit countdown (for friendly UI when Gemini returns 429)
-useEffect(() => {
-  if (typeof window === "undefined") return;
-  if (!rateLimitSecondsLeft) return;
-  const t = window.setInterval(() => {
-    setRateLimitSecondsLeft((s) => (s > 0 ? s - 1 : 0));
-  }, 1000);
-  return () => window.clearInterval(t);
-}, [rateLimitSecondsLeft]);
-
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -565,7 +580,6 @@ useEffect(() => {
     if (!input.trim() || loading) return;
 
     setErrorBanner(null);
-    setRateLimitSecondsLeft(0);
     setShowVideoScript(false);
     setVideoScript("");
 
@@ -1001,7 +1015,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
             {errorBanner && (
               <div className="mb-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100" role="alert">
-                {errorBanner}{rateLimitSecondsLeft > 0 ? ` (try again in ${rateLimitSecondsLeft}s)` : ""}
+                {errorBanner}
               </div>
             )}
 
@@ -1228,7 +1242,15 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <div className="flex flex-col items-start md:items-end gap-1">
                   <InstallPWAButton />
                   <Link href="/hero" className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2">
-                    About Z-Girl Hero Coach
+                    About Z-Girl Hero Coach</button>
+            <button
+              type="button"
+              onClick={() => setShowParentPanel(true)}
+              className="text-sky-300 hover:text-sky-200 underline underline-offset-4"
+            >
+              Parent & Educator Info
+            </button>
+            <button className="hidden" aria-hidden="true">
                   </Link>
                   <Link href="/safety" className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2">
                     Safety &amp; Use Guidelines
