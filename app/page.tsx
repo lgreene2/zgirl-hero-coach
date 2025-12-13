@@ -197,6 +197,9 @@ export default function Home() {
   const recognitionRef = useRef<any>(null);
   const silenceStopTimerRef = useRef<number | null>(null);
   const isListeningRef = useRef<boolean>(false);
+  const voiceBaseInputRef = useRef<string>("");
+  const voiceFinalRef = useRef<string>("");
+  const voiceHadResultRef = useRef<boolean>(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
