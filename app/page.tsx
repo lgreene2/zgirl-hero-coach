@@ -276,6 +276,24 @@ export default function Home() {
     const load = () => setVoices(synth.getVoices() || []);
     load();
     synth.onvoiceschanged = load;
+  // PWA: register service worker for offline caching
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    // Avoid noisy SW logs in dev; still allow localhost for testing
+    if (process.env.NODE_ENV === "development" && !isLocalhost) return;
+
+    navigator.serviceWorker
+      .register("/sw.js")
+      .catch(() => {
+        // Silent fail: app still works without offline caching
+      });
+  }, []);
+
 
     return () => { synth.onvoiceschanged = null; };
   }, []);
