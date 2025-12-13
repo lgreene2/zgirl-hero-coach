@@ -160,6 +160,11 @@ type VoiceSettingsPersist = {
   speechPitch: number;
   speechLang: LangOption["code"];
   selectedVoiceName: string;
+
+  // Voice input (persisted)
+  voiceInputEnabled?: boolean;
+  autoSendVoice?: boolean;
+  confirmBeforeSendVoice?: boolean;
 };
 
 export default function Home() {
@@ -193,8 +198,17 @@ export default function Home() {
   // Speech recognition (verbal input)
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
+  const [pendingVoiceSend, setPendingVoiceSend] = useState<string | null>(null);
   const [autoSendVoice, setAutoSendVoice] = useState(false);
+  const [confirmBeforeSendVoice, setConfirmBeforeSendVoice] = useState(true);
   const recognitionRef = useRef<any>(null);
+
+  const isListeningRef = useRef<boolean>(false);
+  const autoSendVoiceRef = useRef<boolean>(false);
+  const confirmBeforeSendVoiceRef = useRef<boolean>(true);
+  const loadingRef = useRef<boolean>(false);
+  const silenceStopTimerRef = useRef<number | null>(null);
+  const pendingVoiceSendRef = useRef<string>("");
 
   // Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
@@ -226,6 +240,9 @@ export default function Home() {
         if (typeof parsed.speechPitch === "number") setSpeechPitch(parsed.speechPitch);
         if (typeof parsed.speechLang === "string") setSpeechLang(parsed.speechLang as any);
         if (typeof parsed.selectedVoiceName === "string") setSelectedVoiceName(parsed.selectedVoiceName);
+        if (typeof parsed.voiceInputEnabled === "boolean") setVoiceInputEnabled(parsed.voiceInputEnabled);
+        if (typeof parsed.autoSendVoice === "boolean") setAutoSendVoice(parsed.autoSendVoice);
+        if (typeof parsed.confirmBeforeSendVoice === "boolean") setConfirmBeforeSendVoice(parsed.confirmBeforeSendVoice);
       }
 
       const mutedRaw = window.localStorage.getItem(MUTED_MESSAGES_KEY);
@@ -249,11 +266,14 @@ export default function Home() {
       speechPitch,
       speechLang,
       selectedVoiceName,
+      voiceInputEnabled,
+      autoSendVoice,
+      confirmBeforeSendVoice,
     };
     try {
       window.localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(payload));
     } catch {}
-  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName]);
+  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName, voiceInputEnabled, autoSendVoice, confirmBeforeSendVoice]);
 
   // Persist muted map
   useEffect(() => {
@@ -287,12 +307,25 @@ export default function Home() {
     rec.lang = speechLang;
 
     rec.onstart = () => {
+      // Echo prevention: stop any speaking before listening
+      stopSpeaking();
+
       setIsListening(true);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input started. Speak now.";
+
+      // Auto-stop after short silence (resets on each result)
+      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = window.setTimeout(() => {
+        try { rec.stop(); } catch {}
+      }, 2500);
     };
 
-    rec.onerror = () => {
+    rec.onerror = (event: any) => {
       setIsListening(false);
+      const code = event?.error ? String(event.error) : "unknown";
+      // Keep message short for kids/parents; details in console for dev
+      setErrorBanner(`Voice input error: ${code}.`);
+      console.error("SpeechRecognition error:", event);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped due to an error.";
     };
 
@@ -300,13 +333,21 @@ export default function Home() {
       setIsListening(false);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped.";
 
-      // Optional: auto-send when speech stops
-      if (autoSendVoice && voiceHadResultRef.current) {
-        // Give React state a tick to settle
+      if (silenceStopTimerRef.current) {
+        window.clearTimeout(silenceStopTimerRef.current);
+        silenceStopTimerRef.current = null;
+      }
+
+      // Optional: auto-send when speech stops (with confirmation)
+      if (autoSendVoiceRef.current && voiceHadResultRef.current) {
         setTimeout(() => {
-          // Only send if not already sending
           const current = (inputRef.current?.value ?? "").toString().trim();
-          if (current && !loading) {
+          if (!current || loadingRef.current) return;
+
+          if (confirmBeforeSendVoiceRef.current) {
+            pendingVoiceSendRef.current = current;
+            setPendingVoiceSend(current);
+          } else {
             handleSendRef.current();
           }
         }, 150);
@@ -337,13 +378,24 @@ export default function Home() {
 
       setInput(combined);
 
+      // Reset silence timer whenever we receive results
+      if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = window.setTimeout(() => {
+        try { rec.stop(); } catch {}
+      }, 2500);
+
       if (finalChunk && liveRegionRef.current) {
         liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
       }
     };
 
     recognitionRef.current = rec;
-  }, [speechLang, autoSendVoice, loading]);
+
+    return () => {
+      try { rec.onresult = null; rec.onend = null; rec.onerror = null; rec.onstart = null; rec.stop?.(); } catch {}
+      if (recognitionRef.current === rec) recognitionRef.current = null;
+    };
+  }, [speechLang]);
 
   // audio volumes
   useEffect(() => {
@@ -357,6 +409,12 @@ export default function Home() {
   }, []);
 
   const stopSpeaking = useCallback(() => {
+
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { autoSendVoiceRef.current = autoSendVoice; }, [autoSendVoice]);
+  useEffect(() => { confirmBeforeSendVoiceRef.current = confirmBeforeSendVoice; }, [confirmBeforeSendVoice]);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
     if (typeof window === "undefined") return;
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
@@ -407,7 +465,13 @@ export default function Home() {
     const chosen = resolveVoice(speechLang);
     if (chosen) utterance.voice = chosen;
 
-    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      // Echo prevention: stop mic while speaking
+      if (isListeningRef.current) {
+        try { recognitionRef.current?.stop?.(); } catch {}
+      }
+    };
     const done = () => setIsSpeaking(false);
     utterance.onend = done;
     utterance.onerror = done;
@@ -440,17 +504,22 @@ export default function Home() {
     voiceHadResultRef.current = false;
 
     try {
+      stopSpeaking();
       rec.lang = speechLang;
       rec.start();
     } catch {
       // Some browsers throw if start() called twice
     }
-  }, [speechLang, voiceInputEnabled, input]);
+  }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
 
   const stopListening = useCallback(() => {
     const rec = recognitionRef.current;
     if (!rec) return;
     try { rec.stop(); } catch {}
+    if (silenceStopTimerRef.current) {
+      window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = null;
+    }
   }, []);
 
   const toggleListening = useCallback(() => {
@@ -529,6 +598,7 @@ export default function Home() {
     setErrorBanner(null);
     setShowVideoScript(false);
     setVideoScript("");
+    setPendingVoiceSend(null);
 
     const userMessage: ChatMessage = { id: makeId("u"), role: "user", text: input.trim() };
     const nextMessages = [...messages, userMessage];
@@ -728,8 +798,17 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </p>
 
             <div className="relative mx-auto w-40 h-40 sm:w-48 sm:h-48">
-              <div className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${isSpeaking ? "zgirl-hero-avatar--speaking" : ""}`}>
-                <img src="/icons/zgirl-icon-1024.png" alt="Z-Girl Hero Coach" className="h-full w-full rounded-full object-cover" />
+              <div className={`zgirl-hero-avatar bg-gradient-to-b from-cyan-500/20 to-cyan-500/5 p-1 rounded-full ${isSpeaking ? "zgirl-hero-avatar--speaking" : ""} ${isListening ? "zgirl-hero-avatar--listening" : ""}`}>
+                <div className="relative h-full w-full rounded-full overflow-hidden">
+                  <img src="/icons/zgirl-icon-1024.png" alt="Z-Girl Hero Coach" className="h-full w-full rounded-full object-cover" />
+                  <div
+                    aria-hidden="true"
+                    className={[
+                      "zgirl-mouth absolute left-1/2 -translate-x-1/2 bottom-[22%] w-7 h-2 rounded-full bg-slate-950/80",
+                      isSpeaking ? "animate-pulse scale-y-125" : "opacity-0",
+                    ].join(" ")}
+                  />
+                </div>
               </div>
             </div>
 
@@ -777,6 +856,17 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     aria-label="Auto send voice input"
                   />
                   <span>Auto-send</span>
+                </label>
+
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={confirmBeforeSendVoice}
+                    onChange={() => setConfirmBeforeSendVoice((v) => !v)}
+                    disabled={!speechRecOk || !voiceInputEnabled || !autoSendVoice}
+                    aria-label="Confirm before sending voice input"
+                  />
+                  <span>Confirm</span>
                 </label>
               </div>
 
@@ -1051,14 +1141,50 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
                   <label className="sr-only" htmlFor="zgirl-chat-input">Message Z-Girl</label>
 
+                  {pendingVoiceSend && (
+                    <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-100">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-amber-100">Did I hear you right?</div>
+                          <div className="mt-0.5 text-amber-50/90 line-clamp-3">“{pendingVoiceSend}”</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPendingVoiceSend(null);
+                              inputRef.current?.focus();
+                            }}
+                            className="text-[11px] text-amber-100/90 hover:text-amber-50 underline underline-offset-2"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPendingVoiceSend(null);
+                              handleSendRef.current();
+                            }}
+                            className="rounded-full bg-amber-400 px-3 py-1 text-[11px] font-semibold text-slate-950 hover:bg-amber-300 transition"
+                          >
+                            Yes, send
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <textarea
                     id="zgirl-chat-input"
                     ref={inputRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      if (pendingVoiceSend) setPendingVoiceSend(null);
+                    }}
                     onKeyDown={handleKeyDown}
                     rows={2}
-                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
+                    className={`w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400 ${isListening ? "ring-2 ring-amber-400/70 border-amber-400/70" : ""}`}
                     placeholder="Tell Z-Girl what’s going on, or ask a question…"
                   />
 
