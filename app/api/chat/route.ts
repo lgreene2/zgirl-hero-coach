@@ -2,18 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-function isRateLimitError(err: any) {
-  const msg = String(err?.message || err || "");
-  return (
-    msg.includes("429") ||
-    msg.toLowerCase().includes("quota") ||
-    msg.toLowerCase().includes("rate") ||
-    msg.toLowerCase().includes("resource exhausted")
-  );
-}
-
-
-
 // Core safety + persona prompt (backend side)
 // Frontend also sends a system prompt, so think of this as a second safety belt.
 const systemSafety = `
@@ -166,20 +154,14 @@ Z-Girl:
     const safeText = shouldForceCrisis ? crisisResponse() : rawText;
 
     return NextResponse.json({ reply: safeText }, { status: 200 });
-  } catch (err: any) {
-    const rateLimited = isRateLimitError(err);
-    const message = rateLimited
-      ? "Hero HQ is busy right now (rate limit). Please wait about 20 seconds and try again."
-      : "Hero HQ had a glitch. Please try again.";
-
+  } catch (err) {
+    console.error("Z-Girl /api/chat error:", err);
     return NextResponse.json(
       {
-        ok: false,
-        code: rateLimited ? "RATE_LIMIT" : "SERVER_ERROR",
-        reply: message,
-        retryAfterSeconds: rateLimited ? 20 : 0,
+        reply:
+          "My hero-signal glitched while talking to Gemini. Try again in a moment, or let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
       },
-      rateLimited ? { status: 429, headers: { "Retry-After": "20" } } : { status: 500 }
+      { status: 500 }
     );
   }
 }
