@@ -1266,8 +1266,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             >
               Parent & Educator Info
             </button>
-            <button className="hidden" aria-hidden="true">
-                  </Link>
                   <Link href="/safety" className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2">
                     Safety &amp; Use Guidelines
                   </Link>
