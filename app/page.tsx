@@ -224,6 +224,9 @@ export default function Home() {
   const pendingVoiceSendRef = useRef<string>("");
   const silenceStopTimerRef = useRef<number | null>(null);
   const isListeningRef = useRef<boolean>(false);
+  const autoSendVoiceRef = useRef<boolean>(false);
+  const confirmBeforeSendVoiceRef = useRef<boolean>(true);
+  const loadingRef = useRef<boolean>(false);
 
   // Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
@@ -350,12 +353,12 @@ export default function Home() {
         silenceStopTimerRef.current = null;
       }
 
-      if (autoSendVoice && voiceHadResultRef.current) {
+      if (autoSendVoiceRef.current && voiceHadResultRef.current) {
         setTimeout(() => {
           const current = (inputRef.current?.value ?? "").toString().trim();
-          if (!current || loading) return;
+          if (!current || loadingRef.current) return;
 
-          if (confirmBeforeSendVoice) {
+          if (confirmBeforeSendVoiceRef.current) {
             pendingVoiceSendRef.current = current;
             setPendingVoiceSend(current);
           } else {
@@ -403,7 +406,7 @@ export default function Home() {
     };
 
     recognitionRef.current = rec;
-  }, [speechLang, autoSendVoice, loading]);
+  }, [speechLang]);
 
   // audio volumes
   useEffect(() => {
@@ -421,6 +424,18 @@ export default function Home() {
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
+
+  useEffect(() => {
+    autoSendVoiceRef.current = autoSendVoice;
+  }, [autoSendVoice]);
+
+  useEffect(() => {
+    confirmBeforeSendVoiceRef.current = confirmBeforeSendVoice;
+  }, [confirmBeforeSendVoice]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
     if (typeof window === "undefined") return;
     if (!("speechSynthesis" in window)) return;
