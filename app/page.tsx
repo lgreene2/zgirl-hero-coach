@@ -529,7 +529,7 @@ export default function Home() {
     stopSpeaking();
   }, [stopSpeaking]);
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(() => {
     if (!voiceInputEnabled) return;
     if (!isSpeechRecognitionSupported()) {
       setErrorBanner("Voice input isn’t supported in this browser. Try Chrome desktop or Edge.");
@@ -538,52 +538,26 @@ export default function Home() {
 
     const rec = recognitionRef.current;
     if (!rec) {
-      setErrorBanner("Voice input isn’t available right now (SpeechRecognition not initialized). Try refreshing the page or using Chrome/Edge desktop.");
+      setErrorBanner("Voice input isn’t available right now (SpeechRecognition not initialized). Try refreshing the page.");
       return;
     }
 
     setErrorBanner(null);
 
-    // Request mic permission first (prompts user)
-    const ok = await requestMicPermission();
-    if (!ok) {
-      setErrorBanner("Microphone permission is blocked. Please allow mic access for this site, then try again.");
-      if (liveRegionRef.current) liveRegionRef.current.textContent = "Microphone permission blocked.";
-      return;
-    }
-
-    // Capture whatever is currently in the input as the "base" (so interim doesn't multiply)
+    // Capture whatever is currently in the input as the "base"
     const base = (inputRef.current?.value ?? input ?? "").toString();
     voiceBaseInputRef.current = base;
     voiceFinalRef.current = "";
     voiceHadResultRef.current = false;
 
-    // If Z-Girl is currently speaking, stop speech to avoid mic echo
+    // Echo prevention: stop any speaking before listening
     stopSpeaking();
-
-    // Optimistically show listening state; onstart should confirm it
-    setIsListening(true);
-
-    // If onstart never fires, reset and show guidance
-    if (startFailTimerRef.current) window.clearTimeout(startFailTimerRef.current);
-    startFailTimerRef.current = window.setTimeout(() => {
-      if (!isListeningRef.current) return;
-      // If we never got any results and still "listening", something blocked SpeechRecognition
-      if (!voiceHadResultRef.current) {
-        setIsListening(false);
-        setErrorBanner(
-          "Voice input didn’t start. In Chrome, SpeechRecognition sometimes fails if extensions/privacy settings block it. Try: 1) refresh, 2) disable extensions, 3) try Incognito, or 4) use Edge."
-        );
-      }
-    }, 1200);
 
     try {
       rec.lang = speechLang;
       rec.start();
     } catch {
-      setIsListening(false);
-      setErrorBanner("Voice input couldn't start. Try clicking the page once, then press Speak again.");
-      if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input failed to start.";
+      setErrorBanner("Voice input couldn’t start. If you have privacy/extensions enabled, try Incognito or Edge.");
     }
   }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
 
@@ -595,7 +569,7 @@ export default function Home() {
 
   const toggleListening = useCallback(() => {
     if (isListening) stopListening();
-    else void startListening();
+    else startListening();
   }, [isListening, startListening, stopListening]);
 
   const playGreeting = useCallback(() => {
@@ -1258,7 +1232,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     }}
                     onKeyDown={handleKeyDown}
                     rows={2}
-                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400"
+                    className={`w-full resize-none rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-xs md:text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400 ${isListening ? "ring-2 ring-amber-400/70 border-amber-400/70" : ""}`}
                     placeholder="Tell Z-Girl what’s going on, or ask a question…"
                   />
 
@@ -1289,6 +1263,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                         title={isListening ? "Listening… click to stop" : "Click to speak"}
                       >
                         {isListening ? "🎙️ Listening…" : "🎙️ Speak"}
+                      {isListening && <span className="text-[10px] text-amber-200">Listening: ON</span>}
                       </button>
                     </div>
 
