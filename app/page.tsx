@@ -194,7 +194,8 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
   const [autoSendVoice, setAutoSendVoice] = useState(false);
-  const recognitionRef = useRef<any>(null);
+    const sendingRef = useRef(false);
+const recognitionRef = useRef<any>(null);
   const silenceStopTimerRef = useRef<number | null>(null);
 
   // Keep voice transcription stable (avoid repeated interim appends)
@@ -580,6 +581,7 @@ export default function Home() {
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
+      headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemPrompt: SYSTEM_PROMPT + langInstruction,
           messages: nextMessages.map((m) => ({ role: m.role, content: m.text })),
