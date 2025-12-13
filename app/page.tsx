@@ -128,7 +128,14 @@ const BREATHING_STEPS = [
 ];
 
 function makeId(suffix = ""): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return (crypto as any).randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) 
+const showToast = (msg: string) => {
+  setToast(msg);
+  if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+  toastTimerRef.current = window.setTimeout(() => setToast(null), 3800);
+};
+
+return (crypto as any).randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}${suffix}`;
 }
 
@@ -168,6 +175,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [showParentPanel, setShowParentPanel] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
   const parentPanelCloseBtnRef = useRef<HTMLButtonElement | null>(null);
   const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
 
