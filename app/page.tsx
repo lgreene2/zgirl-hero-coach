@@ -193,11 +193,18 @@ export default function Home() {
   // Speech recognition (verbal input)
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
+  const [autoSendVoice, setAutoSendVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  // Keep voice transcription stable (avoid repeated interim appends)
+  const voiceBaseInputRef = useRef<string>("");
+  const voiceFinalRef = useRef<string>("");
+  const voiceHadResultRef = useRef<boolean>(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const liveRegionRef = useRef<HTMLDivElement | null>(null);
+  const handleSendRef = useRef<() => void>(() => {});
 
   // Sounds
   const sendSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -292,31 +299,51 @@ export default function Home() {
     rec.onend = () => {
       setIsListening(false);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped.";
+
+      // Optional: auto-send when speech stops
+      if (autoSendVoice && voiceHadResultRef.current) {
+        // Give React state a tick to settle
+        setTimeout(() => {
+          // Only send if not already sending
+          const current = (inputRef.current?.value ?? "").toString().trim();
+          if (current && !loading) {
+            handleSendRef.current();
+          }
+        }, 150);
+      }
     };
 
     rec.onresult = (event: any) => {
       let interim = "";
-      let finalText = "";
+      let finalChunk = "";
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0]?.transcript ?? "";
-        if (event.results[i].isFinal) finalText += transcript;
+        if (event.results[i].isFinal) finalChunk += transcript;
         else interim += transcript;
       }
 
-      // Show interim in input without overwriting user typing too aggressively
-      if (interim && !finalText) setInput((prev) => (prev ? `${prev} ${interim}` : interim));
+      // Mark that we got voice content in this session
+      if (interim.trim() || finalChunk.trim()) voiceHadResultRef.current = true;
 
-      if (finalText) {
-        setInput((prev) => {
-          const next = prev ? `${prev} ${finalText}` : finalText;
-          return next.replace(/\s+/g, " ").trim();
-        });
-        if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
+      // Accumulate only FINAL chunks (stable), and show INTERIM live without re-appending repeatedly
+      if (finalChunk) {
+        voiceFinalRef.current = `${voiceFinalRef.current} ${finalChunk}`.replace(/\s+/g, " ").trim();
+      }
+
+      const combined = `${voiceBaseInputRef.current} ${voiceFinalRef.current} ${interim}`
+        .replace(/\s+/g, " ")
+        .trim();
+
+      setInput(combined);
+
+      if (finalChunk && liveRegionRef.current) {
+        liveRegionRef.current.textContent = "Voice input captured. You can press Send.";
       }
     };
 
     recognitionRef.current = rec;
-  }, [speechLang]);
+  }, [speechLang, autoSendVoice, loading]);
 
   // audio volumes
   useEffect(() => {
@@ -406,13 +433,19 @@ export default function Home() {
     const rec = recognitionRef.current;
     if (!rec) return;
 
+    // Capture whatever is currently in the input as the "base" (so interim doesn't multiply)
+    const base = (inputRef.current?.value ?? input ?? "").toString();
+    voiceBaseInputRef.current = base;
+    voiceFinalRef.current = "";
+    voiceHadResultRef.current = false;
+
     try {
       rec.lang = speechLang;
       rec.start();
     } catch {
       // Some browsers throw if start() called twice
     }
-  }, [speechLang, voiceInputEnabled]);
+  }, [speechLang, voiceInputEnabled, input]);
 
   const stopListening = useCallback(() => {
     const rec = recognitionRef.current;
@@ -555,6 +588,14 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleSendRef.current = () => {
+      // call the latest handleSend
+      void handleSend();
+    };
+  }, [handleSend]);
+
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -725,6 +766,17 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <label className="inline-flex items-center gap-2">
                   <input type="checkbox" checked={voiceInputEnabled} onChange={() => setVoiceInputEnabled((v) => !v)} disabled={!speechRecOk} aria-label="Enable voice input" />
                   <span>Voice input</span>
+                </label>
+
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoSendVoice}
+                    onChange={() => setAutoSendVoice((v) => !v)}
+                    disabled={!speechRecOk || !voiceInputEnabled}
+                    aria-label="Auto send voice input"
+                  />
+                  <span>Auto-send</span>
                 </label>
               </div>
 
