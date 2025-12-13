@@ -1258,8 +1258,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <div className="flex flex-col items-start md:items-end gap-1">
                   <InstallPWAButton />
                   <Link href="/hero" className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2">
-                    About Z-Girl Hero Coach</button>
-            <button
+                    About Z-Girl Hero Coach</Link>
+                  <button
               type="button"
               onClick={() => setShowParentPanel(true)}
               className="text-sky-300 hover:text-sky-200 underline underline-offset-4"
