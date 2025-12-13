@@ -8,6 +8,7 @@ import React, {
   KeyboardEvent,
   MouseEvent,
 } from "react";
+import { applyTranscriptUpdate, isSpeechRecognitionSupported, isSpeechSupported, pickVoice, wordCount } from "./lib/voice";
 import Link from "next/link";
 import InstallPWAButton from "../components/InstallPWAButton";
 
@@ -144,13 +145,7 @@ const LANG_OPTIONS: LangOption[] = [
   { code: "de-DE", label: "Deutsch", nameForPrompt: "German" },
 ];
 
-function isSpeechSupported(): boolean {
-  return typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
-}
 
-function isSpeechRecognitionSupported(): boolean {
-  return typeof window !== "undefined" && (("SpeechRecognition" in window) || ("webkitSpeechRecognition" in window));
-}
 
 type VoiceSettingsPersist = {
   voiceEnabled: boolean;
@@ -194,6 +189,7 @@ export default function Home() {
   // Speech recognition (verbal input)
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
+  const [voiceToast, setVoiceToast] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const silenceStopTimerRef = useRef<number | null>(null);
   const isListeningRef = useRef<boolean>(false);
@@ -326,56 +322,27 @@ export default function Home() {
     };
 
     rec.onresult = (event: any) => {
-      // Build transcript safely:
-      // - Keep a stable base captured at the moment listening starts
-      // - Accumulate only FINAL chunks in a ref
-      // - Show INTERIM live without appending repeatedly
       const base = voiceBaseInputRef.current || "";
+      const res = applyTranscriptUpdate({ base, finalSoFar: voiceFinalRef.current || "", event });
 
-      let interim = "";
-      let finalChunk = "";
-
-      const results = event?.results;
-      const startIndex = typeof event?.resultIndex === "number" ? event.resultIndex : 0;
-
-      if (results && typeof results.length === "number") {
-        for (let i = startIndex; i < results.length; i++) {
-          const res = results[i];
-          const t = res?.[0]?.transcript ? String(res[0].transcript) : "";
-          if (!t) continue;
-          if (res.isFinal) finalChunk += t;
-          else interim += t;
-        }
-      }
-
-      // Mark that we got voice content in this session
-      if (interim.trim() || finalChunk.trim()) voiceHadResultRef.current = true;
-
-      // Accumulate FINAL text only (stable)
-      if (finalChunk) {
-        // Add spacing carefully so we don't jam words
-        const add = finalChunk.trim();
-        if (add) {
-          voiceFinalRef.current = (voiceFinalRef.current ? (voiceFinalRef.current + " ") : "") + add;
-        }
-      }
-
-      const live = (voiceFinalRef.current + (interim ? (" " + interim.trim()) : "")).trim();
-      const combined =
-        (base + (base && live ? " " : "") + live).replace(/\s+/g, " ").trim();
-
-      setInput(combined);
+      if (res.gotAny) voiceHadResultRef.current = true;
+      voiceFinalRef.current = res.finalSoFar;
+      setInput(res.combined);
 
       // Reset silence timer whenever we receive results
       if (silenceStopTimerRef.current) window.clearTimeout(silenceStopTimerRef.current);
       silenceStopTimerRef.current = window.setTimeout(() => {
-        try {
-          rec.stop();
-        } catch {}
+        try { rec.stop(); } catch {}
       }, 2500);
 
-      if (finalChunk && liveRegionRef.current) {
+      if (res.gotFinal && liveRegionRef.current) {
         liveRegionRef.current.textContent = "Captured voice input.";
+      }
+
+      // Friendly toast when we get a final chunk
+      if (res.gotFinal) {
+        setVoiceToast("Got it 👍");
+        window.setTimeout(() => setVoiceToast(null), 900);
       }
     };
 
@@ -544,6 +511,12 @@ export default function Home() {
     voiceHadResultRef.current = false;
 
     try {
+      // lightweight analytics (no transcript stored)
+      if (typeof window !== "undefined") {
+        const k = "zgirl-voice-uses";
+        const n = Number(window.localStorage.getItem(k) || "0") + 1;
+        window.localStorage.setItem(k, String(n));
+      }
       rec.lang = speechLang;
       rec.start(); // MUST be synchronous inside click
     } catch (e: any) {
@@ -1125,6 +1098,12 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
                 <div className="border-t border-slate-800 bg-slate-950/80 rounded-b-2xl px-3 py-2 space-y-2">
                   <label className="sr-only" htmlFor="zgirl-chat-input">Message Z-Girl</label>
+
+{voiceToast && (
+                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-50">
+                      {voiceToast}
+                    </div>
+                  )}
 
                   <textarea
                     id="zgirl-chat-input"
