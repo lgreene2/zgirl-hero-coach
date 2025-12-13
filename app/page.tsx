@@ -152,6 +152,24 @@ function isSpeechRecognitionSupported(): boolean {
   return typeof window !== "undefined" && (("SpeechRecognition" in window) || ("webkitSpeechRecognition" in window));
 }
 
+const MIC_PERMISSION_KEY = "zgirl-mic-permission-v1";
+
+async function requestMicPermission(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  // SpeechRecognition uses the mic; this forces a permissions prompt in many browsers
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) return true;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Immediately stop tracks (we only needed permission)
+    stream.getTracks().forEach((t) => t.stop());
+    window.localStorage.setItem(MIC_PERMISSION_KEY, "granted");
+    return true;
+  } catch {
+    window.localStorage.setItem(MIC_PERMISSION_KEY, "denied");
+    return false;
+  }
+}
+
 type VoiceSettingsPersist = {
   voiceEnabled: boolean;
   autoSpeakReplies: boolean;
@@ -488,11 +506,21 @@ export default function Home() {
     stopSpeaking();
   }, [stopSpeaking]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (!voiceInputEnabled) return;
     if (!isSpeechRecognitionSupported()) return;
     const rec = recognitionRef.current;
     if (!rec) return;
+
+    setErrorBanner(null);
+
+    // Request mic permission first (prompts user)
+    const ok = await requestMicPermission();
+    if (!ok) {
+      setErrorBanner("Microphone permission is blocked. Please allow mic access for this site, then try again.");
+      if (liveRegionRef.current) liveRegionRef.current.textContent = "Microphone permission blocked.";
+      return;
+    }
 
     // Capture whatever is currently in the input as the "base" (so interim doesn't multiply)
     const base = (inputRef.current?.value ?? input ?? "").toString();
@@ -507,7 +535,8 @@ export default function Home() {
       rec.lang = speechLang;
       rec.start();
     } catch {
-      // Some browsers throw if start() called twice
+      setErrorBanner("Voice input couldn't start. Try clicking the page once, then press Speak again.");
+      if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input failed to start.";
     }
   }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
 
@@ -519,7 +548,7 @@ export default function Home() {
 
   const toggleListening = useCallback(() => {
     if (isListening) stopListening();
-    else startListening();
+    else void startListening();
   }, [isListening, startListening, stopListening]);
 
   const playGreeting = useCallback(() => {
