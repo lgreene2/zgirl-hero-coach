@@ -128,14 +128,7 @@ const BREATHING_STEPS = [
 ];
 
 function makeId(suffix = ""): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) 
-const showToast = (msg: string) => {
-  setToast(msg);
-  if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-  toastTimerRef.current = window.setTimeout(() => setToast(null), 3800);
-};
-
-return (crypto as any).randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return (crypto as any).randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}${suffix}`;
 }
 
@@ -177,6 +170,13 @@ export default function Home() {
   const [showParentPanel, setShowParentPanel] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+
+const showToast = (msg: string) => {
+  setToast(msg);
+  if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+  toastTimerRef.current = window.setTimeout(() => setToast(null), 3800);
+};
+
   const parentPanelCloseBtnRef = useRef<HTMLButtonElement | null>(null);
   const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -959,7 +959,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
       {showChat && (
         <main className="min-h-screen bg-slate-950 text-slate-50 flex items-start justify-center px-4 py-10">
-          <div className="w-full max-w-4xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8">
+          
+
+{toast && (
+  <div className="zgirl-toast" role="status" aria-live="polite">
+    {toast}
+  </div>
+)}
+<div className="w-full max-w-4xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8">
             <div className="flex flex-wrap items-center gap-2 text-xs mb-4">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
