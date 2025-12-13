@@ -335,6 +335,10 @@ export default function Home() {
 
     rec.onstart = () => {
       setIsListening(true);
+      if (startFailTimerRef.current) {
+        window.clearTimeout(startFailTimerRef.current);
+        startFailTimerRef.current = null;
+      }
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input started. Speak now.";
 
       // Auto-stop after short silence (resets on each result)
@@ -346,14 +350,21 @@ export default function Home() {
       }, 2500);
     };
 
-    rec.onerror = () => {
+    rec.onerror = (event: any) => {
       setIsListening(false);
+      const code = event?.error ? String(event.error) : "unknown";
+      const msg = event?.message ? String(event.message) : "";
+      setErrorBanner(`Voice input error (${code}). ${msg}`.trim());
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped due to an error.";
     };
 
     rec.onend = () => {
       setIsListening(false);
       if (liveRegionRef.current) liveRegionRef.current.textContent = "Voice input stopped.";
+      if (startFailTimerRef.current) {
+        window.clearTimeout(startFailTimerRef.current);
+        startFailTimerRef.current = null;
+      }
 
       // Optional: auto-send when speech stops (with kid-safe confirmation)
       if (silenceStopTimerRef.current) {
@@ -553,11 +564,28 @@ export default function Home() {
     // Echo prevention: stop any speaking before listening
     stopSpeaking();
 
+    // UI feedback immediately (Chrome sometimes delays onstart)
+    setIsListening(true);
+
+    // If onstart never fires, show a targeted hint
+    if (startFailTimerRef.current) window.clearTimeout(startFailTimerRef.current);
+    startFailTimerRef.current = window.setTimeout(() => {
+      // If we still appear to be listening but never got a result, recognition likely failed silently
+      if (!voiceHadResultRef.current) {
+        setIsListening(false);
+        setErrorBanner(
+          "Voice input didn’t start (no speech detected). Try: 1) click the page once then press Speak, 2) reload, 3) turn off extensions (ad/privacy blockers), or 4) try Microsoft Edge."
+        );
+      }
+    }, 1400);
+
     try {
       rec.lang = speechLang;
       rec.start();
-    } catch {
-      setErrorBanner("Voice input couldn’t start. If you have privacy/extensions enabled, try Incognito or Edge.");
+    } catch (e: any) {
+      setIsListening(false);
+      const msg = e?.message ? String(e.message) : "";
+      setErrorBanner(`Voice input couldn’t start. ${msg}`.trim());
     }
   }, [speechLang, voiceInputEnabled, input, stopSpeaking]);
 
