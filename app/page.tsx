@@ -195,6 +195,7 @@ export default function Home() {
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
   const [autoSendVoice, setAutoSendVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const silenceStopTimerRef = useRef<number | null>(null);
 
   // Keep voice transcription stable (avoid repeated interim appends)
   const voiceBaseInputRef = useRef<string>("");
@@ -471,6 +472,10 @@ export default function Home() {
     const rec = recognitionRef.current;
     if (!rec) return;
     try { rec.stop(); } catch {}
+    if (silenceStopTimerRef.current) {
+      window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = null;
+    }
   }, []);
 
   const toggleListening = useCallback(() => {
