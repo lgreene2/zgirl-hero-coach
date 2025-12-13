@@ -93,3 +93,33 @@ body {
 .zgirl-scroll::-webkit-scrollbar{width:10px}
 .zgirl-scroll::-webkit-scrollbar-thumb{background:rgba(56,189,248,.25);border-radius:999px}
 .zgirl-scroll::-webkit-scrollbar-track{background:rgba(2,6,23,.4)}
+
+/* Z-Girl speaking ring animation */
+.zgirl-hero-avatar--speaking {
+  box-shadow:
+    0 0 0 4px rgba(56, 189, 248, 0.35),
+    0 0 30px rgba(56, 189, 248, 0.75);
+  animation: zgirlPulseRing 1.2s infinite ease-in-out;
+}
+
+@keyframes zgirlPulseRing {
+  0% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.85; }
+}
+
+/* Accessible range styling */
+.zgirl-range {
+  accent-color: rgb(56, 189, 248);
+}
+
+/* Reduced motion: keep UI calm */
+@media (prefers-reduced-motion: reduce) {
+  .zgirl-hero-avatar--speaking {
+    animation: none !important;
+  }
+  .animate-pulse,
+  .animate-bounce {
+    animation: none !important;
+  }
+}
