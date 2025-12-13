@@ -195,6 +195,7 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
   const recognitionRef = useRef<any>(null);
+  const silenceStopTimerRef = useRef<number | null>(null);
   const isListeningRef = useRef<boolean>(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -480,6 +481,10 @@ export default function Home() {
     const rec = recognitionRef.current;
     if (!rec) return;
     try { rec.stop(); } catch {}
+    if (silenceStopTimerRef.current) {
+      window.clearTimeout(silenceStopTimerRef.current);
+      silenceStopTimerRef.current = null;
+    }
   }, []);
 
   const handleMicClick = () => {
