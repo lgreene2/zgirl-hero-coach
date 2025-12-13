@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 function isRateLimitError(err: any) {
   const msg = String(err?.message || err || "");
   return (
@@ -12,6 +11,7 @@ function isRateLimitError(err: any) {
     msg.toLowerCase().includes("resource exhausted")
   );
 }
+
 
 
 // Core safety + persona prompt (backend side)
@@ -179,10 +179,7 @@ Z-Girl:
         reply: message,
         retryAfterSeconds: rateLimited ? 20 : 0,
       },
-      { status: rateLimited ? 429 : 500, headers: rateLimited ? { "Retry-After": "20" } : {} }
-    );
-  },
-      { status: 500 }
+      rateLimited ? { status: 429, headers: { "Retry-After": "20" } } : { status: 500 }
     );
   }
 }
