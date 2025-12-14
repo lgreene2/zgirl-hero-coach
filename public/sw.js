@@ -16,8 +16,8 @@ self.addEventListener("install", (event) => {
       const cache = await caches.open(STATIC_CACHE);
       await cache.addAll([
         OFFLINE_URL,
-        "/icons/icon-192.png",
-        "/icons/icon-512.png",
+        "/icons/icon-192x192.png",
+        "/icons/icon-512x512.png",
       ]);
       self.skipWaiting();
     })()
