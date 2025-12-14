@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     { media: "(prefers-color-scheme: light)", color: "#0f172a" }, // slate-900
   ],
 
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
 
 icons: {
     icon: [
