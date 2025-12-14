@@ -1,11 +1,10 @@
 {
   "name": "Z-Girl: Hero Coach",
   "short_name": "Z-Girl Coach",
-  "description": "Z-Girl is your music-powered hero coach helping kids and families Unwrap the Hero Within during the holidays and beyond.",
+  "description": "Z-Girl is a gentle hero coach helping kids and families unwrap the hero within.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0f172a",
   "icons": [
@@ -15,20 +14,9 @@
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-256x256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 }
-
