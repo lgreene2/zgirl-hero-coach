@@ -177,6 +177,23 @@ const showToast = (msg: string) => {
   toastTimerRef.current = window.setTimeout(() => setToast(null), 3800);
 };
 
+
+// Lightweight local analytics (localStorage only; no external services)
+const trackEvent = useCallback((event: string, meta: Record<string, any> = {}) => {
+  if (typeof window === "undefined") return;
+  try {
+    const key = "zgirl-analytics-v1";
+    const raw = window.localStorage.getItem(key);
+    const arr = raw ? JSON.parse(raw) : [];
+    const next = Array.isArray(arr) ? arr : [];
+    next.push({ event, meta, ts: Date.now() });
+    // cap at last 200 events
+    while (next.length > 200) next.shift();
+    window.localStorage.setItem(key, JSON.stringify(next));
+  } catch {}
+}, []);
+
+
   const parentPanelCloseBtnRef = useRef<HTMLButtonElement | null>(null);
   const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -217,42 +234,6 @@ const showToast = (msg: string) => {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-
-
-// Simple local analytics (no external service). Stores small event log in localStorage.
-const ANALYTICS_KEY = "zgirl-analytics-v1";
-const trackEvent = useCallback((name: string, props: Record<string, any> = {}) => {
-  if (typeof window === "undefined") return;
-  try {
-    const entry = { name, props, ts: Date.now() };
-    const raw = window.localStorage.getItem(ANALYTICS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    const next = Array.isArray(arr) ? [entry, ...arr].slice(0, 200) : [entry];
-    window.localStorage.setItem(ANALYTICS_KEY, JSON.stringify(next));
-  } catch {
-    // ignore
-  }
-}, []);
-
-// Deep-link helper: /?chat=1 opens chat, and /?chat=1#tips can be used later if needed.
-useEffect(() => {
-  if (typeof window === "undefined") return;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const shouldOpenChat = params.get("chat") === "1" || window.location.hash === "#chat";
-      const lesson = params.get("lesson");
-      if (shouldOpenChat) {
-        setShowChat(true);
-        if (lesson) {
-          // Pre-fill a helpful starter prompt when coming from /4-lessons.
-          setInput(`Can you help me practice ${lesson} today?`);
-        }
-        setTimeout(() => inputRef.current?.focus(), 80);
-      }
-  } catch {
-    // ignore
-  }
-}, []);
   const liveRegionRef = useRef<HTMLDivElement | null>(null);
   const handleSendRef = useRef<() => void>(() => {});
 
@@ -573,6 +554,31 @@ if (typeof window === "undefined") return;
     playGreeting();
     window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
   }, [playGreeting]);
+
+
+// Deep-link support: /?chat=1 opens chat, and optional ?prompt=... pre-fills input
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const openChat = sp.get("chat") === "1";
+    if (!openChat) return;
+
+    setShowChat(true);
+
+    const rawPrompt = sp.get("prompt") || sp.get("prefill") || "";
+    if (rawPrompt) {
+      const decoded = rawPrompt;
+      setInput(decoded);
+      trackEvent("deeplink_open_chat", { hasPrompt: true });
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      trackEvent("deeplink_open_chat", { hasPrompt: false });
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  } catch {}
+}, [trackEvent]);
+
 
   // Load conversation + moments
   useEffect(() => {
@@ -955,23 +961,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               Start Session
             </button>
 
-
-{/* Learn about The 4 Lessons */}
-<div className="mt-4 flex flex-col items-center gap-2">
-  <Link
-    href="/4-lessons"
-    onClick={() => trackEvent("nav_4_lessons_intro")}
-    className="inline-flex items-center justify-center rounded-full border border-sky-400/70 bg-slate-900/80 px-6 py-2 text-sm font-semibold text-sky-300 hover:bg-slate-900 hover:text-sky-200 transition"
-  >
-    The 4 Lessons
-  </Link>
-  <p className="text-[11px] text-slate-400 text-center max-w-xs">
-    Learn about Leadership, Education, Attitude, and Personal Development — the framework behind Z-Girl.
-  </p>
-  <p className="text-[10px] text-slate-500 text-center max-w-xs">
-    Full website refresh coming soon at the4lessons.com
-  </p>
-</div>
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => {
@@ -1312,14 +1301,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   <InstallPWAButton />
                   <Link href="/hero" className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2">
                     About Z-Girl Hero Coach</Link>
-
-<Link
-  href="/4-lessons"
-  onClick={() => trackEvent("nav_4_lessons_footer")}
-  className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
->
-  The 4 Lessons
-</Link>
                   <button
               type="button"
               onClick={() => setShowParentPanel(true)}
