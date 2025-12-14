@@ -65,10 +65,10 @@ export default function PaywallModal({ reason, priceLabel, onClose, onUpgrade }:
 
         <button
           type="button"
-          onClick={onUpgrade}
+          onClick={() => window.open("https://forms.gle/YOUR_WAITLIST_FORM", "_blank")}
           className="mt-4 w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-teal-400/30 hover:bg-teal-300 transition"
         >
-          Start Z-Girl Plus · {priceLabel}
+          Join the Z-Girl Plus waitlist · {priceLabel}
         </button>
 
         <div className="mt-3 text-center text-[11px] text-slate-400">
