@@ -1,30 +1,17 @@
-Z-Girl – Next Smart Steps Bundle
-Generated: 2025-12-14
 
-INCLUDED CHANGES
-1) /4-lessons page upgraded:
-   - Icon grid for the 4 Lessons
-   - Youth vs Parent/Educator toggle
-   - Back to Chat buttons
-   - "Ask Z-Girl →" deep-links that open chat and prefill a prompt
+Z-Girl Hero Coach — Final app/page.tsx Bundle
+Generated: 2025-12-14T11:24:40
 
-2) /hero page:
-   - Bottom CTA no longer points to the4lessons.com (now routes internally)
-   - Added "Back to Chat" CTA
-   - Added click tracking via new client component app/hero/FooterCtas.tsx
+Includes:
+- First-run onboarding (Youth vs Parent/Educator)
+- Adult routing to /4-lessons
+- Youth routing directly to chat
+- Deep-link support preserved (?chat=1&prompt=...)
+- No feature removals from original ~1300-line file
 
-3) Analytics (local only):
-   - Stored in localStorage key: zgirl-analytics-v1
-   - Capped at last 200 events
-   - No external services / no network calls
+File:
+- app/page.tsx (ready to upload/overwrite)
 
-4) Deep-link support in app/page.tsx:
-   - /?chat=1 opens chat automatically
-   - /?chat=1&prompt=... pre-fills the chat input
-
-UPLOAD
-- Copy these files into your repo, overwriting existing where paths match:
-  app/page.tsx
-  app/hero/page.tsx
-  app/hero/FooterCtas.tsx
-  app/4-lessons/page.tsx
+Notes:
+- LocalStorage key: zgirl-user-mode-v1
+- Onboarding shows once per device unless storage cleared
