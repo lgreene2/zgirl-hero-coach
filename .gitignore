@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OS / Editor
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Turbo / Next cache (optional but common)
+.turbo/
+.next/cache/
+
+# Local HTTPS keys (extra safety)
+*.key
+*.crt
