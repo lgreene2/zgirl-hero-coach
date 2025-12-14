@@ -1284,6 +1284,12 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     Safety &amp; Use Guidelines
                   </Link>
                 </div>
+              <Link
+  href="/4-lessons"
+  className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+>
+  The 4 Lessons
+</Link>
               </div>
             </footer>
           </div>
