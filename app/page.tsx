@@ -1283,7 +1283,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 rounded-full overflow-hidden border border-sky-400/70 shadow-[0_0_12px_rgba(56,189,248,0.4)]">
-                  <img src="/icons/zgirl-icon-192.png" alt="Z-Girl avatar" className="w-full h-full object-cover" />
+                  <img src="/icons/icon-192x192.png" alt="Z-Girl avatar" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-[11px] font-semibold text-sky-200">Z-Girl&apos;s Hero Tips</span>
               </div>
@@ -1308,7 +1308,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
         <button type="button" onClick={() => setShowTips((prev) => !prev)} className="relative h-12 w-12 rounded-full border border-sky-400/70 bg-slate-900/90 shadow-[0_0_20px_rgba(56,189,248,0.6)] flex items-center justify-center overflow-hidden transition-transform duration-200 hover:scale-105 active:scale-95" aria-label="Open Z-Girl hero tips">
           <div className="absolute inset-0 rounded-full bg-sky-400/10 animate-pulse" />
-          <img src="/icons/zgirl-icon-192.png" alt="Z-Girl helper" className="relative h-9 w-9 rounded-full object-cover border border-slate-900" />
+          <img src="/icons/icon-192x192.png" alt="Z-Girl helper" className="relative h-9 w-9 rounded-full object-cover border border-slate-900" />
         </button>
       </div>
 
