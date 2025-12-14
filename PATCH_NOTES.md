@@ -1,15 +1,20 @@
-Z-Girl – 4 Lessons Bundle (v2)
+Z-Girl Hero Coach — Optional Upgrades Pack
 Generated: 2025-12-14
 
-WHAT’S INCLUDED
-- New /4-lessons explainer page (internal, no external dependency)
-- Home CTA component for “The 4 Lessons” button
-- All content is PWA-safe and offline-friendly
+CHANGES INCLUDED
+1) /4-lessons page upgraded:
+   - Icon cards for each Lesson
+   - Youth vs Parent/Educator toggle
+   - "Back to chat" button + helper links
 
-HOW TO USE
-1. Copy app/4-lessons/page.tsx into your project
-2. Import or inline the HomeCTAAddon where desired on the intro screen
-3. Deploy normally
+2) Smoother navigation:
+   - Deep-link support: /?chat=1 opens chat automatically
 
-WHY
-This removes reliance on the4lessons.com while preserving brand clarity.
+3) Lightweight analytics tracking (local-only):
+   - Tracks clicks to /4-lessons (intro + footer)
+   - Tracks /4-lessons interactions (tab switch, back-to-chat, chat jumps)
+   - Stored in localStorage key: zgirl-analytics-v1 (max 200 entries)
+
+FILES
+- app/page.tsx
+- app/4-lessons/page.tsx
