@@ -1,5 +1,6 @@
 // app/hero/page.tsx
 import Link from "next/link";
+import FooterCtas from "./FooterCtas";
 
 export const metadata = {
   title: "Z-Girl Hero Coach · Hero Info",
@@ -60,6 +61,12 @@ export default function HeroPage() {
                 className="inline-flex items-center justify-center rounded-full bg-sky-400 px-5 py-2 text-xs font-semibold text-slate-950 shadow-lg shadow-sky-400/40 transition hover:bg-sky-300 active:bg-sky-500 md:text-sm"
               >
                 Start a Session with Z-Girl
+              </Link>
+              <Link
+                href="/?chat=1"
+                className="inline-flex items-center justify-center rounded-full border border-slate-600 px-4 py-2 text-[11px] font-semibold text-slate-100 hover:border-sky-400 hover:text-sky-200 md:text-xs"
+              >
+                Back to Chat
               </Link>
               <a
                 href="#about"
@@ -230,14 +237,8 @@ export default function HeroPage() {
               >
                 Open Z-Girl Hero Coach App
               </Link>
-              <a
-                href="https://the4lessons.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-full border border-slate-600 px-4 py-2 text-[11px] font-semibold text-slate-100 hover:border-sky-400 hover:text-sky-200 md:text-xs"
-              >
-                Learn About The 4 Lessons®
-              </a>
+
+              <FooterCtas />
             </div>
           </div>
           <p className="mt-3 text-[10px] text-slate-500">
