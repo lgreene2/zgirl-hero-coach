@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-id: "/zgirl-hero-coach-v2",
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+   id: "/zgirl-hero-coach-v2",
+    
     name: "Z-Girl: Hero Coach",
     short_name: "Z-Girl",
     description:
