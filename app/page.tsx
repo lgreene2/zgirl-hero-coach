@@ -1660,7 +1660,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   >
                     Parent &amp; Educator Info
                   </button>
+                  
                   <Link
+                    href="/for-adults"
+                    className="text-[10px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+                  >
+                    Parent &amp; Educator Guide
+                  </Link>
+
                     href="/safety"
                     className="text-[10px] text-slate-400 hover:text-slate-200 underline underline-offset-2"
                   >
