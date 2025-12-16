@@ -145,6 +145,26 @@ export default function PilotPage() {
             </div>
           )}
         </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-2">
+          <h3 className="text-base font-semibold text-slate-100">
+            What happens after the pilot?
+          </h3>
+          <ul className="list-disc list-inside text-sm text-slate-300 space-y-1">
+            <li>We confirm your setting (age range, group type, and schedule).</li>
+            <li>We share a short orientation and the Parent &amp; Educator Guide.</li>
+            <li>You run the pilot for 30 days with light, optional check-ins.</li>
+            <li>
+              At the end, we review what worked and decide next steps together — no
+              obligation.
+            </li>
+          </ul>
+          <p className="text-xs text-slate-400">
+            No student accounts required. Z-Girl is not therapy and not emergency
+            services.
+          </p>
+        </section>
+
       </div>
     </main>
   );
