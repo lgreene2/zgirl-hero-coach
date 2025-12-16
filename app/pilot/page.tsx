@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PilotPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const submitted = searchParams.get("submitted") === "1";
+
+  // ✅ Replace useSearchParams() with a safe client-side read of the query string
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    // Runs client-side only
+    const sp = new URLSearchParams(window.location.search);
+    setSubmitted(sp.get("submitted") === "1");
+  }, []);
 
   const [nameRoleOrg, setNameRoleOrg] = useState("");
   const [pilotDetails, setPilotDetails] = useState("");
@@ -17,12 +24,13 @@ export default function PilotPage() {
     const body = encodeURIComponent(
       `Hello,\n\nI’m interested in a Z-Girl 30-Day Pilot.\n\nName/Role/Organization:\n${nameRoleOrg}\n\nPilot details (grade level / group / setting):\n${pilotDetails}\n\nThank you.`
     );
-    // TODO: replace with your inbox
+    // Keep your current inbox
     return `mailto:lgreene@thepuf.org?subject=${subject}&body=${body}`;
   }, [nameRoleOrg, pilotDetails]);
 
   function handleSubmit() {
     // Mark submitted for the thank-you state (no backend required)
+    setSubmitted(true);
     router.replace("/pilot?submitted=1");
     // Open email draft
     window.location.href = mailtoHref;
@@ -33,7 +41,10 @@ export default function PilotPage() {
       <div className="w-full max-w-3xl space-y-6 rounded-3xl bg-slate-900/80 border border-slate-800 px-6 py-8 shadow-xl">
         <header className="space-y-2">
           <p className="text-xs text-slate-400">
-            <Link href="/" className="underline underline-offset-2 hover:text-slate-100">
+            <Link
+              href="/"
+              className="underline underline-offset-2 hover:text-slate-100"
+            >
               ← Back to Z-Girl
             </Link>
           </p>
