@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 export default function AppFooter() {
   const pathname = usePathname();
-  const hideFooter = pathname === "/";
 
-  if (hideFooter) return null;
+  // Hide footer on main chat page only
+  if (pathname === "/") return null;
 
   return (
     <footer className="border-t border-slate-800 bg-slate-950/70 backdrop-blur">
@@ -43,8 +43,8 @@ export default function AppFooter() {
         </div>
 
         <p className="mt-3 text-center text-xs text-slate-500">
-          Z-Girl is a digital hero coach for reflection and encouragement — not
-          therapy and not emergency services.
+          Z-Girl is a digital hero coach for reflection and encouragement —
+          not therapy and not emergency services.
         </p>
       </div>
     </footer>
