@@ -1,7 +1,7 @@
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { assessRisk, crisisReply, mediumRiskPrefix } from "@/lib/safety";
+import { assessRisk, crisisReply, mediumRiskPrefix } from "../../lib/safety";
 
 const systemSafety = `
 You are Z-Girl, a warm, upbeat Black teen superhero and digital "hero coach" from The 4 Lessons universe.
