@@ -1,9 +1,8 @@
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { assessRisk, crisisReply, mediumRiskPrefix } from "@/lib/safety";
 
-// Core safety + persona prompt (backend side)
-// Frontend also sends a system prompt, so think of this as a second safety belt.
 const systemSafety = `
 You are Z-Girl, a warm, upbeat Black teen superhero and digital "hero coach" from The 4 Lessons universe.
 Your audience is primarily kids and teens (about 10–16 years old), and sometimes caring adults.
@@ -20,16 +19,6 @@ If the user is struggling but not in crisis:
 - Ask up to 1–2 short clarifying questions if needed.
 - Keep answers short (about 3–6 sentences).
 - Offer exactly one small, realistic "hero move" they can try next.
-
-If the user mentions self-harm, suicide, wanting to die, killing themselves, cutting,
-overdose, serious plans to hurt someone else, or feeling unsafe because of abuse or violence:
-- Be gentle and serious.
-- Say you are just a digital hero coach, not a doctor, therapist, or emergency service.
-- Encourage them strongly to reach out to a trusted adult (parent/caregiver, school counselor,
-  teacher, coach, or another adult they trust).
-- If they are in immediate danger, tell them to contact emergency services in their area
-  (for example, 911 in the United States) or a local crisis hotline right away.
-- Do NOT give specific methods or instructions about self-harm or violence.
 `.trim();
 
 const apiKey = process.env.GEMINI_API_KEY || "";
@@ -38,47 +27,7 @@ let model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
 
 if (apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Use latest flash model so we don't have to chase version numbers
   model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-}
-
-// Simple keyword-based safety check.
-// This is NOT a full classifier, but it gives us a conservative backstop.
-const CRISIS_PATTERNS: RegExp[] = [
-  /kill myself/i,
-  /killing myself/i,
-  /want to die/i,
-  /want to end it/i,
-  /end my life/i,
-  /suicide/i,
-  /suicidal/i,
-  /self[-\s]?harm/i,
-  /cutting myself/i,
-  /hurt myself on purpose/i,
-  /overdose/i,
-  /hurt (them|him|her|someone) badly/i,
-  /they (hit|beat|hurt) me/i,
-  /being abused/i,
-  /sexual abuse/i,
-];
-
-function looksLikeCrisis(text: string): boolean {
-  const lower = text.toLowerCase();
-  return CRISIS_PATTERNS.some((re) => re.test(lower));
-}
-
-function crisisResponse(): string {
-  return (
-    "I’m really glad you told me this. Your safety matters a lot to me. 💙\n\n" +
-    "I’m just a digital hero coach, so I can’t handle emergencies or keep you safe by myself. " +
-    "This is a really important time to bring a *real-life* hero onto your team.\n\n" +
-    "Please reach out to a trusted adult as soon as you can — a parent or caregiver, " +
-    "school counselor, teacher, coach, or another adult you feel safe with. " +
-    "If you feel in immediate danger or like you might seriously hurt yourself or someone else, " +
-    "contact emergency services in your area right away (for example, 911 in the United States) " +
-    "or a local crisis hotline.\n\n" +
-    "You’re not alone in this, even if it feels that way right now. Reaching out is a powerful hero move."
-  );
 }
 
 function isRateLimitError(err: any): { retryAfterSec: number; message: string } | null {
@@ -120,6 +69,7 @@ export async function POST(req: NextRequest) {
         {
           reply:
             "My hero-signal to Gemini isn’t working right now. Ask your grown-up dev to check my API key. 🛠️",
+          riskLevel: "low",
         },
         { status: 500 }
       );
@@ -130,34 +80,48 @@ export async function POST(req: NextRequest) {
       | null;
 
     const messages = body?.messages ?? [];
+    const frontendSystemPrompt = body?.systemPrompt ?? "";
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      // No conversation yet; gently nudge the user to start
       return NextResponse.json(
         {
           reply:
             "Hey hero, I’m here whenever you’re ready. Tell me what’s going on, and we’ll take one small step together. 💙",
+          riskLevel: "low",
         },
         { status: 200 }
       );
     }
 
-    // Convert the conversation into a plain-text history for Gemini
+    const userLast = messages[messages.length - 1]?.content ?? "";
+    const risk = assessRisk(userLast);
+
+    // ✅ Deterministic crisis override (do NOT call the model on high risk)
+    if (risk.level === "high") {
+      return NextResponse.json(
+        {
+          reply: crisisReply({ countryHint: "US" }),
+          riskLevel: "high",
+          safetyTags: risk.tags,
+        },
+        { status: 200 }
+      );
+    }
+
+    // Convert conversation to plain text history (kept for context)
     const historyText = messages
-      .map((m) =>
-        m.role === "assistant" ? `Z-Girl: ${m.content}` : `User: ${m.content}`
-      )
+      .map((m) => (m.role === "assistant" ? `Z-Girl: ${m.content}` : `User: ${m.content}`))
       .join("\n");
 
-    const userLast = messages[messages.length - 1]?.content ?? "";
+    const mediumPrefix = risk.level === "medium" ? `\n\n${mediumRiskPrefix(risk.tags)}\n` : "";
 
-    // If the latest user message looks like crisis / severe risk,
-    // we still call the model (for logging/consistency),
-    // but we will override the reply with our own crisis message.
-    const shouldForceCrisis = looksLikeCrisis(historyText);
-
+    // Final prompt = Backend safety belt + (optional) frontend persona prompt + medium safety bump
     const finalPrompt = `
 ${systemSafety}
+
+${frontendSystemPrompt ? `Frontend persona guidance:\n${frontendSystemPrompt}\n` : ""}
+
+${mediumPrefix}
 
 Conversation so far:
 ${historyText}
@@ -173,29 +137,32 @@ Z-Girl:
     `.trim();
 
     const result = await model.generateContent(finalPrompt);
+
     const rawText =
       result.response.text().trim() ||
       "I’m here with you. Let’s try that again in a moment. 💙";
 
-    const safeText = shouldForceCrisis ? crisisResponse() : rawText;
-
-    return NextResponse.json({ reply: safeText }, { status: 200 });
-} catch (err: any) {
-  const rl = isRateLimitError(err);
-  if (rl) {
     return NextResponse.json(
-      { reply: rl.message, rateLimited: true, retryAfterSec: rl.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      { reply: rawText, riskLevel: risk.level, safetyTags: risk.tags },
+      { status: 200 }
+    );
+  } catch (err: any) {
+    const rl = isRateLimitError(err);
+    if (rl) {
+      return NextResponse.json(
+        { reply: rl.message, rateLimited: true, retryAfterSec: rl.retryAfterSec, riskLevel: "low" },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
+    console.error("Z-Girl /api/chat error:", err);
+    return NextResponse.json(
+      {
+        reply:
+          "My hero-signal glitched while talking to Gemini. Please try again in a moment — and let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
+        riskLevel: "low",
+      },
+      { status: 500 }
     );
   }
-
-  console.error("Z-Girl /api/chat error:", err);
-  return NextResponse.json(
-    {
-      reply:
-        "My hero-signal glitched while talking to Gemini. Please try again in a moment — and let a trusted adult or your grown-up dev know if it keeps happening. 🛠️",
-    },
-    { status: 500 }
-  );
-}
 }
