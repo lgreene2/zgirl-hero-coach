@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Nunito } from "next/font/google";
 
 import VersionBadge from "@/components/VersionBadge";
-import AppFooter from "@/components/AppFooter"; // ✅ new
+import AppFooter from "@/components/AppFooter";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -48,10 +48,10 @@ export default function RootLayout({
       >
         <div className="flex-1">{children}</div>
 
-        {/* ✅ Footer renders on all pages except "/" (handled inside client component) */}
+        {/* Footer renders everywhere except "/" */}
         <AppFooter />
 
-        {/* Version badge (safe everywhere) */}
+        {/* Version badge */}
         <div className="fixed bottom-3 left-3 z-50">
           <VersionBadge />
         </div>
