@@ -1,6 +1,7 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
+import ConditionalPilotCTA from "@/components/ConditionalPilotCTA";
 import { Analytics } from "@vercel/analytics/react";
 import { Nunito } from "next/font/google";
 
@@ -55,6 +56,8 @@ export default function RootLayout({
         <div className="fixed bottom-3 left-3 z-50">
           <VersionBadge />
         </div>
+        {/* Conditional conversion CTA (one-pager & safety only) */}
+        <ConditionalPilotCTA />
 
         <Analytics />
       </body>
