@@ -23,6 +23,18 @@ export default function ForAdultsPage() {
             what to expect, and how to support young people after a session.
           </p>
 
+          <p className="mt-3 text-sm text-slate-300">
+            Interested in trying Z-Girl in a structured, safety-first way? Explore the
+            optional{" "}
+            <Link
+              href="/pilot"
+              className="text-sky-300 hover:text-sky-200 underline underline-offset-4 font-semibold"
+            >
+              30-day pilot
+            </Link>{" "}
+            designed for schools and youth programs.
+          </p>
+
           <div className="mt-3 rounded-2xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
             <div className="font-semibold text-sky-100">Quick note</div>
             <div className="mt-1 text-sky-100/90">
