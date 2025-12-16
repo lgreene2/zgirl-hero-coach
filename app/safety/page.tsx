@@ -211,6 +211,26 @@ export default function SafetyPage() {
           </p>
         </section>
 
+        <section className="mt-10 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
+  <p className="text-sm text-slate-200">
+    <strong>Considering a structured, safety-first way to explore Z-Girl in your
+    school or youth program?</strong>
+    <br />
+    Learn more about our optional{" "}
+    <span className="font-semibold">30-day pilot</span>, designed for educators
+    and youth-serving organizations.
+  </p>
+
+  <div className="mt-3">
+    <a
+      href="/pilot"
+      className="inline-flex items-center gap-2 text-sky-300 hover:text-sky-200 underline underline-offset-4 font-semibold"
+    >
+      → View the 30-Day Pilot Overview
+    </a>
+  </div>
+</section>
+
         {/* Footer */}
         <footer className="pt-4 border-t border-slate-800">
           <p className="text-xs text-slate-500">
