@@ -1,75 +1,38 @@
-// app/layout.tsx
 import "./globals.css";
-import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
+import { Nunito } from "next/font/google";
+
 import VersionBadge from "@/components/VersionBadge";
 
-// Brand font (feels friendly + heroic)
 const nunito = Nunito({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  variable: "--font-nunito",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zgirl-hero-coach.vercel.app"),
-
-  title: {
-    default: "Z-Girl: Hero Coach – Unwrap the Hero Within",
-    template: "%s | Z-Girl: Hero Coach",
+  title: "Z-Girl: Hero Coach",
+  description: "A gentle hero coach for youth reflection and encouragement.",
+  applicationName: "Z-Girl: Hero Coach",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Z-Girl",
   },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: "/manifest.webmanifest",
+};
 
-  description:
-    'Holiday Hero Coach chat with Z-Girl from The 4Lessons universe. A gentle, encouraging space to talk about stress, family drama, and big feelings while you "Unwrap the Hero Within."',
-
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#020617" }, // slate-950
     { media: "(prefers-color-scheme: light)", color: "#0f172a" }, // slate-900
   ],
-
-  manifest: "/manifest.webmanifest",
-
-  icons: {
-    icon: [
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-    ],
-  },
-
-  openGraph: {
-    type: "website",
-    url: "https://zgirl-hero-coach.vercel.app",
-    siteName: "Z-Girl: Hero Coach",
-    title: "Z-Girl: Hero Coach – Holiday Live Coach Mode",
-    description:
-      'Feeling stressed, tired, or stuck? Z-Girl helps you practice healthy coping skills and “Unwrap the Hero Within” with gentle, music-powered coaching.',
-    images: [
-      {
-        url: "/og/zgirl-hero-coach.png",
-        width: 1200,
-        height: 630,
-        alt: "Z-Girl: Hero Coach – Unwrap the Hero Within",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Z-Girl: Hero Coach – Unwrap the Hero Within",
-    description:
-      "Chat with Z-Girl from The 4Lessons universe about holiday stress, family drama, and big feelings in a safe, encouraging space.",
-    images: ["/og/zgirl-hero-coach.png"],
-  },
-
-  appleWebApp: {
-    capable: true,
-    title: "Z-Girl: Hero Coach",
-    statusBarStyle: "black-translucent",
-  },
 };
 
 export default function RootLayout({
