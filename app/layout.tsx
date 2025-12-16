@@ -2,7 +2,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react"; // ⬅️ new
+import { Analytics } from "@vercel/analytics/react";
+import VersionBadge from "@/components/VersionBadge";
 
 // Brand font (feels friendly + heroic)
 const nunito = Nunito({
@@ -29,17 +30,19 @@ export const metadata: Metadata = {
 
   manifest: "/manifest.webmanifest",
 
-icons: {
+  icons: {
     icon: [
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-  ],
-  apple: [{ url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" }],
-},
+    ],
+    apple: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
 
   openGraph: {
     type: "website",
-    url: "https://zgirl-hero-coach.vercel.app", // ⬅️ full URL instead of "/"
+    url: "https://zgirl-hero-coach.vercel.app",
     siteName: "Z-Girl: Hero Coach",
     title: "Z-Girl: Hero Coach – Holiday Live Coach Mode",
     description:
@@ -80,7 +83,13 @@ export default function RootLayout({
         className={`${nunito.className} bg-slate-950 text-slate-50 antialiased min-h-screen`}
       >
         {children}
-        <Analytics /> {/* ⬅️ Vercel Analytics hook */}
+
+        {/* Tiny, non-intrusive app version stamp (helps support + cache debugging) */}
+        <div className="fixed bottom-3 left-3 z-50">
+          <VersionBadge />
+        </div>
+
+        <Analytics />
       </body>
     </html>
   );
