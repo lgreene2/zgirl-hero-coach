@@ -9,7 +9,7 @@ import React, {
   MouseEvent,
 } from "react";
 import Link from "next/link";
-import InstallPWAButton from "../components/InstallPWAButton";
+import InstallPWAButton from "../../components/InstallPWAButton";
 
 type ChatMessage = {
   id: string;
