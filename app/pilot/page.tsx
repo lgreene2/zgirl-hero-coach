@@ -25,7 +25,7 @@ export default function PilotPage() {
       `Hello,\n\nI’m interested in a Z-Girl 30-Day Pilot.\n\nName/Role/Organization:\n${nameRoleOrg}\n\nPilot details (grade level / group / setting):\n${pilotDetails}\n\nThank you.`
     );
     // Keep your current inbox
-    return `mailto:lgreene@thepuf.org?subject=${subject}&body=${body}`;
+    return `mailto:info@zgirlinitiative.org?subject=${subject}&body=${body}`;
   }, [nameRoleOrg, pilotDetails]);
 
   function handleSubmit() {
