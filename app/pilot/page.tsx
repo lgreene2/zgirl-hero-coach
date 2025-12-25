@@ -19,10 +19,19 @@ export default function PilotPage() {
   const [nameRoleOrg, setNameRoleOrg] = useState("");
   const [pilotDetails, setPilotDetails] = useState("");
 
+  // ✅ NEW: District Pilot Overview (primary) — expects these files in /public/pilot
+  // Make sure filenames match exactly.
+  const DISTRICT_PNG = "/pilot/Z-Girl_District_Pilot_Overview.png";
+  const DISTRICT_PDF = "/pilot/Z-Girl_District_Pilot_Overview.pdf";
+
+  // ✅ Existing supporting docs (keep as-is so you don’t break old links)
+  const VISUAL_ONEPAGER_PDF = "/Z-Girl_Visual_One-Pager_v1.1.pdf";
+  const PILOT_30DAY_PDF = "/Z-Girl_30-Day_Pilot_Overview_v1.1_VISUAL.pdf";
+
   const mailtoHref = useMemo(() => {
-    const subject = encodeURIComponent("Z-Girl 30-Day Pilot Interest");
+    const subject = encodeURIComponent("Z-Girl District Pilot Interest");
     const body = encodeURIComponent(
-      `Hello,\n\nI’m interested in a Z-Girl 30-Day Pilot.\n\nName/Role/Organization:\n${nameRoleOrg}\n\nPilot details (grade level / group / setting):\n${pilotDetails}\n\nThank you.`
+      `Hello,\n\nI’m interested in a Z-Girl District Pilot.\n\nName/Role/Organization:\n${nameRoleOrg}\n\nPilot details (grade level / group / setting):\n${pilotDetails}\n\nThank you.`
     );
     // Keep your current inbox
     return `mailto:info@zgirlinitiative.org?subject=${subject}&body=${body}`;
@@ -48,7 +57,9 @@ export default function PilotPage() {
               ← Back to Z-Girl
             </Link>
           </p>
+
           <h1 className="text-2xl md:text-3xl font-bold">Z-Girl 30-Day Pilot</h1>
+
           <p className="text-sm text-slate-300">
             A low-risk, safety-first pilot for schools and youth organizations exploring a youth-friendly SEL reflection tool.
           </p>
@@ -62,21 +73,74 @@ export default function PilotPage() {
           </p>
         </section>
 
+        {/* ✅ UPDATED: Primary + Supporting Downloads */}
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Download Pilot Materials</h2>
-          <div className="flex flex-col gap-2 text-sm">
-            <a
-              href="/Z-Girl_Visual_One-Pager_v1.1.pdf"
-              className="underline underline-offset-2 text-sky-300 hover:text-sky-200"
-            >
-              ⬇ Visual One-Pager (PDF)
-            </a>
-            <a
-              href="/Z-Girl_30-Day_Pilot_Overview_v1.1_VISUAL.pdf"
-              className="underline underline-offset-2 text-sky-300 hover:text-sky-200"
-            >
-              ⬇ 30-Day Pilot Overview (PDF)
-            </a>
+          <h2 className="text-lg font-semibold">Pilot Materials</h2>
+
+          {/* Primary: District Pilot Overview */}
+          <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="font-semibold text-slate-100">
+                  District Pilot Overview (Primary)
+                </div>
+                <div className="text-sm text-slate-200">
+                  Recommended for district leaders, principals, and funders.
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <a
+                  href={DISTRICT_PDF}
+                  download
+                  className="inline-flex items-center justify-center rounded-xl bg-sky-400 px-4 py-2 text-slate-950 font-semibold hover:bg-sky-300 transition"
+                >
+                  Download PDF
+                </a>
+                <a
+                  href={DISTRICT_PDF}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 px-4 py-2 text-slate-100 hover:bg-white/5 transition"
+                >
+                  Open
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Embedded preview image */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={DISTRICT_PNG}
+              alt="Z-Girl District Pilot Overview"
+              className="w-full h-auto rounded-xl"
+            />
+          </div>
+
+          {/* Supporting downloads (keep existing PDFs available) */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+            <div className="font-semibold text-slate-100">Supporting downloads</div>
+            <p className="mt-1 text-sm text-slate-300">
+              Use these if someone wants a quick visual summary or the operational pilot timeline.
+            </p>
+
+            <div className="mt-3 flex flex-col gap-2 text-sm">
+              <a
+                href={VISUAL_ONEPAGER_PDF}
+                className="underline underline-offset-2 text-sky-300 hover:text-sky-200"
+              >
+                ⬇ Visual One-Pager (PDF) — quick overview
+              </a>
+
+              <a
+                href={PILOT_30DAY_PDF}
+                className="underline underline-offset-2 text-sky-300 hover:text-sky-200"
+              >
+                ⬇ 30-Day Pilot Overview (PDF) — timeline &amp; structure
+              </a>
+            </div>
           </div>
         </section>
 
@@ -164,7 +228,6 @@ export default function PilotPage() {
             services.
           </p>
         </section>
-
       </div>
     </main>
   );
