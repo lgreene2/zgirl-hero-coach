@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@vercel/analytics";
+
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -19,10 +21,15 @@ export default function PilotPage() {
   const [nameRoleOrg, setNameRoleOrg] = useState("");
   const [pilotDetails, setPilotDetails] = useState("");
 
-  // ✅ NEW: District Pilot Overview (primary) — expects these files in /public/pilot
-  // Make sure filenames match exactly.
+  // ✅ District Pilot Overview (primary) — expects these files in /public/pilot
+  // Replace file contents (same filenames) when you add the QR code so links never break.
   const DISTRICT_PNG = "/pilot/Z-Girl_District_Pilot_Overview.png";
   const DISTRICT_PDF = "/pilot/Z-Girl_District_Pilot_Overview.pdf";
+
+  // ✅ NEW: Foundation / Grant variant (optional link, kept subtle)
+  // Add these files under /public/pilot when ready:
+  // - public/pilot/Z-Girl_District_Pilot_Overview_Foundation.pdf
+  const FOUNDATION_PDF = "/pilot/Z-Girl_District_Pilot_Overview_Foundation.pdf";
 
   // ✅ Existing supporting docs (keep as-is so you don’t break old links)
   const VISUAL_ONEPAGER_PDF = "/Z-Girl_Visual_One-Pager_v1.1.pdf";
@@ -38,6 +45,7 @@ export default function PilotPage() {
   }, [nameRoleOrg, pilotDetails]);
 
   function handleSubmit() {
+    track("pilot_request_started");
     // Mark submitted for the thank-you state (no backend required)
     setSubmitted(true);
     router.replace("/pilot?submitted=1");
@@ -77,6 +85,11 @@ export default function PilotPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Pilot Materials</h2>
 
+          {/* ✅ NEW: QR reinforcement (lightweight, district-safe) */}
+          <p className="text-sm text-slate-300">
+            Tip: The District Pilot Overview includes a QR code — scan it anytime to return to this page.
+          </p>
+
           {/* Primary: District Pilot Overview */}
           <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +106,7 @@ export default function PilotPage() {
                 <a
                   href={DISTRICT_PDF}
                   download
+                  onClick={() => track("district_pilot_overview_download")}
                   className="inline-flex items-center justify-center rounded-xl bg-sky-400 px-4 py-2 text-slate-950 font-semibold hover:bg-sky-300 transition"
                 >
                   Download PDF
@@ -139,6 +153,18 @@ export default function PilotPage() {
                 className="underline underline-offset-2 text-sky-300 hover:text-sky-200"
               >
                 ⬇ 30-Day Pilot Overview (PDF) — timeline &amp; structure
+              </a>
+            </div>
+
+            {/* ✅ NEW: Foundation / grant variant link (kept subtle so districts aren’t confused) */}
+            <div className="mt-4">
+              <a
+                href={FOUNDATION_PDF}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs underline underline-offset-2 text-slate-400 hover:text-slate-200"
+              >
+                Foundation &amp; Grant Overview (PDF)
               </a>
             </div>
           </div>
