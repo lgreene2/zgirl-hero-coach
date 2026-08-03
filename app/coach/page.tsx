@@ -31,56 +31,6 @@ const HERO_KEY = "zgirl-hero-moments-v1";
 const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
 const MUTED_MESSAGES_KEY = "zgirl-muted-message-ids-v1";
 
-const UNWRAP_SONG_URL = "https://distrokid.com/hyperfollow/zgirl1/unrap-the-hero-within";
-
-const SYSTEM_PROMPT = `You are Z-Girl, a warm, upbeat Black teen superhero from The 4 Lessons universe. 
-You are a *digital hero coach* for kids and teens, and sometimes for caring adults who want to support them.
-
-WHO YOU ARE
-- You speak like an encouraging big sister / mentor.
-- You use simple, clear language that a 10–16 year old can understand.
-- You sometimes use gentle "hero" metaphors (hero moves, power-ups, inner villain, shield, cape), but never so much that it feels cheesy or confusing.
-- You are always respectful of different families, cultures, and beliefs.
-
-WHAT YOU CAN HELP WITH
-- Stress from school, homework, tests or grades
-- Big feelings (worry, sadness, anger, frustration, feeling overwhelmed)
-- Friend drama, bullying, social media stress
-- Confidence, self-talk, and motivation
-- Simple coping skills: breathing, grounding, journaling, talking to trusted adults
-- Planning small, realistic "hero moves" the user can try in real life
-
-BOUNDARIES (VERY IMPORTANT)
-- You are NOT a doctor, therapist, counselor, lawyer, or emergency service.
-- You NEVER give medical advice, clinical diagnoses, medication advice, or legal instructions.
-- You NEVER tell someone to hide serious harm from a trusted adult.
-- You NEVER encourage self-harm, revenge, violence, or breaking laws.
-
-CRISIS & SAFETY (CRITICAL)
-If the user mentions:
-- wanting to die, kill themselves, self-harm, cutting, overdose, or "ending it"
-- wanting to seriously hurt someone else
-- being abused, assaulted, or feeling unsafe at home, at school, or in a relationship
-
-THEN you MUST:
-1) Respond gently and seriously
-2) Clearly say that you are just a digital hero coach and not an emergency service
-3) Encourage them to reach out to a trusted adult
-4) If immediate danger: contact emergency services (911 in the U.S.) or local hotline
-
-CONVERSATION STYLE
-- Ask 1–2 short clarifying questions before giving long advice, unless urgent.
-- Keep responses focused (3–6 sentences).
-- Include one concrete "hero move" they can try.
-- Validate feelings first.
-
-HOLIDAY / SEASONAL MODE
-- If the user mentions holidays or "Unwrap the Hero Within", connect it to courage/kindness.
-- Keep it inclusive.
-
-OVERALL GOAL
-Help the user feel seen, calmer, and choose one small next hero move.`;
-
 const STARTER_SUGGESTIONS: string[] = [
   "I’m feeling stressed about school.",
   "My family is arguing and it’s making me anxious.",
@@ -188,6 +138,7 @@ type VoiceSettingsPersist = {
 };
 
 type RiskLevel = "low" | "medium" | "high";
+type CoachAudience = "youth" | "adult" | "supporter";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -196,6 +147,7 @@ export default function Home() {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [showParentPanel, setShowParentPanel] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [coachAudience, setCoachAudience] = useState<CoachAudience>("youth");
   const toastTimerRef = useRef<number | null>(null);
 
   // ✅ Safety/Trust Layer UI state
@@ -718,16 +670,13 @@ export default function Home() {
     }
 
     const langMeta = LANG_OPTIONS.find((l) => l.code === speechLang);
-    const langInstruction =
-      langMeta && !langMeta.code.startsWith("en")
-        ? `\n\nIMPORTANT: Reply in ${langMeta.nameForPrompt}. Keep the same kid-friendly tone and safety rules.`
-        : "";
 
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
         body: JSON.stringify({
-          systemPrompt: SYSTEM_PROMPT + langInstruction,
+          audience: coachAudience,
+          language: langMeta?.nameForPrompt ?? "English",
           messages: nextMessages.map((m) => ({ role: m.role, content: m.text })),
         }),
       });
@@ -1017,16 +966,11 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                 LIVE COACH
               </span>
-              <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">
-                HOLIDAY HERO MODE
-              </span>
-              <span className="px-2 py-1 rounded-full border border-indigo-400/70 bg-indigo-400/10 text-indigo-300">
-                PILOT PROGRAM
-              </span>
+              <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">HERO WITHIN v2.0</span>
             </div>
 
             <p className="text-[11px] text-slate-400 mt-1">
-              A gentle hero-coach for youth reflection — not a therapist or emergency service.
+              An optional AI-guided conversation for reflection—not therapy or emergency help.
             </p>
 
             <h1 className="text-3xl font-bold leading-tight mt-2">
@@ -1034,28 +978,23 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </h1>
 
             <p className="text-sm text-slate-300">
-              Feeling stressed, overwhelmed, or stuck? Z-Girl helps you manage challenges and{" "}
-              <span className="text-teal-300 font-semibold">unwrap the hero within</span> — one small step at a time.
+              Feeling stressed, overwhelmed, or stuck? Z-Girl helps you pause, find your strength, and choose{" "}
+              <span className="text-teal-300 font-semibold">one achievable Hero Move</span>.
             </p>
 
-            {/* Holiday Note (optional companion song) */}
             <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-3 text-left">
-              <div className="text-[11px] font-semibold text-slate-200">
-                Holiday Note
+              <div className="text-[11px] font-semibold text-slate-200">Choose your conversation</div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {([
+                  ["youth", "Youth"],
+                  ["adult", "Adult"],
+                  ["supporter", "Supporter"],
+                ] as const).map(([id, label]) => (
+                  <button key={id} type="button" onClick={() => setCoachAudience(id)} aria-pressed={coachAudience === id} className="rounded-xl border border-slate-700 px-2 py-2 text-[11px] font-bold aria-pressed:border-teal-300 aria-pressed:bg-teal-300/10 aria-pressed:text-teal-200">
+                    {label}
+                  </button>
+                ))}
               </div>
-              <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
-                Holiday Hero Mode is a gentle space for reflection during the season. If you’d like an optional
-                companion, the song <span className="text-slate-200 font-semibold">“Unwrap the Hero Within”</span>{" "}
-                was created to support calm reflection and encouragement. Listening is optional.
-              </p>
-              <a
-                href={UNWRAP_SONG_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-block text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
-              >
-                🎧 Listen: Unwrap the Hero Within
-              </a>
             </div>
 
 
@@ -1244,7 +1183,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               }}
               className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
             >
-              Start Session
+              Start AI-guided reflection
             </button>
 
             <div className="flex flex-col items-center gap-1">
@@ -1282,7 +1221,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             </div>
 
             <p className="text-[10px] text-slate-500 leading-relaxed">
-              Private, judgment-free, hero-powered guidance. Z-Girl can&apos;t provide medical, crisis, or emergency help.
+              Messages in AI Coach are sent to our application and AI provider to generate a reply. Avoid personal identifying details. Z-Girl can&apos;t provide medical, crisis, or emergency help.
             </p>
           </div>
         </section>
@@ -1303,7 +1242,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 LIVE COACH
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-sky-300 font-semibold">
-                HOLIDAY HERO MODE
+                {coachAudience === "youth" ? "YOUTH" : coachAudience === "adult" ? "PERSONAL" : "SUPPORTER"} EDITION
               </span>
             </div>
 
@@ -1311,25 +1250,15 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
                 Z-Girl: Hero Coach
                 <span className="block text-lg md:text-xl text-sky-300">
-                  Unwrap the Hero Within
+                  The Hero Within Reflection System
                 </span>
               </h1>
               <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
-                This is a cozy, kid-friendly space to talk about stress, big feelings, family drama, school, and self-confidence.
-                Z-Girl is here as a gentle hero coach—not a doctor or therapist—to help you find your next small hero move.
+                This is an optional AI-guided space to reflect on feelings, challenges, choices, and goals.
+                Z-Girl is a digital hero coach—not a doctor or therapist—and will help you find one achievable next move.
               </p>
 
-              <p className="mt-2 text-[11px] text-slate-400 max-w-xl">
-                Optional holiday companion song:{" "}
-                <a
-                  href={UNWRAP_SONG_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sky-300 hover:text-sky-200 underline underline-offset-2"
-                >
-                  Unwrap the Hero Within
-                </a>
-              </p>
+              <p className="mt-2 text-[11px] text-slate-400 max-w-xl">Messages are transmitted to the app and AI provider to generate a reply. Avoid names, addresses, school names, and other identifying details.</p>
 
             </header>
 
@@ -1681,7 +1610,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   It&apos;s not a replacement for a counselor, therapist, doctor, or
                   emergency service. If you&apos;re feeling overwhelmed, in danger, or
                   unsafe, please reach out to a trusted adult, counselor, or local
-                  professional right away. Conversations are stored locally on the user’s device and are not shared with third parties.
+                  professional right away. A browser copy of this chat is stored on this device; messages are also sent to the application server and AI provider to generate replies. Avoid identifying details and clear the chat on shared devices.
                 </p>
 
                 <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-left">

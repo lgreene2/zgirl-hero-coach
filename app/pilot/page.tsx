@@ -71,13 +71,15 @@ export default function PilotPage() {
           <p className="text-sm text-slate-300">
             A low-risk, safety-first pilot for schools and youth organizations exploring a youth-friendly SEL reflection tool.
           </p>
+          <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-100">
+            <strong>Archive notice:</strong> The downloadable pilot documents below are v1.1 materials retained for historical reference. Z-Girl Open v2.0 is now public; the updated Z-Girl EDU institutional package is in development and requires separate privacy and implementation review.
+          </div>
         </header>
 
         <section className="rounded-2xl bg-sky-500/10 border border-sky-500/30 p-4 space-y-2">
           <h2 className="font-semibold">Safety &amp; Boundaries</h2>
           <p className="text-sm text-slate-200">
-            Z-Girl is not therapy, not medical care, and not emergency support. Messages are screened for safety risk,
-            and sensitive topics encourage trusted-adult involvement.
+            Z-Girl is not therapy, medical care, or emergency support. AI Coach messages are sent to the application and AI provider to generate replies. Private Reflection does not use the AI provider. Sensitive topics trigger a safety response and encourage real-world support.
           </p>
         </section>
 

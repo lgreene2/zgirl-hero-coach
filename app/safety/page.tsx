@@ -45,9 +45,9 @@ export default function SafetyPage() {
               grounding, positive self-talk, and choosing small “hero moves.”
             </li>
             <li>
-              Designed primarily for young people roughly{" "}
-              <span className="font-semibold">ages 10–16</span>, and for caring
-              adults who want to explore the experience themselves.
+              Z-Girl Youth is designed for young people roughly{" "}
+              <span className="font-semibold">ages 10–17</span>. Z-Girl Open also
+              includes separate reflection paths for adults, families, and guided groups.
             </li>
             <li>
               If you’re under 10, we recommend using Z-Girl with a parent,
@@ -174,17 +174,20 @@ export default function SafetyPage() {
             Privacy &amp; Data Behavior
           </h2>
           <p className="text-sm text-slate-300">
-            This early version of Z-Girl: Hero Coach does not use logins or
-            accounts. Conversations are stored locally in the browser so users
-            can revisit past chats and saved “Hero Moments.”
+            Z-Girl Open v2.0 does not require logins or accounts. The structured
+            reflection tool keeps answers in the current page unless a user
+            chooses to save a draft in that browser. Journey progress is saved
+            in the browser so a user can return to it.
           </p>
           <p className="text-sm text-slate-300">
-            This means your chat history stays on your device or browser — not
-            in an online account for this app.
+            The optional AI Coach works differently: messages must be sent to
+            the application server and its AI provider to generate a reply.
+            Users should not include full names, addresses, school names, or
+            other identifying details.
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
             <li>
-              Clearing the chat inside the app removes the visible conversation
+              Clearing a reflection, journey, or chat removes its browser copy
               from that device.
             </li>
             <li>
@@ -192,10 +195,14 @@ export default function SafetyPage() {
               stored conversations.
             </li>
             <li>
-              As the app evolves, more detailed privacy information may be added
-              here or on a separate policy page.
+              Technical hosting, security, error, and basic usage data may be
+              processed to operate and protect the service. Reflection data is
+              not sold and is not used for advertising.
             </li>
           </ul>
+          <p className="text-sm text-slate-300">
+            Read the full, plain-language <Link href="/privacy" className="font-semibold text-sky-300 underline">Privacy &amp; Data Guide</Link>.
+          </p>
         </section>
 
         {/* When in Doubt */}

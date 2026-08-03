@@ -53,7 +53,7 @@ export function assessRisk(text: string): RiskAssessment {
 
 export function crisisReply(opts?: { countryHint?: "US" | "OTHER" }): string {
   const usLine =
-    "If you feel in immediate danger or like you might seriously hurt yourself or someone else, call 911 (in the United States) or your local emergency number right now.";
+    "If you feel in immediate danger or like you might seriously hurt yourself or someone else, call 911 (in the United States) or your local emergency number right now. In the U.S., you can also call or text 988 for the Suicide & Crisis Lifeline.";
   const intlLine =
     "If you feel in immediate danger, contact your local emergency number right now.";
 

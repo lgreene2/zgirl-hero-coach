@@ -3,26 +3,23 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import ConditionalPilotCTA from "@/components/ConditionalPilotCTA";
 import { Analytics } from "@vercel/analytics/react";
-import { Nunito } from "next/font/google";
 
 import VersionBadge from "@/components/VersionBadge";
 import AppFooter from "@/components/AppFooter";
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  variable: "--font-nunito",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://zgirl-hero-coach.vercel.app"),
-  title: "Z-Girl: Hero Coach",
-  description: "A gentle hero coach for youth reflection and encouragement.",
-  applicationName: "Z-Girl: Hero Coach",
+  metadataBase: new URL("https://zgirlinitiative.org"),
+  title: {
+    default: "Z-Girl: The Hero Within Reflection System",
+    template: "%s | Z-Girl",
+  },
+  description:
+    "A character-powered, safety-first reflection system that helps youth and adults turn difficult moments into achievable Hero Moves.",
+  applicationName: "Z-Girl: Hero Within",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Z-Girl",
+    title: "Z-Girl: Hero Within",
   },
   formatDetection: {
     telephone: false,
@@ -32,8 +29,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#020617" },
-    { media: "(prefers-color-scheme: light)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: dark)", color: "#061521" },
+    { media: "(prefers-color-scheme: light)", color: "#061521" },
   ],
 };
 
@@ -45,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body
-        className={`${nunito.className} bg-slate-950 text-slate-50 antialiased min-h-screen flex flex-col`}
+        className="bg-[#061521] text-slate-50 antialiased min-h-screen flex flex-col"
       >
         <div className="flex-1">{children}</div>
 

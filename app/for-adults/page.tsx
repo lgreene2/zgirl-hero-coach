@@ -18,9 +18,9 @@ export default function ForAdultsPage() {
             Parent &amp; Educator Guide
           </h1>
           <p className="text-sm text-slate-300 max-w-2xl">
-            Z-Girl: Hero Coach is a gentle reflection and encouragement tool for
-            youth. This page helps adults understand how to use the app safely,
-            what to expect, and how to support young people after a session.
+            Z-Girl is a reflection and encouragement system for youth, adults,
+            families, and guided groups. This page helps adults support youth,
+            understand the safety boundaries, and choose the right experience.
           </p>
 
           <p className="mt-3 text-sm text-slate-300">
@@ -78,8 +78,8 @@ export default function ForAdultsPage() {
             Recommended Ages
           </h2>
           <p className="text-sm text-slate-300">
-            Z-Girl is designed primarily for ages{" "}
-            <span className="font-semibold">10–16</span>. Younger children can
+            Z-Girl Youth is designed primarily for ages{" "}
+            <span className="font-semibold">10–17</span>. Younger children can
             still benefit, but we recommend using the app{" "}
             <span className="font-semibold">with a parent/caregiver nearby</span>{" "}
             to help them process emotions and put “hero moves” into practice.
@@ -179,22 +179,22 @@ export default function ForAdultsPage() {
             Privacy &amp; Device Notes
           </h2>
           <p className="text-sm text-slate-300">
-            This early version does not use accounts. Chat history is stored{" "}
-            <span className="font-semibold">locally in the browser</span> so the
-            user can revisit past chats and saved “Hero Moments.”
+            The private reflection and 7-Day Journey do not use AI. Reflection
+            answers stay in the current page unless browser saving is selected;
+            journey progress is stored locally so the user can return.
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
             <li>
-              Clearing chat inside the app removes the visible conversation from
-              that device.
+              AI Coach messages are sent to the application and its AI provider
+              to generate replies; a browser copy is also stored on the device.
             </li>
             <li>
               Clearing browser data or using private/incognito mode may remove
               stored conversations.
             </li>
             <li>
-              If you share a device, consider clearing chat after use or using a
-              separate profile.
+              If you share a device, clear reflection, journey, and chat entries
+              after use or use a separate browser profile.
             </li>
           </ul>
         </section>
@@ -232,6 +232,12 @@ export default function ForAdultsPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-semibold text-slate-100">More Info</h2>
           <div className="flex flex-wrap gap-3 text-sm">
+            <Link
+              href="/reflect"
+              className="text-sky-300 hover:text-sky-200 underline underline-offset-2"
+            >
+              Start a Private Reflection
+            </Link>
             <Link
               href="/safety"
               className="text-sky-300 hover:text-sky-200 underline underline-offset-2"

@@ -1,141 +1,24 @@
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
+
+const method = ["Pause", "Name It", "Understand It", "Find the Strength", "Choose a Hero Move", "Reflect Forward"];
 
 export default function OnePagerPage() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 flex items-start justify-center px-4 py-10">
-      <div className="w-full max-w-3xl rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl shadow-cyan-500/10 px-6 py-6 md:px-10 md:py-8 space-y-6">
-        
-        {/* Header */}
-        <header className="space-y-3">
-          <p className="text-xs text-slate-400">
-            <Link href="/" className="hover:text-slate-100 underline underline-offset-2">
-              ← Back to Z-Girl: Hero Coach
-            </Link>
-          </p>
+  return <main className="min-h-screen bg-[#061521] text-white"><SiteHeader /><div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 lg:py-16">
+    <div className="flex flex-wrap items-center gap-2"><span className="eyebrow">Z-Girl Open v2.0</span><span className="eyebrow eyebrow-muted">Public overview</span></div>
+    <h1 className="mt-6 font-display text-4xl font-black leading-tight tracking-tight sm:text-6xl">The Hero Within Reflection System</h1>
+    <p className="mt-5 max-w-3xl text-xl leading-8 text-slate-300">A character-powered, safety-first reflection system that helps people turn difficult moments into achievable Hero Moves.</p>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-50">
-            Z-Girl: Hero Coach
-          </h1>
+    <div className="mt-10 grid gap-5 md:grid-cols-2"><Card title="Who it serves"><ul><li>Youth ages 10–17</li><li>Adults seeking personal growth</li><li>Families reflecting together</li><li>Schools and youth programs using guided activities</li></ul></Card><Card title="What it helps with"><ul><li>Emotional awareness and self-talk</li><li>Confidence, resilience, and everyday decisions</li><li>School, work, relationship, and goal-related stress</li><li>Turning reflection into one realistic next action</li></ul></Card></div>
 
-          <p className="text-sm md:text-base text-slate-300 max-w-2xl">
-            A youth-friendly digital hero coach designed to support social-emotional learning,
-            reflection, and healthy coping skills — with safety, transparency, and adult involvement
-            built in.
-          </p>
+    <section className="mt-10 rounded-3xl border border-[#49d8c2]/20 bg-[#49d8c2]/[.055] p-6 sm:p-8"><p className="section-kicker">Reusable core method</p><h2 className="font-display text-3xl font-black">Six steps from reaction to agency</h2><ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{method.map((step, index) => <li key={step} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#061521]/40 p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#49d8c2] text-sm font-black text-[#04151c]">{index + 1}</span><span className="font-black">{step}</span></li>)}</ol></section>
 
-          <p className="text-xs text-slate-400">
-            <span className="font-semibold">Version:</span> Z-Girl v1.1 — Safety &amp; Trust Layer
-          </p>
-        </header>
+    <div className="mt-10 grid gap-5 md:grid-cols-2"><Card title="Public release formats"><ul><li>No-login private web reflection</li><li>Optional AI-guided conversation</li><li>Installable Progressive Web App</li><li>Interactive 7-Day Hero Within Journey</li><li>Print / save-PDF reflection summaries</li><li>Voice and accessibility controls</li></ul></Card><Card title="Trust commitments"><ul><li>No advertising or sale of reflection data</li><li>Private reflection does not use an AI provider</li><li>AI data flow disclosed before conversation</li><li>Deterministic crisis-response safety layer</li><li>Clear non-therapy and emergency boundaries</li><li>WCAG 2.2 AA target</li></ul></Card></div>
 
-        {/* What It Is */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">What Z-Girl Is</h2>
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>A fictional, youth-appropriate <span className="font-semibold">hero coach</span> from <span className="font-semibold">The 4 Lessons</span> universe.</li>
-            <li>A reflective tool that helps youth name emotions, reduce stress, and choose one small positive action (“hero move”).</li>
-            <li>A conversation starter that complements SEL instruction, mentoring, and youth programs.</li>
-            <li>Designed primarily for ages <span className="font-semibold">10–16</span>.</li>
-          </ul>
-        </section>
+    <section className="mt-10 rounded-3xl border border-white/10 bg-white/[.035] p-6 sm:p-8"><h2 className="font-display text-2xl font-black">Institutional pathway</h2><p className="mt-3 leading-7 text-slate-300">Z-Girl EDU is the planned school and youth-organization edition: facilitated activities, staff orientation, family communications, privacy review, de-identified outcomes, and train-the-facilitator licensing. Archived v1.1 pilot materials remain available for historical reference while the v2 institutional package is developed.</p><Link href="/pilot" className="mt-4 inline-flex font-black text-sky-300 underline underline-offset-4">View pilot information →</Link></section>
 
-        {/* What It Is Not */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">What Z-Girl Is Not</h2>
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>Not a therapist, counselor, doctor, or lawyer.</li>
-            <li>Not a crisis or emergency service.</li>
-            <li>Not a replacement for trusted adults or professional support.</li>
-          </ul>
-        </section>
-
-        {/* Safety */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">Built-In Safety &amp; Trust</h2>
-          <p className="text-sm text-slate-300">
-            Z-Girl includes a dedicated <span className="font-semibold">Safety &amp; Trust Layer</span> designed
-            specifically for youth use.
-          </p>
-
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>Messages are checked for safety risk before responses are generated.</li>
-            <li>Higher-risk topics trigger calm “safety check-ins” and encourage trusted-adult involvement.</li>
-            <li>Serious safety concerns bypass normal chat responses and provide crisis-appropriate guidance.</li>
-            <li>Clear transparency (“Why did Z-Girl say this?”) explains safety decisions in plain language.</li>
-          </ul>
-        </section>
-
-        {/* SEL Alignment */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">SEL &amp; Educational Alignment</h2>
-          <p className="text-sm text-slate-300">
-            Z-Girl supports core social-emotional learning practices, including:
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>Emotional awareness and vocabulary</li>
-            <li>Self-regulation and calming strategies</li>
-            <li>Positive self-talk and confidence building</li>
-            <li>Responsible decision-making through small, realistic actions</li>
-          </ul>
-        </section>
-
-        {/* How Schools & Orgs Use It */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">Common Use Cases</h2>
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>Classroom SEL warm-ups or reflection stations</li>
-            <li>After-school programs and youth mentoring</li>
-            <li>Check-ins during stressful periods (testing, transitions, behavior support)</li>
-            <li>Supplement to counseling or advisory programs (not a replacement)</li>
-          </ul>
-        </section>
-
-        {/* Adult Role */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">Role of Adults</h2>
-          <p className="text-sm text-slate-300">
-            Z-Girl is designed to <span className="font-semibold">support adult-youth conversations</span>,
-            not replace them.
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-            <li>Adults are encouraged to review the app and safety guidance.</li>
-            <li>Youth are encouraged to share takeaways and “hero moves.”</li>
-            <li>Serious concerns should always be handled by qualified adults or professionals.</li>
-          </ul>
-        </section>
-
-        {/* Privacy */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">Privacy at a Glance</h2>
-          <p className="text-sm text-slate-300">
-            Z-Girl does not require accounts. Chat history is stored locally in the browser for the
-            user’s reference and can be cleared at any time.
-          </p>
-        </section>
-
-        {/* Links */}
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-100">Learn More</h2>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link href="/for-adults" className="text-sky-300 hover:text-sky-200 underline underline-offset-2">
-              Parent &amp; Educator Guide
-            </Link>
-            <Link href="/safety" className="text-sky-300 hover:text-sky-200 underline underline-offset-2">
-              Safety &amp; Use Guidelines
-            </Link>
-            <Link href="/hero" className="text-sky-300 hover:text-sky-200 underline underline-offset-2">
-              About Z-Girl
-            </Link>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="pt-4 border-t border-slate-800">
-          <p className="text-xs text-slate-500">
-            This one-pager is intended for informational and educational purposes only.
-          </p>
-        </footer>
-      </div>
-    </main>
-  );
+    <div className="mt-10 flex flex-col gap-3 sm:flex-row"><Link href="/reflect" className="button-primary">Start a private reflection <span aria-hidden="true">→</span></Link><Link href="/journey" className="button-secondary">Begin the 7-Day Journey</Link><Link href="/safety" className="button-secondary">Trust &amp; Safety</Link></div>
+  </div></main>;
 }
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) { return <section className="rounded-3xl border border-white/10 bg-white/[.035] p-6"><h2 className="font-display text-2xl font-black">{title}</h2><div className="mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 text-sm leading-6 text-slate-300">{children}</div></section>; }

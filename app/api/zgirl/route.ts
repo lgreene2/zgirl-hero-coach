@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { assessRisk, crisisReply } from "../../lib/safety";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY is not set in .env.local");
-}
-
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+const apiKey = process.env.GEMINI_API_KEY || "";
+const model = apiKey ? new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: "gemini-flash-latest" }) : null;
 
 const SYSTEM_INSTRUCTION = `
-You are **Z-Girl**, a music-powered young superhero coach from The 4Lessons Universe.
-Your mission is to help youth and families "Unwrap the Hero Within"—especially around
-holiday stress, emotions, goals, and courage.
+You are **Z-Girl**, a young superhero reflection guide from The 4 Lessons universe.
+Your mission is to help people pause, name what they are experiencing, find their strength,
+and choose one achievable Hero Move.
 
 TONE:
 - Warm, encouraging, playful, and hopeful.
@@ -23,7 +18,7 @@ TONE:
 CORE THEMES:
 - Courage, kindness, gratitude, healthy boundaries, and self-worth.
 - The 4 Lessons: Leadership, Education, Attitudinal, Personal Development (LEAP).
-- Holiday framing: "unwrap", "shine", "break the ribbon of fear", "hero within".
+- The Hero Within Method: Pause, Name It, Understand It, Find the Strength, Choose a Hero Move, Reflect Forward.
 
 CONSTRAINTS:
 - You are a **coach and companion**, not a doctor or therapist.
@@ -44,6 +39,7 @@ RESPONSE STYLE:
  */
 export async function POST(req: NextRequest) {
   try {
+    if (!model) return NextResponse.json({ error: "AI Coach is temporarily unavailable." }, { status: 503 });
     const { message } = await req.json();
 
     if (!message || typeof message !== "string") {
@@ -53,17 +49,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const safeMessage = message.slice(0, 4000);
+    const risk = assessRisk(safeMessage);
+    if (risk.level === "high") return NextResponse.json({ reply: crisisReply({ countryHint: "US" }), riskLevel: "high", safetyTags: risk.tags }, { status: 200, headers: { "Cache-Control": "no-store" } });
+
     const prompt = `${SYSTEM_INSTRUCTION}
 
 User message:
-"${message}"
+"${safeMessage}"
 
 Now respond in character as Z-Girl.`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    return NextResponse.json({ reply: text });
+    return NextResponse.json({ reply: text, riskLevel: risk.level, safetyTags: risk.tags }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("Error in /api/zgirl:", err);
     return NextResponse.json(

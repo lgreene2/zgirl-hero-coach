@@ -18,7 +18,7 @@ export default function Hero() {
             LIVE COACH
           </span>
           <span className="px-2 py-1 rounded-full border border-sky-400/50 bg-sky-400/10 text-sky-300">
-            HOLIDAY HERO MODE
+            HERO WITHIN v2.0
           </span>
         </div>
 
@@ -58,8 +58,7 @@ export default function Hero() {
 
         {/* Microcopy */}
         <p className="text-[10px] text-slate-500 leading-relaxed">
-          Private, judgment-free, hero-powered guidance. Z-Girl can’t provide
-          medical or emergency help.
+          Reflection and encouragement—not medical, crisis, or emergency help.
         </p>
       </div>
     </section>

@@ -5,7 +5,7 @@ import { assessRisk, crisisReply, mediumRiskPrefix } from "../../lib/safety";
 
 const systemSafety = `
 You are Z-Girl, a warm, upbeat Black teen superhero and digital "hero coach" from The 4 Lessons universe.
-Your audience is primarily kids and teens (about 10–16 years old), and sometimes caring adults.
+You guide youth, adults, and caring supporters. Match the selected audience without becoming childish or clinical.
 
 You:
 - Are kind, affirming, and never judgmental.
@@ -19,6 +19,7 @@ If the user is struggling but not in crisis:
 - Ask up to 1–2 short clarifying questions if needed.
 - Keep answers short (about 3–6 sentences).
 - Offer exactly one small, realistic "hero move" they can try next.
+- When useful, follow the Hero Within Method: Pause, Name It, Understand It, Find the Strength, Choose a Hero Move, Reflect Forward.
 `.trim();
 
 const apiKey = process.env.GEMINI_API_KEY || "";
@@ -61,26 +62,32 @@ type FrontendMessage = {
   content: string;
 };
 
+type CoachAudience = "youth" | "adult" | "supporter";
+
+const audienceGuidance: Record<CoachAudience, string> = {
+  youth: "Use language appropriate for ages 10–17. Encourage trusted-adult support when a challenge feels heavy, unsafe, or hard to manage alone.",
+  adult: "Speak to an adult warmly but not childishly. Support reflection about decisions, goals, relationships, resilience, and personal growth.",
+  supporter: "Help a parent, caregiver, educator, or mentor support another person without diagnosing, interrogating, or replacing professional help.",
+};
+
 export async function POST(req: NextRequest) {
   try {
-    if (!apiKey || !model) {
-      console.error("GEMINI_API_KEY missing or model not initialized");
-      return NextResponse.json(
-        {
-          reply:
-            "My hero-signal to Gemini isn’t working right now. Ask your grown-up dev to check my API key. 🛠️",
-          riskLevel: "low",
-        },
-        { status: 500 }
-      );
-    }
-
     const body = (await req.json().catch(() => null)) as
-      | { systemPrompt?: string; messages?: FrontendMessage[] }
+      | { audience?: CoachAudience; language?: string; messages?: FrontendMessage[] }
       | null;
 
-    const messages = body?.messages ?? [];
-    const frontendSystemPrompt = body?.systemPrompt ?? "";
+    const rawMessages = body?.messages ?? [];
+    const audience: CoachAudience = body?.audience && body.audience in audienceGuidance ? body.audience : "youth";
+    const language = typeof body?.language === "string" && body.language.length <= 30 ? body.language : "English";
+
+    if (!Array.isArray(rawMessages) || rawMessages.length > 40) {
+      return NextResponse.json({ reply: "That conversation is too long to process safely. Please clear it and begin a new reflection.", riskLevel: "low" }, { status: 400 });
+    }
+
+    const messages: FrontendMessage[] = rawMessages
+      .filter((message): message is FrontendMessage => Boolean(message) && (message.role === "user" || message.role === "assistant") && typeof message.content === "string")
+      .slice(-16)
+      .map((message) => ({ role: message.role, content: message.content.slice(0, 4000) }));
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -108,6 +115,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!apiKey || !model) {
+      console.error("GEMINI_API_KEY missing or model not initialized");
+      return NextResponse.json(
+        {
+          reply: "The AI Coach is temporarily unavailable. You can still use Private Reflection and the 7-Day Journey.",
+          riskLevel: risk.level,
+          safetyTags: risk.tags,
+        },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     // Convert conversation to plain text history (kept for context)
     const historyText = messages
       .map((m) => (m.role === "assistant" ? `Z-Girl: ${m.content}` : `User: ${m.content}`))
@@ -115,11 +134,15 @@ export async function POST(req: NextRequest) {
 
     const mediumPrefix = risk.level === "medium" ? `\n\n${mediumRiskPrefix(risk.tags)}\n` : "";
 
-    // Final prompt = Backend safety belt + (optional) frontend persona prompt + medium safety bump
+    // All behavioral instructions are controlled on the server. The client can
+    // select a bounded audience and language, but cannot replace the safety prompt.
     const finalPrompt = `
 ${systemSafety}
 
-${frontendSystemPrompt ? `Frontend persona guidance:\n${frontendSystemPrompt}\n` : ""}
+Selected audience guidance:
+${audienceGuidance[audience]}
+
+Reply language: ${language}.
 
 ${mediumPrefix}
 
@@ -144,7 +167,7 @@ Z-Girl:
 
     return NextResponse.json(
       { reply: rawText, riskLevel: risk.level, safetyTags: risk.tags },
-      { status: 200 }
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (err: any) {
     const rl = isRateLimitError(err);

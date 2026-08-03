@@ -18,7 +18,7 @@ export default function HeroPage() {
           <div className="w-full space-y-4 md:w-3/5">
             <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/60 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-200">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Hero Coach for Youth · Ages 10–16
+              Hero Coach for Youth · Ages 10–17
             </p>
 
             <h1 className="text-3xl font-bold leading-tight md:text-4xl">
