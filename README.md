@@ -1,6 +1,6 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl Open v2.0 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups.
+Z-Girl Open v2.0.1 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups.
 
 ## Public experiences
 
@@ -32,6 +32,8 @@ npm run build
 
 ## Release
 
-Current package version: `2.0.0`.
+Current package version: `2.0.1`.
 
 The v2.0 release replaces seasonal framing, introduces the reusable Hero Within Method, clarifies AI data flow, prevents client-supplied safety prompt overrides, updates the PWA cache, and preserves older pilot files only as labeled archive materials.
+
+The v2.0.1 Natural Voice Patch waits for the browser voice catalog before greeting, prefers a natural feminine voice in the selected language, remembers a different device voice for each language, adds a voice preview, and moves speed, pitch, and device-specific choices under Advanced voice options.

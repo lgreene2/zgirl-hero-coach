@@ -26,8 +26,11 @@ Use this quick checklist whenever you touch voice code.
   - OFF: nothing speaks (but chat still works)
   - ON: speaks on demand
 - Voice selection:
-  - Female-first voice chosen by default
-  - Changing voice persists after refresh
+  - Welcome waits until the device voice catalog is ready
+  - Z-Girl Natural Voice chooses a language-matched, feminine-first voice by default
+  - Preview voice uses the same voice and language as replies
+  - A different selected voice persists for each language after refresh
+  - No matching-language voice produces a visible explanation instead of a silent mismatch
 - Rate & Pitch sliders affect speech.
 
 ## 4) Per-message controls
@@ -49,4 +52,3 @@ Use this quick checklist whenever you touch voice code.
 - Chrome (desktop): must pass all above
 - Edge (desktop): should pass
 - iOS Safari: SpeechRecognition may not work (expected); UI should degrade gracefully.
-

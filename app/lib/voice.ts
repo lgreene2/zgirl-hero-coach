@@ -71,8 +71,115 @@ export function applyTranscriptUpdate({ base, finalSoFar, event }: TranscriptUpd
   return { finalSoFar: nextFinal, interim: normalizeSpaces(interim), combined, gotAny, gotFinal };
 }
 
-// A light heuristic to prefer female-sounding voices (name-based; browser-dependent).
-const FEMALE_HINTS = ["female", "woman", "girl", "zira", "samantha", "victoria", "karen", "tessa", "amelie", "ava", "emma", "olivia"];
+const NATURAL_HINTS = [
+  "natural",
+  "neural",
+  "premium",
+  "enhanced",
+  "online",
+  "wavenet",
+];
+
+// Browsers do not expose voice gender. These name hints let us prefer a warm,
+// feminine presentation without claiming that every device labels voices the
+// same way. Language matching always takes priority.
+const FEMININE_HINTS = [
+  "female",
+  "woman",
+  "girl",
+  "samantha",
+  "victoria",
+  "karen",
+  "tessa",
+  "serena",
+  "zira",
+  "aria",
+  "jenny",
+  "ava",
+  "emma",
+  "olivia",
+  "susan",
+  "hazel",
+  "sonia",
+  "michelle",
+  "helena",
+  "elvira",
+  "dalia",
+  "paloma",
+  "monica",
+  "paulina",
+  "sabina",
+  "amelie",
+  "amélie",
+  "hortense",
+  "denise",
+  "audrey",
+  "marie",
+  "francisca",
+  "fernanda",
+  "vitoria",
+  "vitória",
+  "katja",
+  "hedda",
+  "amala",
+  "anna",
+  "petra",
+  "google uk english female",
+];
+
+const MASCULINE_HINTS = [
+  " male",
+  "david",
+  "mark",
+  "george",
+  "daniel",
+  "ralph",
+  "fred",
+  "thomas",
+  "guy",
+];
+
+function languageBase(lang: string): string {
+  return (lang || "").trim().toLowerCase().split("-")[0];
+}
+
+export function voiceMatchesLanguage(
+  voice: SpeechSynthesisVoice,
+  lang: string
+): boolean {
+  const target = languageBase(lang);
+  return Boolean(target && languageBase(voice.lang) === target);
+}
+
+export function rankVoices(
+  voices: SpeechSynthesisVoice[],
+  lang: string
+): SpeechSynthesisVoice[] {
+  const exactLang = (lang || "").toLowerCase();
+
+  const score = (voice: SpeechSynthesisVoice): number => {
+    const name = (voice.name || "").toLowerCase();
+    const voiceLang = (voice.lang || "").toLowerCase();
+    let points = 0;
+
+    if (voiceLang === exactLang) points += 70;
+    else if (voiceMatchesLanguage(voice, lang)) points += 55;
+    else points -= 100;
+
+    if (NATURAL_HINTS.some((hint) => name.includes(hint))) points += 24;
+    if (FEMININE_HINTS.some((hint) => name.includes(hint))) points += 36;
+    if (MASCULINE_HINTS.some((hint) => name.includes(hint))) points -= 70;
+    if (voice.default) points += 3;
+    if (voice.localService) points += 1;
+
+    return points;
+  };
+
+  return [...voices].sort((a, b) => {
+    const difference = score(b) - score(a);
+    return difference || a.name.localeCompare(b.name);
+  });
+}
 
 export function pickVoice(
   voices: SpeechSynthesisVoice[],
@@ -87,13 +194,16 @@ export function pickVoice(
     if (exact) return exact;
   }
 
-  const inLang = lang ? voices.filter((v) => (v.lang || "").toLowerCase().startsWith(lang.toLowerCase().slice(0, 2))) : voices.slice();
+  const inLang = lang
+    ? voices.filter((voice) => voiceMatchesLanguage(voice, lang))
+    : voices.slice();
 
-  if (preferFemale) {
-    const female = inLang.find((v) => FEMALE_HINTS.some((h) => (v.name || "").toLowerCase().includes(h)));
-    if (female) return female;
-  }
+  // Do not silently substitute a voice from another language. An explicitly
+  // selected device voice may still be used through preferredName above.
+  if (!inLang.length) return null;
 
-  const defaultVoice = inLang.find((v) => (v as any).default);
-  return defaultVoice || inLang[0] || voices[0] || null;
+  const ranked = lang ? rankVoices(inLang, lang) : inLang;
+  if (preferFemale) return ranked[0] || null;
+
+  return inLang.find((voice) => voice.default) || inLang[0] || null;
 }

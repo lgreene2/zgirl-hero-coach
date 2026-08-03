@@ -10,6 +10,12 @@ import React, {
 } from "react";
 import Link from "next/link";
 import InstallPWAButton from "../../components/InstallPWAButton";
+import {
+  isSpeechSupported,
+  pickVoice,
+  rankVoices,
+  voiceMatchesLanguage,
+} from "../lib/voice";
 
 type ChatMessage = {
   id: string;
@@ -28,7 +34,8 @@ const STORAGE_KEY = "zgirl-hero-chat-v1";
 const HERO_KEY = "zgirl-hero-moments-v1";
 
 // Persisted voice settings + per-message mute map
-const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
+const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v2";
+const LEGACY_VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
 const MUTED_MESSAGES_KEY = "zgirl-muted-message-ids-v1";
 
 const STARTER_SUGGESTIONS: string[] = [
@@ -100,25 +107,57 @@ function makeId(suffix = ""): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}${suffix}`;
 }
 
-type LangOption = { code: string; label: string; nameForPrompt: string };
+type LangOption = {
+  code: string;
+  label: string;
+  nameForPrompt: string;
+  greeting: string;
+};
 
 const LANG_OPTIONS: LangOption[] = [
-  { code: "en-US", label: "English (US)", nameForPrompt: "English" },
-  { code: "en-GB", label: "English (UK)", nameForPrompt: "English" },
-  { code: "es-ES", label: "Español (ES)", nameForPrompt: "Spanish" },
-  { code: "es-US", label: "Español (US)", nameForPrompt: "Spanish" },
-  { code: "fr-FR", label: "Français", nameForPrompt: "French" },
-  { code: "pt-BR", label: "Português (BR)", nameForPrompt: "Portuguese" },
-  { code: "de-DE", label: "Deutsch", nameForPrompt: "German" },
+  {
+    code: "en-US",
+    label: "English (US)",
+    nameForPrompt: "English",
+    greeting: "Hey there, I'm Z-Girl, your reflection guide. I'm here to help you discover the hero within, one small step at a time.",
+  },
+  {
+    code: "en-GB",
+    label: "English (UK)",
+    nameForPrompt: "English",
+    greeting: "Hello, I'm Z-Girl, your reflection guide. I'm here to help you discover the hero within, one small step at a time.",
+  },
+  {
+    code: "es-ES",
+    label: "Español (ES)",
+    nameForPrompt: "Spanish",
+    greeting: "Hola, soy Z-Girl, tu guía de reflexión. Estoy aquí para ayudarte a descubrir la fuerza heroica que llevas dentro, un pequeño paso a la vez.",
+  },
+  {
+    code: "es-US",
+    label: "Español (US)",
+    nameForPrompt: "Spanish",
+    greeting: "Hola, soy Z-Girl, tu guía de reflexión. Estoy aquí para ayudarte a descubrir la fuerza heroica que llevas dentro, un pequeño paso a la vez.",
+  },
+  {
+    code: "fr-FR",
+    label: "Français",
+    nameForPrompt: "French",
+    greeting: "Bonjour, je suis Z-Girl, votre guide de réflexion. Je suis là pour vous aider à découvrir le héros qui est en vous, un petit pas à la fois.",
+  },
+  {
+    code: "pt-BR",
+    label: "Português (BR)",
+    nameForPrompt: "Portuguese",
+    greeting: "Olá, eu sou a Z-Girl, sua guia de reflexão. Estou aqui para ajudar você a descobrir a força heroica dentro de si, um pequeno passo de cada vez.",
+  },
+  {
+    code: "de-DE",
+    label: "Deutsch",
+    nameForPrompt: "German",
+    greeting: "Hallo, ich bin Z-Girl, deine Reflexionsbegleiterin. Ich helfe dir, die Heldin oder den Helden in dir zu entdecken – Schritt für Schritt.",
+  },
 ];
-
-function isSpeechSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
-    typeof SpeechSynthesisUtterance !== "undefined"
-  );
-}
 
 function isSpeechRecognitionSupported(): boolean {
   return (
@@ -135,6 +174,7 @@ type VoiceSettingsPersist = {
   speechPitch: number;
   speechLang: LangOption["code"];
   selectedVoiceName: string;
+  preferredVoiceNames: Record<string, string>;
 };
 
 type RiskLevel = "low" | "medium" | "high";
@@ -176,8 +216,6 @@ export default function Home() {
   }, []);
 
   const parentPanelCloseBtnRef = useRef<HTMLButtonElement | null>(null);
-  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
-
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [heroMoments, setHeroMoments] = useState<HeroMoment[]>([]);
   const [showVideoScript, setShowVideoScript] = useState(false);
@@ -192,11 +230,16 @@ export default function Home() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [autoSpeakReplies, setAutoSpeakReplies] = useState(false); // safer default
   const [soundsEnabled, setSoundsEnabled] = useState(true);
-  const [speechRate, setSpeechRate] = useState(1);
-  const [speechPitch, setSpeechPitch] = useState(1);
+  const [speechRate, setSpeechRate] = useState(0.94);
+  const [speechPitch, setSpeechPitch] = useState(1.03);
   const [speechLang, setSpeechLang] = useState<LangOption["code"]>("en-US");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceName, setSelectedVoiceName] = useState<string>("");
+  const [preferredVoiceNames, setPreferredVoiceNames] = useState<Record<string, string>>({});
+  const [voiceSettingsLoaded, setVoiceSettingsLoaded] = useState(false);
+  const [voiceCatalogSettled, setVoiceCatalogSettled] = useState(false);
+  const [advancedVoiceOpen, setAdvancedVoiceOpen] = useState(false);
+
+  const selectedVoiceName = preferredVoiceNames[speechLang] || "";
 
   // Per-message mute (persisted)
   const [mutedMessageIds, setMutedMessageIds] = useState<Record<string, boolean>>({});
@@ -224,41 +267,37 @@ export default function Home() {
   const startupSoundRef = useRef<HTMLAudioElement | null>(null);
   const replyChimeRef = useRef<HTMLAudioElement | null>(null);
 
-  // Load persisted voice settings
+  // Load persisted voice settings before allowing the defaults to be saved.
   useEffect(() => {
-    // Wire welcome audio to speaking animation (ring + mouth)
-    if (typeof window !== "undefined") {
-      try {
-        if (!welcomeAudioRef.current) {
-          welcomeAudioRef.current = new Audio("/audio/welcome.mp3");
-          welcomeAudioRef.current.preload = "auto";
-        }
-        const a = welcomeAudioRef.current;
-        const onPlay = () => setIsSpeaking(true);
-        const onEnd = () => setIsSpeaking(false);
-        a?.addEventListener?.("play", onPlay);
-        a?.addEventListener?.("ended", onEnd);
-        a?.addEventListener?.("pause", onEnd);
-        return () => {
-          a?.removeEventListener?.("play", onPlay);
-          a?.removeEventListener?.("ended", onEnd);
-          a?.removeEventListener?.("pause", onEnd);
-        };
-      } catch {}
-    }
-
     if (typeof window === "undefined") return;
     try {
-      const raw = window.localStorage.getItem(VOICE_SETTINGS_KEY);
+      const raw =
+        window.localStorage.getItem(VOICE_SETTINGS_KEY) ||
+        window.localStorage.getItem(LEGACY_VOICE_SETTINGS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<VoiceSettingsPersist>;
         if (typeof parsed.voiceEnabled === "boolean") setVoiceEnabled(parsed.voiceEnabled);
         if (typeof parsed.autoSpeakReplies === "boolean") setAutoSpeakReplies(parsed.autoSpeakReplies);
         if (typeof parsed.soundsEnabled === "boolean") setSoundsEnabled(parsed.soundsEnabled);
-        if (typeof parsed.speechRate === "number") setSpeechRate(parsed.speechRate);
-        if (typeof parsed.speechPitch === "number") setSpeechPitch(parsed.speechPitch);
-        if (typeof parsed.speechLang === "string") setSpeechLang(parsed.speechLang as any);
-        if (typeof parsed.selectedVoiceName === "string") setSelectedVoiceName(parsed.selectedVoiceName);
+        if (typeof parsed.speechRate === "number") {
+          setSpeechRate(parsed.speechRate === 1 ? 0.94 : parsed.speechRate);
+        }
+        if (typeof parsed.speechPitch === "number") {
+          setSpeechPitch(parsed.speechPitch === 1 ? 1.03 : parsed.speechPitch);
+        }
+        const savedLang = LANG_OPTIONS.some((option) => option.code === parsed.speechLang)
+          ? (parsed.speechLang as LangOption["code"])
+          : "en-US";
+        setSpeechLang(savedLang);
+        if (
+          parsed.preferredVoiceNames &&
+          typeof parsed.preferredVoiceNames === "object" &&
+          !Array.isArray(parsed.preferredVoiceNames)
+        ) {
+          setPreferredVoiceNames(parsed.preferredVoiceNames);
+        } else if (typeof parsed.selectedVoiceName === "string" && parsed.selectedVoiceName) {
+          setPreferredVoiceNames({ [savedLang]: parsed.selectedVoiceName });
+        }
       }
 
       const mutedRaw = window.localStorage.getItem(MUTED_MESSAGES_KEY);
@@ -267,13 +306,15 @@ export default function Home() {
         if (parsedMuted && typeof parsedMuted === "object") setMutedMessageIds(parsedMuted);
       }
     } catch {
-      // ignore
+      // Invalid device settings should never block the coach.
+    } finally {
+      setVoiceSettingsLoaded(true);
     }
   }, []);
 
   // Persist voice settings
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !voiceSettingsLoaded) return;
     const payload: VoiceSettingsPersist = {
       voiceEnabled,
       autoSpeakReplies,
@@ -282,11 +323,12 @@ export default function Home() {
       speechPitch,
       speechLang,
       selectedVoiceName,
+      preferredVoiceNames,
     };
     try {
       window.localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(payload));
     } catch {}
-  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName]);
+  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName, preferredVoiceNames, voiceSettingsLoaded]);
 
   // Persist muted map
   useEffect(() => {
@@ -301,12 +343,27 @@ export default function Home() {
     if (!isSpeechSupported()) return;
     const synth = window.speechSynthesis;
 
-    const load = () => setVoices(synth.getVoices() || []);
+    let active = true;
+    const load = () => {
+      if (!active) return;
+      const available = synth.getVoices() || [];
+      if (available.length) {
+        setVoices(available);
+        setVoiceCatalogSettled(true);
+      }
+    };
     load();
-    synth.onvoiceschanged = load;
+    synth.addEventListener?.("voiceschanged", load);
+    const retryTimers = [100, 400, 1000, 1800].map((delay) =>
+      window.setTimeout(load, delay)
+    );
+    const settleTimer = window.setTimeout(() => setVoiceCatalogSettled(true), 2000);
 
     return () => {
-      synth.onvoiceschanged = null;
+      active = false;
+      synth.removeEventListener?.("voiceschanged", load);
+      retryTimers.forEach((timer) => window.clearTimeout(timer));
+      window.clearTimeout(settleTimer);
     };
   }, []);
 
@@ -427,47 +484,28 @@ export default function Home() {
     (langCode: string): SpeechSynthesisVoice | undefined => {
       if (!voices.length) return undefined;
 
-      const byLang = voices.filter((v) =>
-        (v.lang || "")
-          .toLowerCase()
-          .startsWith(langCode.slice(0, 2).toLowerCase())
-      );
-      const pool = byLang.length ? byLang : voices;
-
       if (selectedVoiceName) {
-        const exact = pool.find((v) => v.name === selectedVoiceName);
+        const exact = voices.find((v) => v.name === selectedVoiceName);
         if (exact) return exact;
       }
 
-      const preferredNames = [
-        "Google UK English Female",
-        "Microsoft Zira",
-        "Microsoft Aria",
-        "Microsoft Jenny",
-        "Samantha",
-        "Serena",
-        "Zira",
-        "Jenny",
-        "Aria",
-      ];
-
-      return (
-        pool.find((v) =>
-          preferredNames.some((n) =>
-            v.name.toLowerCase().includes(n.toLowerCase())
-          )
-        ) ||
-        pool.find((v) => /female|woman|girl/i.test(v.name)) ||
-        pool[0]
-      );
+      return pickVoice(voices, { lang: langCode, preferFemale: true }) || undefined;
     },
     [voices, selectedVoiceName]
   );
 
   const speakText = useCallback(
-    (text: string) => {
-      if (!voiceEnabled) return;
-      if (!isSpeechSupported()) return;
+    (text: string): boolean => {
+      if (!voiceEnabled || !isSpeechSupported()) return false;
+
+      const chosen = resolveVoice(speechLang);
+      if (!chosen) {
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent =
+            "No matching voice is available for the selected language on this device.";
+        }
+        return false;
+      }
 
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(text);
@@ -476,8 +514,7 @@ export default function Home() {
       utterance.pitch = Math.min(2, Math.max(0, speechPitch));
       utterance.lang = speechLang;
 
-      const chosen = resolveVoice(speechLang);
-      if (chosen) utterance.voice = chosen;
+      utterance.voice = chosen;
 
       utterance.onstart = () => setIsSpeaking(true);
       const done = () => setIsSpeaking(false);
@@ -486,6 +523,7 @@ export default function Home() {
 
       synth.cancel();
       synth.speak(utterance);
+      return true;
     },
     [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]
   );
@@ -542,23 +580,24 @@ export default function Home() {
   }, [isListening, startListening, stopListening]);
 
   const playGreeting = useCallback(() => {
-    if (soundsEnabled && startupSoundRef.current) {
+    const greeting =
+      LANG_OPTIONS.find((option) => option.code === speechLang)?.greeting ||
+      LANG_OPTIONS[0].greeting;
+    const started = speakText(greeting);
+    if (started && soundsEnabled && startupSoundRef.current) {
       startupSoundRef.current.currentTime = 0;
       startupSoundRef.current.play().catch(() => {});
     }
-    const greeting =
-      "Hey there, I'm Z-Girl, your hero coach. I'm here to help you unwrap the hero within, one small step at a time.";
-    speakText(greeting);
-  }, [speakText, soundsEnabled]);
+    return started;
+  }, [speakText, soundsEnabled, speechLang]);
 
   // auto greeting once per session
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !voiceSettingsLoaded || !voices.length) return;
     const already = window.sessionStorage.getItem("zgirlGreetingPlayed");
     if (already) return;
-    playGreeting();
-    window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
-  }, [playGreeting]);
+    if (playGreeting()) window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
+  }, [playGreeting, voiceSettingsLoaded, voices.length]);
 
   // Deep-link support: /?chat=1 opens chat, and optional ?prompt=... pre-fills input
   useEffect(() => {
@@ -853,16 +892,15 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
   const speechRecOk =
     typeof window === "undefined" ? true : isSpeechRecognitionSupported();
 
-  const voiceOptions = (() => {
-    const base = voices || [];
-    const primary = base.filter((v) =>
-      (v.lang || "")
-        .toLowerCase()
-        .startsWith(speechLang.slice(0, 2).toLowerCase())
-    );
-    const rest = base.filter((v) => !primary.includes(v));
-    return [...primary, ...rest];
-  })();
+  const voiceOptions = rankVoices(voices || [], speechLang);
+  const activeVoice = resolveVoice(speechLang);
+  const selectedVoiceAvailable = voices.some(
+    (voice) => voice.name === selectedVoiceName
+  );
+  const hasMatchingVoice = voices.some((voice) => voiceMatchesLanguage(voice, speechLang));
+  const usingMismatchedVoice = Boolean(
+    activeVoice && !voiceMatchesLanguage(activeVoice, speechLang)
+  );
 
   const assistantMessages = messages.filter((m) => m.role === "assistant");
   const lastAssistantId = assistantMessages.length
@@ -1012,10 +1050,10 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-3 text-left space-y-2">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-3 text-left space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-[11px] font-semibold text-slate-200">
-                  Voice & Accessibility
+                  Voice &amp; listening
                 </div>
                 <button
                   type="button"
@@ -1040,9 +1078,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     checked={voiceEnabled}
                     onChange={() => setVoiceEnabled((v) => !v)}
                     disabled={!speechOk}
-                    aria-label="Enable voice"
+                    aria-label="Enable voice output"
                   />
-                  <span>Voice</span>
+                  <span>Voice output</span>
                 </label>
 
                 <label className="inline-flex items-center gap-2">
@@ -1066,44 +1104,16 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   <span>Sounds</span>
                 </label>
 
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={voiceInputEnabled}
-                    onChange={() => setVoiceInputEnabled((v) => !v)}
-                    disabled={!speechRecOk}
-                    aria-label="Enable voice input"
-                  />
-                  <span>Voice input</span>
-                </label>
-
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={autoSendVoice}
-                    onChange={() => setAutoSendVoice((v) => !v)}
-                    disabled={!speechRecOk || !voiceInputEnabled}
-                    aria-label="Auto send voice input"
-                  />
-                  <span>Auto-send</span>
-                </label>
               </div>
 
-              {!speechRecOk && (
-                <div className="text-[11px] text-amber-100 border border-amber-500/40 bg-amber-500/10 rounded-xl px-3 py-2">
-                  Voice input isn’t supported here. (You can still type.)
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-3">
                 <label className="text-[11px] text-slate-300">
                   Language
                   <select
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-[12px] text-slate-50"
                     value={speechLang}
                     onChange={(e) => {
-                      setSpeechLang(e.target.value as any);
-                      setSelectedVoiceName("");
+                      setSpeechLang(e.target.value as LangOption["code"]);
                       stopSpeaking();
                       if (isListening) stopListening();
                     }}
@@ -1117,58 +1127,174 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   </select>
                 </label>
 
-                <label className="text-[11px] text-slate-300">
-                  Voice (optional)
-                  <select
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-[12px] text-slate-50"
-                    value={selectedVoiceName}
-                    onChange={(e) => {
-                      setSelectedVoiceName(e.target.value);
-                      stopSpeaking();
-                    }}
-                    disabled={!speechOk || !voices.length}
-                    aria-label="Select voice"
-                  >
-                    <option value="">Auto (female-first)</option>
-                    {voiceOptions.map((v) => (
-                      <option key={`${v.name}-${v.lang}`} value={v.name}>
-                        {v.name} — {v.lang}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="rounded-xl border border-teal-400/25 bg-teal-400/[.06] px-3 py-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-[11px] font-semibold text-teal-100">
+                        Z-Girl Natural Voice · Recommended
+                      </div>
+                      <div className="mt-1 text-[10px] leading-4 text-slate-400">
+                        {activeVoice
+                          ? `Using ${activeVoice.name} · ${activeVoice.lang}`
+                          : voiceCatalogSettled
+                            ? "No matching voice is installed for this language."
+                            : "Finding the best voice on this device…"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={playGreeting}
+                      disabled={!speechOk || !voiceEnabled || !activeVoice}
+                      className="inline-flex shrink-0 items-center justify-center rounded-full border border-teal-300/40 bg-teal-300/10 px-3 py-1.5 text-[11px] font-semibold text-teal-100 hover:bg-teal-300/20 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Preview Z-Girl's voice"
+                    >
+                      Preview voice
+                    </button>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="text-[11px] text-slate-300">
-                    Rate: {speechRate.toFixed(2)}
+                  {!hasMatchingVoice && voiceCatalogSettled && !selectedVoiceName && (
+                    <p className="mt-2 text-[10px] leading-4 text-amber-100">
+                      Spoken output is paused so Z-Girl does not silently use a voice from the wrong language. You can install a matching device voice or choose one intentionally under Advanced voice options.
+                    </p>
+                  )}
+                  {usingMismatchedVoice && (
+                    <p className="mt-2 text-[10px] leading-4 text-amber-100">
+                      This device voice does not match the selected language and may pronounce words incorrectly.
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-800 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedVoiceOpen((open) => !open)}
+                    className="flex w-full items-center justify-between py-1 text-left text-[11px] font-semibold text-slate-300 hover:text-white"
+                    aria-expanded={advancedVoiceOpen}
+                    aria-controls="advanced-voice-options"
+                  >
+                    <span>Advanced voice options</span>
+                    <span aria-hidden="true">{advancedVoiceOpen ? "−" : "+"}</span>
+                  </button>
+
+                  {advancedVoiceOpen && (
+                    <div id="advanced-voice-options" className="mt-2 grid grid-cols-1 gap-3">
+                      <label className="text-[11px] text-slate-300">
+                        Device voice
+                        <select
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-[12px] text-slate-50"
+                          value={selectedVoiceAvailable ? selectedVoiceName : ""}
+                          onChange={(e) => {
+                            const nextName = e.target.value;
+                            setPreferredVoiceNames((current) => {
+                              const next = { ...current };
+                              if (nextName) next[speechLang] = nextName;
+                              else delete next[speechLang];
+                              return next;
+                            });
+                            stopSpeaking();
+                          }}
+                          disabled={!speechOk || !voices.length}
+                          aria-label="Select a device voice"
+                        >
+                          <option value="">Z-Girl Natural Voice (recommended)</option>
+                          {voiceOptions.map((voice) => (
+                            <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
+                              {voiceMatchesLanguage(voice, speechLang) ? "✓ " : ""}
+                              {voice.name} — {voice.lang}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="mt-1 block text-[10px] leading-4 text-slate-500">
+                          Matching-language voices appear first. Available voices vary by browser and device.
+                        </span>
+                      </label>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="text-[11px] text-slate-300">
+                          Speed: {speechRate.toFixed(2)}×
+                          <input
+                            className="zgirl-range mt-1 w-full"
+                            type="range"
+                            min={0.5}
+                            max={2}
+                            step={0.05}
+                            value={speechRate}
+                            onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                            disabled={!speechOk || !voiceEnabled}
+                            aria-label="Speech speed"
+                          />
+                        </label>
+
+                        <label className="text-[11px] text-slate-300">
+                          Pitch: {speechPitch.toFixed(2)}
+                          <input
+                            className="zgirl-range mt-1 w-full"
+                            type="range"
+                            min={0}
+                            max={2}
+                            step={0.05}
+                            value={speechPitch}
+                            onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
+                            disabled={!speechOk || !voiceEnabled}
+                            aria-label="Speech pitch"
+                          />
+                        </label>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSpeechRate(0.94);
+                          setSpeechPitch(1.03);
+                          setPreferredVoiceNames((current) => {
+                            const next = { ...current };
+                            delete next[speechLang];
+                            return next;
+                          });
+                          stopSpeaking();
+                        }}
+                        className="justify-self-start text-[10px] font-semibold text-sky-300 underline underline-offset-2 hover:text-sky-200"
+                      >
+                        Reset natural voice settings
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-800 pt-3">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Microphone input
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                  <label className="inline-flex items-center gap-2">
                     <input
-                      className="zgirl-range mt-1 w-full"
-                      type="range"
-                      min={0.5}
-                      max={2}
-                      step={0.05}
-                      value={speechRate}
-                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                      disabled={!speechOk || !voiceEnabled}
-                      aria-label="Speech rate"
+                      type="checkbox"
+                      checked={voiceInputEnabled}
+                      onChange={() => setVoiceInputEnabled((v) => !v)}
+                      disabled={!speechRecOk}
+                      aria-label="Enable voice input"
                     />
+                    <span>Voice input</span>
                   </label>
 
-                  <label className="text-[11px] text-slate-300">
-                    Pitch: {speechPitch.toFixed(2)}
+                  <label className="inline-flex items-center gap-2">
                     <input
-                      className="zgirl-range mt-1 w-full"
-                      type="range"
-                      min={0}
-                      max={2}
-                      step={0.05}
-                      value={speechPitch}
-                      onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-                      disabled={!speechOk || !voiceEnabled}
-                      aria-label="Speech pitch"
+                      type="checkbox"
+                      checked={autoSendVoice}
+                      onChange={() => setAutoSendVoice((v) => !v)}
+                      disabled={!speechRecOk || !voiceInputEnabled}
+                      aria-label="Auto send voice input"
                     />
+                    <span>Auto-send</span>
                   </label>
                 </div>
+
+                {!speechRecOk && (
+                  <div className="mt-2 text-[11px] text-amber-100 border border-amber-500/40 bg-amber-500/10 rounded-xl px-3 py-2">
+                    Voice input isn’t supported here. You can still type.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1197,18 +1323,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 Skip intro · Go to chat
               </button>
 
-              <div className="mt-2 flex justify-center">
-                <button
-                  type="button"
-                  onClick={playGreeting}
-                  disabled={!speechOk || !voiceEnabled}
-                  className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Play welcome greeting"
-                >
-                  <span aria-hidden="true">🔊</span>
-                  <span>Play Z-Girl’s welcome</span>
-                </button>
-              </div>
             </div>
 
             <div className="relative z-10 mt-3">
