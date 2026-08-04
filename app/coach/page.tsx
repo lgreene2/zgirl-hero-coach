@@ -34,8 +34,9 @@ const STORAGE_KEY = "zgirl-hero-chat-v1";
 const HERO_KEY = "zgirl-hero-moments-v1";
 
 // Persisted voice settings + per-message mute map
-const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v2";
-const LEGACY_VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
+const VOICE_SETTINGS_KEY = "zgirl-voice-settings-v3";
+const LEGACY_VOICE_SETTINGS_KEY = "zgirl-voice-settings-v2";
+const OLDEST_VOICE_SETTINGS_KEY = "zgirl-voice-settings-v1";
 const MUTED_MESSAGES_KEY = "zgirl-muted-message-ids-v1";
 
 const STARTER_SUGGESTIONS: string[] = [
@@ -229,7 +230,7 @@ export default function Home() {
   // Voice controls (persisted)
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [autoSpeakReplies, setAutoSpeakReplies] = useState(false); // safer default
-  const [soundsEnabled, setSoundsEnabled] = useState(true);
+  const [soundsEnabled, setSoundsEnabled] = useState(false);
   const [speechRate, setSpeechRate] = useState(0.94);
   const [speechPitch, setSpeechPitch] = useState(1.03);
   const [speechLang, setSpeechLang] = useState<LangOption["code"]>("en-US");
@@ -261,24 +262,26 @@ export default function Home() {
   const liveRegionRef = useRef<HTMLDivElement | null>(null);
   const handleSendRef = useRef<() => void>(() => {});
 
-  // Sounds
-  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
-  const heroMomentSoundRef = useRef<HTMLAudioElement | null>(null);
-  const startupSoundRef = useRef<HTMLAudioElement | null>(null);
-  const replyChimeRef = useRef<HTMLAudioElement | null>(null);
+  // Optional, low-volume cue played only when spoken output begins.
+  const voiceCueRef = useRef<HTMLAudioElement | null>(null);
 
   // Load persisted voice settings before allowing the defaults to be saved.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw =
-        window.localStorage.getItem(VOICE_SETTINGS_KEY) ||
-        window.localStorage.getItem(LEGACY_VOICE_SETTINGS_KEY);
+      const currentRaw = window.localStorage.getItem(VOICE_SETTINGS_KEY);
+      const legacyRaw =
+        window.localStorage.getItem(LEGACY_VOICE_SETTINGS_KEY) ||
+        window.localStorage.getItem(OLDEST_VOICE_SETTINGS_KEY);
+      const raw = currentRaw || legacyRaw;
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<VoiceSettingsPersist>;
         if (typeof parsed.voiceEnabled === "boolean") setVoiceEnabled(parsed.voiceEnabled);
         if (typeof parsed.autoSpeakReplies === "boolean") setAutoSpeakReplies(parsed.autoSpeakReplies);
-        if (typeof parsed.soundsEnabled === "boolean") setSoundsEnabled(parsed.soundsEnabled);
+        // v2.0.2 intentionally resets legacy sound preferences to the new quieter default.
+        if (currentRaw && typeof parsed.soundsEnabled === "boolean") {
+          setSoundsEnabled(parsed.soundsEnabled);
+        }
         if (typeof parsed.speechRate === "number") {
           setSpeechRate(parsed.speechRate === 1 ? 0.94 : parsed.speechRate);
         }
@@ -462,15 +465,9 @@ export default function Home() {
     recognitionRef.current = rec;
   }, [speechLang, autoSendVoice, loading]);
 
-  // audio volumes
+  // Keep the optional voice-start cue subtle.
   useEffect(() => {
-    const setVol = (ref: { current: HTMLAudioElement | null }, v: number) => {
-      if (ref.current) ref.current.volume = v;
-    };
-    setVol(sendSoundRef, 0.75);
-    setVol(heroMomentSoundRef, 0.75);
-    setVol(replyChimeRef, 0.85);
-    setVol(startupSoundRef, 0.85);
+    if (voiceCueRef.current) voiceCueRef.current.volume = 0.12;
   }, []);
 
   const stopSpeaking = useCallback(() => {
@@ -516,7 +513,13 @@ export default function Home() {
 
       utterance.voice = chosen;
 
-      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        if (soundsEnabled && voiceCueRef.current) {
+          voiceCueRef.current.currentTime = 0;
+          voiceCueRef.current.play().catch(() => {});
+        }
+      };
       const done = () => setIsSpeaking(false);
       utterance.onend = done;
       utterance.onerror = done;
@@ -525,7 +528,7 @@ export default function Home() {
       synth.speak(utterance);
       return true;
     },
-    [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]
+    [voiceEnabled, soundsEnabled, speechRate, speechPitch, speechLang, resolveVoice]
   );
 
   const speakMessage = useCallback(
@@ -583,13 +586,8 @@ export default function Home() {
     const greeting =
       LANG_OPTIONS.find((option) => option.code === speechLang)?.greeting ||
       LANG_OPTIONS[0].greeting;
-    const started = speakText(greeting);
-    if (started && soundsEnabled && startupSoundRef.current) {
-      startupSoundRef.current.currentTime = 0;
-      startupSoundRef.current.play().catch(() => {});
-    }
-    return started;
-  }, [speakText, soundsEnabled, speechLang]);
+    return speakText(greeting);
+  }, [speakText, speechLang]);
 
   // auto greeting once per session
   useEffect(() => {
@@ -701,12 +699,6 @@ export default function Home() {
     // stop mic when sending
     if (isListening) stopListening();
 
-    if (soundsEnabled && sendSoundRef.current) {
-      try {
-        sendSoundRef.current.currentTime = 0;
-        await sendSoundRef.current.play();
-      } catch {}
-    }
 
     const langMeta = LANG_OPTIONS.find((l) => l.code === speechLang);
 
@@ -747,11 +739,6 @@ export default function Home() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // 🔔 sounds: keep gentle, but still okay
-      if (soundsEnabled && replyChimeRef.current) {
-        replyChimeRef.current.currentTime = 0;
-        replyChimeRef.current.play().catch(() => {});
-      }
 
       // ✅ Safety rule: do NOT auto-speak medium/high (prevents blasting sensitive content)
       const safeToAutoSpeak = apiRisk === "low";
@@ -833,12 +820,6 @@ export default function Home() {
     };
     setHeroMoments((prev) => [newMoment, ...prev]);
 
-    if (soundsEnabled && heroMomentSoundRef.current) {
-      try {
-        heroMomentSoundRef.current.currentTime = 0;
-        heroMomentSoundRef.current.play();
-      } catch {}
-    }
   };
 
   const handleClearHeroMoments = () => setHeroMoments([]);
@@ -1099,9 +1080,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     type="checkbox"
                     checked={soundsEnabled}
                     onChange={() => setSoundsEnabled((v) => !v)}
-                    aria-label="Enable sounds"
+                    aria-label="Enable optional sound cue when voice playback begins"
                   />
-                  <span>Sounds</span>
+                  <span>Sound cues <span className="text-slate-400">(off by default)</span></span>
                 </label>
 
               </div>
@@ -1301,10 +1282,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
             <button
               onClick={() => {
                 setShowChat(true);
-                if (soundsEnabled && startupSoundRef.current) {
-                  startupSoundRef.current.currentTime = 0;
-                  startupSoundRef.current.play().catch(() => {});
-                }
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
               className="w-full inline-flex items-center justify-center rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-400/40 hover:bg-teal-300 active:bg-teal-500 transition transform hover:-translate-y-0.5 active:translate-y-[1px]"
@@ -1919,11 +1896,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </div>
       )}
 
-      {/* Audio */}
-      <audio ref={sendSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
-      <audio ref={heroMomentSoundRef} src="/sounds/zgirl-chime.wav" preload="auto" />
-      <audio ref={startupSoundRef} src="/sounds/zgirl-startup.wav" preload="auto" />
-      <audio ref={replyChimeRef} src="/sounds/zgirl-chime.wav" preload="auto" />
+      {/* Optional voice-start cue; independent from spoken output. */}
+      <audio ref={voiceCueRef} src="/sounds/zgirl-startup.wav" preload="auto" />
     </div>
   );
 }
