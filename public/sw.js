@@ -1,10 +1,10 @@
-/* Z-Girl v2.1 service worker
+/* Z-Girl v2.2 service worker
    - Registers from the application shell
    - Network-first pages with an offline fallback
    - Stale-while-revalidate static assets
    - User-controlled updates (no surprise reloads)
 */
-const CACHE_VERSION = "zgirl-cache-v2-1-0";
+const CACHE_VERSION = "zgirl-cache-v2-2-0";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline.html";
@@ -55,6 +55,13 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || request.method !== "GET") return;
+
+  // Confidential reviewer pages, session checks, and audio must never enter a
+  // service-worker cache or fall back to a previously viewed copy.
+  if (url.pathname.startsWith("/review") || url.pathname.startsWith("/api/review")) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
 
   if (url.pathname.startsWith("/api/chat") || url.pathname.startsWith("/api/zgirl")) {
     event.respondWith(

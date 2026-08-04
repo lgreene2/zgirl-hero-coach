@@ -29,7 +29,7 @@ export default function Home() {
         <div className="mx-auto grid min-h-[780px] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.12fr_.88fr] lg:px-12 lg:py-24">
           <div className="max-w-3xl">
             <div className="mb-6 flex flex-wrap gap-2">
-              <span className="eyebrow">Z-Girl Open v2.1</span>
+              <span className="eyebrow">Z-Girl Open v2.2</span>
               <span className="eyebrow eyebrow-muted">No login required</span>
             </div>
             <p className="mb-4 text-sm font-bold uppercase tracking-[.26em] text-[#76ead6]">The Hero Within Reflection System</p>
