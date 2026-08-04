@@ -1,10 +1,10 @@
-/* Z-Girl v2.2.2 service worker
+/* Z-Girl v2.2.3 service worker
    - Registers from the application shell
    - Network-first pages with an offline fallback
    - Stale-while-revalidate static assets
    - User-controlled updates (no surprise reloads)
 */
-const CACHE_VERSION = "zgirl-cache-v2-2-2";
+const CACHE_VERSION = "zgirl-cache-v2-2-3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline.html";
