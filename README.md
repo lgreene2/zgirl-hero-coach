@@ -1,6 +1,6 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl Open v2.2.0 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups.
+Z-Girl Open v2.2.2 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups. The public experience remains private by default and requires no account. The native-language studio-review workflow is protected by unique language-scoped reviewer credentials and a separate server-only media gateway.
 
 ## Public experiences
 
@@ -14,35 +14,73 @@ Z-Girl Open v2.2.0 is a character-powered, safety-first reflection experience fo
 - `/for-adults` — parent, caregiver, educator, and mentor guidance
 - `/pilot` — archived v1.1 pilot materials and v2 institutional pathway
 - `/edu` — current Z-Girl EDU institutional overview and downloadable package summary
-- `/review` — protected native-language review workspace (requires server-side configuration)
+- `/review` — protected native-language review workspace; fail-closed until server-side activation is complete
 
-## Protected reviewer activation
+## v2.2.2 protected reviewer architecture
 
-Each reviewer receives a unique language-scoped code. The server stores only a SHA-256 hash of each code, signs an eight-hour locale-specific session, and rejects audio requests for every locale except the one assigned to that session.
+Each reviewer receives one unique code assigned to exactly one language. The public server stores only a SHA-256 hash of the code, signs an eight-hour locale-specific session, and rejects audio requests for every locale except the one assigned to that session.
 
-1. Select one qualified native or professional-level reviewer for each locale: `es-US`, `fr-FR`, `pt-BR`, and `de-DE`.
-2. Generate the private credential handoff record outside the repository:
+Candidate recordings remain in the separate private `zgirl-native-language-review-portal` project. The browser never receives the private gateway bearer token. The public Z-Girl server requests media through the protected gateway and streams it to the authorized reviewer with no-store and no-index controls.
+
+Direct candidate paths in the private project return `404`. The private gateway accepts only the fixed candidate identifier, four approved review locales, seven day numbers, and the `voice` or `calm` mix.
+
+## Activation procedure
+
+1. Import the private `lgreene2/zgirl-native-language-review-portal` repository into a separate Vercel project.
+2. Deploy its `main` branch after the v2.2.2 asset-gateway pull request is merged.
+3. Generate the confidential credential and deployment record outside both repositories:
 
 ```bash
 npm run review:credentials -- --out /absolute/private/path/private-review-credentials.json
 ```
 
-3. Set the generated `ZGIRL_REVIEW_ACCESS_HASHES_JSON` and `ZGIRL_REVIEW_SESSION_SECRET` as sensitive Vercel environment variables. Never place plaintext access codes in Vercel, Git, the assignment tracker, or public messages.
-4. Set `ZGIRL_REVIEW_ASSET_BASE_URL` and `ZGIRL_REVIEW_ASSET_BEARER_TOKEN` for the protected candidate source.
-5. Verify all 56 expected audio objects before inviting reviewers:
+4. In the private gateway project, set the generated sensitive variable:
+
+```text
+ZGIRL_ASSET_GATEWAY_BEARER_TOKEN
+```
+
+5. In the public `zgirl-hero-coach` project, set the generated sensitive variables:
+
+```text
+ZGIRL_REVIEW_ACCESS_HASHES_JSON
+ZGIRL_REVIEW_SESSION_SECRET
+ZGIRL_REVIEW_ASSET_BASE_URL=https://<private-gateway-host>/api/review-assets
+ZGIRL_REVIEW_ASSET_BEARER_TOKEN
+```
+
+6. Verify the private gateway, including all 56 authenticated byte-range responses and the direct-path `404` gate:
+
+```bash
+ZGIRL_ASSET_GATEWAY_BASE_URL=https://<private-gateway-host>/api/review-assets \
+ZGIRL_ASSET_GATEWAY_BEARER_TOKEN=<generated-token> \
+npm run gateway:verify
+```
+
+7. Verify all 56 objects through the public project configuration:
 
 ```bash
 npm run review:verify-assets
 ```
 
-6. Share the portal link and the assigned plaintext code through separate messages. The reviewer can access only the assigned language.
+8. Confirm invalid codes fail, expired sessions redirect to login, and a valid reviewer session cannot request another locale.
+9. Send the invitation and plaintext access code through separate messages. Never place plaintext reviewer codes in Vercel, Git, issue trackers, shared worksheets, or public messages.
+10. Keep the portal fail-closed until all checks pass.
+
+See:
+
+- `RELEASE_NOTES_v2.2.2_REVIEWER_ASSET_GATEWAY.md`
+- `docs/REVIEWER_INVITATION_TEMPLATE.md`
+- `docs/REVIEWER_CREDENTIAL_HANDOFF_TEMPLATE.md`
+- `docs/REVIEWER_ACTIVATION_CHECKLIST.md`
 
 ## Local development
 
 1. Copy `.env.example` to `.env.local`.
 2. Add a valid `GEMINI_API_KEY` to enable AI Coach replies.
-3. Run `npm install`.
-4. Run `npm run dev`.
+3. Add reviewer variables only when testing the protected workflow.
+4. Run `npm install`.
+5. Run `npm run dev`.
 
 Private Reflection and the 7-Day Journey work without an AI key. The production build also succeeds without a key; AI Coach returns a clear unavailable response while the deterministic crisis response remains active.
 
@@ -50,20 +88,24 @@ Private Reflection and the 7-Day Journey work without an AI key. The production 
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
 ```
 
 ## Release
 
-Current package version: `2.2.0`.
+Current package version: `2.2.2`.
 
 The v2.0 release replaces seasonal framing, introduces the reusable Hero Within Method, clarifies AI data flow, prevents client-supplied safety prompt overrides, updates the PWA cache, and preserves older pilot files only as labeled archive materials.
 
 The v2.0.1 Natural Voice Patch waits for the browser voice catalog before greeting, prefers a natural feminine voice in the selected language, remembers a different device voice for each language, adds a voice preview, and moves speed, pitch, and device-specific choices under Advanced voice options.
-
 
 The v2.0.2 Sound Cue Refinement removes completion, send, save, and launch chimes. An optional low-volume cue can play only when spoken output begins; it is separate from voice output and defaults to Off, including for users migrating from v2.0.1.
 
 The v2.1 Multilingual Journey & PWA release localizes all seven journey days into five public language tracks, uses an explicitly selected matching browser voice with no autoplay, generates visible and downloadable transcripts from the exact spoken source, registers the service worker, adds browser-specific installation guidance, supports visited-page offline fallback, and gives installed users control over updates. Translated studio audio remains outside the public build until native-language review is complete.
 
 The v2.2 EDU & Native-Language Review release adds the public Z-Girl EDU institutional pathway, a protected exact-candidate reviewer workspace, signed approval exports, reviewer correction exports, and network-only review routes. The studio-audio candidate remains internal, and an approval export does not authorize public promotion without a separate product-owner decision.
+
+The v2.2.1 Reviewer Activation release replaces a shared access code with four hashed, language-scoped credentials, limits each signed session to its assigned locale, validates the 56-track candidate set, and keeps the portal fail-closed until protected deployment inputs are configured.
+
+The v2.2.2 Reviewer Asset Gateway release moves candidate delivery behind a separate server-only bearer-protected gateway, blocks predictable direct asset paths, supports authenticated byte-range playback, generates the shared gateway token with the confidential reviewer record, hardens the public audio proxy, and updates the PWA cache and visible application version.

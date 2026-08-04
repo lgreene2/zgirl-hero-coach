@@ -17,7 +17,9 @@ function argument(name) {
 
 const outputArg = argument("--out");
 if (!outputArg) {
-  console.error("Usage: npm run review:credentials -- --out /absolute/private/path/private-review-credentials.json");
+  console.error(
+    "Usage: npm run review:credentials -- --out /absolute/private/path/private-review-credentials.json",
+  );
   process.exit(2);
 }
 
@@ -25,18 +27,35 @@ const outputPath = path.resolve(outputArg);
 const accessHashes = {};
 const credentials = LANGUAGES.map((language) => {
   const accessCode = randomBytes(18).toString("base64url");
-  accessHashes[language.locale] = createHash("sha256").update(accessCode, "utf8").digest("hex");
-  return { ...language, reviewer: "", reviewerEmail: "", accessCode };
+  accessHashes[language.locale] = createHash("sha256")
+    .update(accessCode, "utf8")
+    .digest("hex");
+  return {
+    ...language,
+    reviewer: "",
+    reviewerEmail: "",
+    accessCode,
+  };
 });
 
+const gatewayBearerToken = randomBytes(48).toString("base64url");
 const record = {
   candidateId: CANDIDATE_ID,
   generatedAt: new Date().toISOString(),
-  warning: "CONFIDENTIAL. Share each plaintext code only with its assigned reviewer. Never commit or upload this file to a public location.",
+  warning:
+    "CONFIDENTIAL. Share each plaintext reviewer code only with its assigned reviewer. Store deployment secrets only in the named Vercel projects. Never commit or upload this file to a public location.",
   credentials,
   vercelEnvironment: {
-    ZGIRL_REVIEW_ACCESS_HASHES_JSON: JSON.stringify(accessHashes),
-    ZGIRL_REVIEW_SESSION_SECRET: randomBytes(48).toString("base64url"),
+    publicZgirlProject: {
+      ZGIRL_REVIEW_ACCESS_HASHES_JSON: JSON.stringify(accessHashes),
+      ZGIRL_REVIEW_SESSION_SECRET: randomBytes(48).toString("base64url"),
+      ZGIRL_REVIEW_ASSET_BASE_URL:
+        "https://<private-gateway-host>/api/review-assets",
+      ZGIRL_REVIEW_ASSET_BEARER_TOKEN: gatewayBearerToken,
+    },
+    privateGatewayProject: {
+      ZGIRL_ASSET_GATEWAY_BEARER_TOKEN: gatewayBearerToken,
+    },
   },
 };
 
@@ -53,4 +72,6 @@ await handle.close();
 await fs.chmod(outputPath, 0o600);
 
 console.log(`Created confidential reviewer credential record at ${outputPath}`);
-console.log("Plaintext codes were written only to that file and were not printed.");
+console.log(
+  "Plaintext reviewer codes and deployment secrets were written only to that file and were not printed.",
+);
