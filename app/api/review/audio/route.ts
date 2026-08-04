@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isReviewAuthorized } from "@/app/review/auth";
+import { authorizedReviewLocale } from "@/app/review/auth";
 import {
   REVIEW_CANDIDATE_ID,
   REVIEW_LANGUAGES,
@@ -9,7 +9,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  if (!(await isReviewAuthorized())) {
+  const authorizedLocale = await authorizedReviewLocale();
+  if (!authorizedLocale) {
     return NextResponse.json({ error: "Review authorization required." }, { status: 401 });
   }
 
@@ -21,6 +22,9 @@ export async function GET(request: Request) {
 
   if (!validLocale || !Number.isInteger(day) || day < 1 || day > 7 || !["voice", "calm"].includes(mix || "")) {
     return NextResponse.json({ error: "Invalid review-audio request." }, { status: 400 });
+  }
+  if (locale !== authorizedLocale) {
+    return NextResponse.json({ error: "This session is not assigned to that language." }, { status: 403 });
   }
 
   const baseUrl = process.env.ZGIRL_REVIEW_ASSET_BASE_URL?.replace(/\/$/, "");

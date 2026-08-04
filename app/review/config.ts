@@ -39,3 +39,7 @@ export const REVIEW_CRITERIA: Array<{
 ];
 
 export const REVIEW_DAYS = 7;
+
+export function isReviewLocale(value: unknown): value is ReviewLocale {
+  return typeof value === "string" && REVIEW_LANGUAGES.some(({ locale }) => locale === value);
+}

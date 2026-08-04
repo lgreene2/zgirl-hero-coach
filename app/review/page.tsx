@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { isReviewAuthorized } from "@/app/review/auth";
+import { authorizedReviewLocale } from "@/app/review/auth";
 import ReviewerWorkspace from "@/app/review/ReviewerWorkspace";
 
 export const metadata: Metadata = {
@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ReviewPage() {
-  if (!(await isReviewAuthorized())) redirect("/review/login");
-  return <ReviewerWorkspace />;
+  const authorizedLocale = await authorizedReviewLocale();
+  if (!authorizedLocale) redirect("/review/login");
+  return <ReviewerWorkspace authorizedLocale={authorizedLocale} />;
 }

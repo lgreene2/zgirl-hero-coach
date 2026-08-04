@@ -54,3 +54,6 @@ Thumbs.db
 # Local HTTPS keys (extra safety)
 *.key
 *.crt
+
+# generated reviewer credentials (plaintext access codes)
+private-review-credentials*.json
