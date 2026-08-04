@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
+import { REVIEW_LANGUAGES, type ReviewLocale } from "@/app/review/config";
 
 export default function ReviewLoginPage() {
+  const [locale, setLocale] = useState<ReviewLocale>("es-US");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,7 +18,7 @@ export default function ReviewLoginPage() {
       const response = await fetch("/api/review/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, locale }),
       });
       const result = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) throw new Error(result.error || "Access could not be verified.");
@@ -47,6 +49,18 @@ export default function ReviewLoginPage() {
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block text-sm font-black text-slate-200">
+            Assigned language
+            <select
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as ReviewLocale)}
+              className="mt-2 min-h-12 w-full rounded-2xl border border-white/15 bg-[#061521] px-4 text-white outline-none focus:border-[#49d8c2] focus:ring-4 focus:ring-[#49d8c2]/15"
+            >
+              {REVIEW_LANGUAGES.map((language) => (
+                <option key={language.locale} value={language.locale}>{language.label} ({language.region})</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-black text-slate-200">
             Review access code
             <input
               type="password"
@@ -64,7 +78,7 @@ export default function ReviewLoginPage() {
         </form>
 
         <p className="mt-5 text-xs leading-5 text-slate-500">
-          Access expires after eight hours. Review records remain in this browser until you export or clear them.
+          Access is limited to the assigned language and expires after eight hours. Review records remain in this browser until you export or clear them.
         </p>
       </section>
     </main>

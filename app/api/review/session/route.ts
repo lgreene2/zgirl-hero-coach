@@ -5,6 +5,7 @@ import {
   reviewSessionToken,
   validateReviewAccessCode,
 } from "@/app/review/auth";
+import { isReviewLocale } from "@/app/review/config";
 
 export const runtime = "nodejs";
 
@@ -16,18 +17,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => ({}))) as { code?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { code?: unknown; locale?: unknown };
   const code = typeof body.code === "string" ? body.code.trim() : "";
-  if (!validateReviewAccessCode(code)) {
+  if (!isReviewLocale(body.locale) || !reviewIsConfigured(body.locale) || !validateReviewAccessCode(body.locale, code)) {
     return NextResponse.json({ error: "The access code is not valid." }, { status: 401 });
   }
 
-  const token = reviewSessionToken();
+  const token = reviewSessionToken(body.locale);
   if (!token) {
     return NextResponse.json({ error: "Review access is unavailable." }, { status: 503 });
   }
 
-  const response = NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true, locale: body.locale });
   response.cookies.set(REVIEW_COOKIE, token, {
     httpOnly: true,
     sameSite: "strict",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getDayTranscript, getJourneyTrack } from "@/app/lib/journey";
 import {
   REVIEW_CANDIDATE_ID,
@@ -31,9 +31,6 @@ type Reviewer = {
   signedDate: string;
 };
 type LanguageReview = { reviewer: Reviewer; sessions: ReviewSession[] };
-type ReviewStore = Record<ReviewLocale, LanguageReview>;
-
-const STORAGE_KEY = `zgirl-native-review-${REVIEW_CANDIDATE_ID}`;
 
 function emptyCriteria(): Record<ReviewCriterion, CheckStatus> {
   return Object.fromEntries(REVIEW_CRITERIA.map(({ key }) => [key, "Pending"])) as Record<ReviewCriterion, CheckStatus>;
@@ -61,10 +58,38 @@ function emptyLanguageReview(): LanguageReview {
   };
 }
 
-function emptyStore(): ReviewStore {
-  return Object.fromEntries(
-    REVIEW_LANGUAGES.map(({ locale }) => [locale, emptyLanguageReview()])
-  ) as ReviewStore;
+function restoreLanguageReview(saved: string): LanguageReview {
+  const fallback = emptyLanguageReview();
+  const parsed = JSON.parse(saved) as Partial<LanguageReview>;
+  const restoredReviewer: Partial<Reviewer> = parsed.reviewer && typeof parsed.reviewer === "object" ? parsed.reviewer : {};
+  const reviewer: Reviewer = {
+    name: typeof restoredReviewer.name === "string" ? restoredReviewer.name : "",
+    email: typeof restoredReviewer.email === "string" ? restoredReviewer.email : "",
+    roleOrganization: typeof restoredReviewer.roleOrganization === "string" ? restoredReviewer.roleOrganization : "",
+    dialectRegion: typeof restoredReviewer.dialectRegion === "string" ? restoredReviewer.dialectRegion : "",
+    fluencyConfirmed: restoredReviewer.fluencyConfirmed === true,
+    exactCandidateConfirmed: restoredReviewer.exactCandidateConfirmed === true,
+    confidentialityConfirmed: restoredReviewer.confidentialityConfirmed === true,
+    signature: typeof restoredReviewer.signature === "string" ? restoredReviewer.signature : "",
+    signedDate: typeof restoredReviewer.signedDate === "string" ? restoredReviewer.signedDate : "",
+  };
+  const sessions = fallback.sessions.map((emptySession, index) => {
+    const restored = Array.isArray(parsed.sessions) ? parsed.sessions[index] : undefined;
+    if (!restored || typeof restored !== "object") return emptySession;
+    const criteria = Object.fromEntries(
+      REVIEW_CRITERIA.map(({ key }) => {
+        const value = restored.criteria?.[key];
+        return [key, value === "Pass" || value === "Changes Needed" ? value : "Pending"];
+      })
+    ) as Record<ReviewCriterion, CheckStatus>;
+    return {
+      criteria,
+      notes: typeof restored.notes === "string" ? restored.notes : "",
+      proposedCorrection: typeof restored.proposedCorrection === "string" ? restored.proposedCorrection : "",
+      reviewedAt: typeof restored.reviewedAt === "string" ? restored.reviewedAt : "",
+    };
+  });
+  return { reviewer, sessions };
 }
 
 function downloadFile(contents: string, filename: string, type: string) {
@@ -96,21 +121,20 @@ function criteriaProgress(review: LanguageReview) {
   };
 }
 
-export default function ReviewerWorkspace() {
-  const [activeLocale, setActiveLocale] = useState<ReviewLocale>("es-US");
+export default function ReviewerWorkspace({ authorizedLocale }: { authorizedLocale: ReviewLocale }) {
   const [activeDay, setActiveDay] = useState(0);
-  const [store, setStore] = useState<ReviewStore>(emptyStore);
+  const [review, setReview] = useState<LanguageReview>(emptyLanguageReview);
   const [loaded, setLoaded] = useState(false);
   const [audioProblem, setAudioProblem] = useState("");
   const [notice, setNotice] = useState("");
+  const storageKey = `zgirl-native-review-${REVIEW_CANDIDATE_ID}-${authorizedLocale}`;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
+        const saved = window.localStorage.getItem(storageKey);
         if (saved) {
-          const parsed = JSON.parse(saved) as Partial<ReviewStore>;
-          setStore((current) => ({ ...current, ...parsed }));
+          setReview(restoreLanguageReview(saved));
         }
       } catch {
         // A damaged browser draft must not prevent a fresh review.
@@ -118,25 +142,22 @@ export default function ReviewerWorkspace() {
       setLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!loaded) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+      window.localStorage.setItem(storageKey, JSON.stringify(review));
     } catch {
       // Review exports remain available even when browser storage is blocked.
     }
-  }, [loaded, store]);
+  }, [loaded, review, storageKey]);
 
-  const review = store[activeLocale];
-  const track = getJourneyTrack(activeLocale);
+  const track = getJourneyTrack(authorizedLocale);
+  const assignedLanguage = REVIEW_LANGUAGES.find(({ locale }) => locale === authorizedLocale)!;
   const day = track.days[activeDay];
   const session = review.sessions[activeDay];
-  const transcript = useMemo(
-    () => getDayTranscript(track, activeDay),
-    [activeDay, track]
-  );
+  const transcript = getDayTranscript(track, activeDay);
   const progress = criteriaProgress(review);
   const readyForSignature = progress.passed === progress.total;
   const reviewerComplete = Boolean(
@@ -152,24 +173,18 @@ export default function ReviewerWorkspace() {
   );
 
   function updateReviewer<K extends keyof Reviewer>(key: K, value: Reviewer[K]) {
-    setStore((current) => ({
+    setReview((current) => ({
       ...current,
-      [activeLocale]: {
-        ...current[activeLocale],
-        reviewer: { ...current[activeLocale].reviewer, [key]: value },
-      },
+      reviewer: { ...current.reviewer, [key]: value },
     }));
   }
 
   function updateSession(mutator: (current: ReviewSession) => ReviewSession) {
-    setStore((current) => ({
+    setReview((current) => ({
       ...current,
-      [activeLocale]: {
-        ...current[activeLocale],
-        sessions: current[activeLocale].sessions.map((item, index) =>
-          index === activeDay ? mutator(item) : item
-        ),
-      },
+      sessions: current.sessions.map((item, index) =>
+        index === activeDay ? mutator(item) : item
+      ),
     }));
   }
 
@@ -188,7 +203,7 @@ export default function ReviewerWorkspace() {
         REVIEW_CRITERIA.filter(({ key }) => item.criteria[key] === "Changes Needed").map(({ key, label }) => [
           REVIEW_CANDIDATE_ID,
           track.languageEnglish,
-          activeLocale,
+          authorizedLocale,
           index + 1,
           track.days[index].title,
           label,
@@ -201,7 +216,7 @@ export default function ReviewerWorkspace() {
     ];
     downloadFile(
       rows.map((row) => row.map(csvCell).join(",")).join("\n"),
-      `Z-Girl-${activeLocale}-${REVIEW_CANDIDATE_ID}-Issue-Log.csv`,
+      `Z-Girl-${authorizedLocale}-${REVIEW_CANDIDATE_ID}-Issue-Log.csv`,
       "text/csv;charset=utf-8"
     );
     setNotice("Issue log exported. Keep it with the candidate review record.");
@@ -218,7 +233,7 @@ export default function ReviewerWorkspace() {
       candidateId: REVIEW_CANDIDATE_ID,
       publicRelease: "Z-Girl Open v2.2 candidate review",
       language: track.languageEnglish,
-      locale: activeLocale,
+      locale: authorizedLocale,
       reviewer: review.reviewer,
       checksExpected: REVIEW_DAYS * REVIEW_CRITERIA.length,
       checksPassed: progress.passed,
@@ -238,7 +253,7 @@ export default function ReviewerWorkspace() {
     };
     downloadFile(
       `${JSON.stringify(record, null, 2)}\n`,
-      `Z-Girl-${activeLocale}-${REVIEW_CANDIDATE_ID}-Signed-Approval.json`,
+      `Z-Girl-${authorizedLocale}-${REVIEW_CANDIDATE_ID}-Signed-Approval.json`,
       "application/json;charset=utf-8"
     );
     setNotice("Signed approval exported. Product-owner validation is still required before promotion.");
@@ -246,7 +261,7 @@ export default function ReviewerWorkspace() {
 
   function clearLanguage() {
     if (!window.confirm(`Clear the ${track.languageEnglish} review draft from this browser?`)) return;
-    setStore((current) => ({ ...current, [activeLocale]: emptyLanguageReview() }));
+    setReview(emptyLanguageReview());
     setActiveDay(0);
     setNotice("Language draft cleared from this browser.");
   }
@@ -274,24 +289,11 @@ export default function ReviewerWorkspace() {
           <strong>Release boundary:</strong> Candidate audio may not be shared or published. All seven sessions and all 49 checks must pass. A signed export is a reviewer record, not permission to promote the language.
         </section>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {REVIEW_LANGUAGES.map((language) => {
-            const itemProgress = criteriaProgress(store[language.locale]);
-            const percent = Math.round((itemProgress.complete / itemProgress.total) * 100);
-            return (
-              <button
-                key={language.locale}
-                type="button"
-                onClick={() => { setActiveLocale(language.locale); setActiveDay(0); setAudioProblem(""); setNotice(""); }}
-                aria-pressed={activeLocale === language.locale}
-                className={`rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#49d8c2]/25 ${activeLocale === language.locale ? "border-[#49d8c2]/60 bg-[#49d8c2]/10" : "border-white/10 bg-white/[.025] hover:border-white/25"}`}
-              >
-                <span className="block font-black">{language.label}</span>
-                <span className="mt-1 block text-xs text-slate-400">{language.region} · {percent}% reviewed</span>
-              </button>
-            );
-          })}
-        </div>
+        <section className="mt-6 rounded-2xl border border-[#49d8c2]/30 bg-[#49d8c2]/[.08] p-4">
+          <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">Assigned language only</p>
+          <p className="mt-1 font-display text-xl font-black">{assignedLanguage.label} · {assignedLanguage.region}</p>
+          <p className="mt-1 text-sm text-slate-300">This session cannot open or request candidate audio from another locale.</p>
+        </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-5">
@@ -374,13 +376,13 @@ export default function ReviewerWorkspace() {
                 <div key={mix} className="rounded-2xl border border-white/10 bg-[#061521] p-4">
                   <h3 className="text-sm font-black">{mix === "voice" ? "Voice-only candidate" : "Calm-background candidate"}</h3>
                   <audio
-                    key={`${activeLocale}-${activeDay}-${mix}`}
+                    key={`${authorizedLocale}-${activeDay}-${mix}`}
                     controls
                     preload="none"
                     onCanPlay={() => setAudioProblem("")}
                     onError={() => setAudioProblem("Candidate audio is not yet connected or this track is unavailable.")}
                     className="mt-3 w-full"
-                    src={`/api/review/audio?locale=${activeLocale}&day=${activeDay + 1}&mix=${mix}`}
+                    src={`/api/review/audio?locale=${authorizedLocale}&day=${activeDay + 1}&mix=${mix}`}
                   >
                     Your browser does not support audio playback.
                   </audio>

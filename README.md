@@ -16,6 +16,27 @@ Z-Girl Open v2.2.0 is a character-powered, safety-first reflection experience fo
 - `/edu` — current Z-Girl EDU institutional overview and downloadable package summary
 - `/review` — protected native-language review workspace (requires server-side configuration)
 
+## Protected reviewer activation
+
+Each reviewer receives a unique language-scoped code. The server stores only a SHA-256 hash of each code, signs an eight-hour locale-specific session, and rejects audio requests for every locale except the one assigned to that session.
+
+1. Select one qualified native or professional-level reviewer for each locale: `es-US`, `fr-FR`, `pt-BR`, and `de-DE`.
+2. Generate the private credential handoff record outside the repository:
+
+```bash
+npm run review:credentials -- --out /absolute/private/path/private-review-credentials.json
+```
+
+3. Set the generated `ZGIRL_REVIEW_ACCESS_HASHES_JSON` and `ZGIRL_REVIEW_SESSION_SECRET` as sensitive Vercel environment variables. Never place plaintext access codes in Vercel, Git, the assignment tracker, or public messages.
+4. Set `ZGIRL_REVIEW_ASSET_BASE_URL` and `ZGIRL_REVIEW_ASSET_BEARER_TOKEN` for the protected candidate source.
+5. Verify all 56 expected audio objects before inviting reviewers:
+
+```bash
+npm run review:verify-assets
+```
+
+6. Share the portal link and the assigned plaintext code through separate messages. The reviewer can access only the assigned language.
+
 ## Local development
 
 1. Copy `.env.example` to `.env.local`.
