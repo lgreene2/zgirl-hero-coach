@@ -5,7 +5,7 @@ const method = ["Pause", "Name It", "Understand It", "Find the Strength", "Choos
 
 export default function OnePagerPage() {
   return <main className="min-h-screen bg-[#061521] text-white"><SiteHeader /><div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 lg:py-16">
-    <div className="flex flex-wrap items-center gap-2"><span className="eyebrow">Z-Girl Open v2.0</span><span className="eyebrow eyebrow-muted">Public overview</span></div>
+    <div className="flex flex-wrap items-center gap-2"><span className="eyebrow">Z-Girl Open v2.1</span><span className="eyebrow eyebrow-muted">Public overview</span></div>
     <h1 className="mt-6 font-display text-4xl font-black leading-tight tracking-tight sm:text-6xl">The Hero Within Reflection System</h1>
     <p className="mt-5 max-w-3xl text-xl leading-8 text-slate-300">A character-powered, safety-first reflection system that helps people turn difficult moments into achievable Hero Moves.</p>
 

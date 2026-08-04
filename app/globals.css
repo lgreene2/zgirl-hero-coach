@@ -77,6 +77,10 @@ body {
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { min-width: 320px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 3px solid rgba(118, 234, 214, .9);
+  outline-offset: 3px;
+}
 .font-display { font-family: "Trebuchet MS", "Avenir Next", Arial, sans-serif; }
 .hero-grid {
   background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
@@ -173,6 +177,12 @@ body { min-width: 320px; }
 
 /* Reduced motion: keep UI calm */
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
   .zgirl-hero-avatar--speaking {
     animation: none !important;
   }

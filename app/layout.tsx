@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 import VersionBadge from "@/components/VersionBadge";
 import AppFooter from "@/components/AppFooter";
+import PWAClient from "@/components/PWAClient";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zgirlinitiative.org"),
@@ -55,6 +56,8 @@ export default function RootLayout({
         </div>
         {/* Conditional conversion CTA (one-pager & safety only) */}
         <ConditionalPilotCTA />
+
+        <PWAClient />
 
         <Analytics />
       </body>

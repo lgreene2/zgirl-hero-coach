@@ -72,7 +72,7 @@ export default function PilotPage() {
             A low-risk, safety-first pilot for schools and youth organizations exploring a youth-friendly SEL reflection tool.
           </p>
           <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-100">
-            <strong>Archive notice:</strong> The downloadable pilot documents below are v1.1 materials retained for historical reference. Z-Girl Open v2.0 is now public; the updated Z-Girl EDU institutional package is in development and requires separate privacy and implementation review.
+            <strong>Archive notice:</strong> The downloadable pilot documents below are v1.1 materials retained for historical reference. Z-Girl Open v2.1 is now public; the updated Z-Girl EDU institutional package is in development and requires separate privacy and implementation review.
           </div>
         </header>
 
