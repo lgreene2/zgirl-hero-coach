@@ -57,7 +57,8 @@ export default function JourneyPage() {
           if (Array.isArray(saved.completed) && saved.completed.length === 7) setCompleted(saved.completed);
           if (typeof saved.active === "number") setActive(Math.max(0, Math.min(6, saved.active)));
         }
-        const savedLocale = window.localStorage.getItem(LANGUAGE_KEY);
+        const legacyLocale = window.localStorage.getItem(LANGUAGE_KEY);
+        const savedLocale = legacyLocale === "es-ES" ? "es-US" : legacyLocale;
         if (JOURNEY_TRACKS.some((candidate) => candidate.code === savedLocale)) {
           setLocale(savedLocale as JourneyLocale);
         }

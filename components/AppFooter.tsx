@@ -22,6 +22,7 @@ export default function AppFooter() {
   const isJourney = pathname.startsWith("/journey");
   const isCoach = pathname.startsWith("/coach");
   const isPilot = pathname.startsWith("/pilot");
+  const isEdu = pathname.startsWith("/edu");
   const isSafety = pathname === "/safety" || pathname.startsWith("/safety/");
   const isAdults = pathname === "/for-adults" || pathname.startsWith("/for-adults/");
   const isPrivacy = pathname.startsWith("/privacy");
@@ -44,6 +45,7 @@ export default function AppFooter() {
 
           <Link href="/privacy" className={navClass(isPrivacy)}>Privacy</Link>
           <Link href="/accessibility" className={navClass(isAccessibility)}>Accessibility</Link>
+          <Link href="/edu" className={navClass(isEdu)}>Z-Girl EDU</Link>
           <Link href="/pilot" className={navClass(isPilot)}>Pilot Program</Link>
         </div>
 

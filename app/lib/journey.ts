@@ -1,4 +1,4 @@
-export type JourneyLocale = "en-US" | "es-ES" | "fr-FR" | "pt-BR" | "de-DE";
+export type JourneyLocale = "en-US" | "es-US" | "fr-FR" | "pt-BR" | "de-DE";
 
 export type JourneyDay = {
   title: string;
@@ -118,7 +118,7 @@ export const JOURNEY_TRACKS: JourneyTrack[] = [
     ],
   },
   {
-    code: "es-ES",
+    code: "es-US",
     language: "Español",
     languageEnglish: "Spanish",
     transcriptFileLabel: "Espanol",
@@ -355,7 +355,7 @@ export function getDayTranscript(track: JourneyTrack, dayIndex: number): string 
   const day = track.days[dayIndex];
   const { ui } = track;
   return [
-    `${ui.day} ${dayIndex + 1} ${track.code === "de-DE" ? "von" : track.code === "fr-FR" ? "sur" : track.code === "pt-BR" ? "de" : track.code === "es-ES" ? "de" : "of"} 7. ${day.title}.`,
+    `${ui.day} ${dayIndex + 1} ${track.code === "de-DE" ? "von" : track.code === "fr-FR" ? "sur" : track.code === "pt-BR" ? "de" : track.code === "es-US" ? "de" : "of"} 7. ${day.title}.`,
     `${ui.focus}: ${day.focus}`,
     `${ui.reflectionPrompt}: ${day.reflection}`,
     `${ui.strengthPrompt}: ${day.strength}`,

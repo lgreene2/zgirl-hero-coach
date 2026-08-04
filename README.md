@@ -1,10 +1,10 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl Open v2.1.0 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups.
+Z-Girl Open v2.2.0 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups.
 
 ## Public experiences
 
-- `/` — v2.1 public gateway
+- `/` — v2.2 public gateway
 - `/reflect` — private, no-login six-step reflection
 - `/journey` — interactive 7-Day Hero Within Journey in English, Spanish, French, Brazilian Portuguese, and German, with matching device voices and exact downloadable transcripts
 - `/coach` — optional AI-guided reflection with youth, adult, and supporter editions
@@ -13,6 +13,8 @@ Z-Girl Open v2.1.0 is a character-powered, safety-first reflection experience fo
 - `/safety` — safety boundaries and crisis guidance
 - `/for-adults` — parent, caregiver, educator, and mentor guidance
 - `/pilot` — archived v1.1 pilot materials and v2 institutional pathway
+- `/edu` — current Z-Girl EDU institutional overview and downloadable package summary
+- `/review` — protected native-language review workspace (requires server-side configuration)
 
 ## Local development
 
@@ -32,7 +34,7 @@ npm run build
 
 ## Release
 
-Current package version: `2.1.0`.
+Current package version: `2.2.0`.
 
 The v2.0 release replaces seasonal framing, introduces the reusable Hero Within Method, clarifies AI data flow, prevents client-supplied safety prompt overrides, updates the PWA cache, and preserves older pilot files only as labeled archive materials.
 
@@ -42,3 +44,5 @@ The v2.0.1 Natural Voice Patch waits for the browser voice catalog before greeti
 The v2.0.2 Sound Cue Refinement removes completion, send, save, and launch chimes. An optional low-volume cue can play only when spoken output begins; it is separate from voice output and defaults to Off, including for users migrating from v2.0.1.
 
 The v2.1 Multilingual Journey & PWA release localizes all seven journey days into five public language tracks, uses an explicitly selected matching browser voice with no autoplay, generates visible and downloadable transcripts from the exact spoken source, registers the service worker, adds browser-specific installation guidance, supports visited-page offline fallback, and gives installed users control over updates. Translated studio audio remains outside the public build until native-language review is complete.
+
+The v2.2 EDU & Native-Language Review release adds the public Z-Girl EDU institutional pathway, a protected exact-candidate reviewer workspace, signed approval exports, reviewer correction exports, and network-only review routes. The studio-audio candidate remains internal, and an approval export does not authorize public promotion without a separate product-owner decision.

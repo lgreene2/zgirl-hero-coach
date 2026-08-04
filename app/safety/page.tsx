@@ -174,7 +174,7 @@ export default function SafetyPage() {
             Privacy &amp; Data Behavior
           </h2>
           <p className="text-sm text-slate-300">
-            Z-Girl Open v2.1 does not require logins or accounts. The structured
+            Z-Girl Open v2.2 does not require logins or accounts. The structured
             reflection tool keeps answers in the current page unless a user
             chooses to save a draft in that browser. Journey progress is saved
             in the browser so a user can return to it.

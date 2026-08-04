@@ -985,7 +985,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                 LIVE COACH
               </span>
-              <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">HERO WITHIN v2.1</span>
+              <span className="px-2 py-1 rounded-full border border-sky-400/70 bg-sky-400/10 text-sky-300">HERO WITHIN v2.2</span>
             </div>
 
             <p className="text-[11px] text-slate-400 mt-1">

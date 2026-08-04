@@ -18,7 +18,7 @@ export default function Hero() {
             LIVE COACH
           </span>
           <span className="px-2 py-1 rounded-full border border-sky-400/50 bg-sky-400/10 text-sky-300">
-            HERO WITHIN v2.1
+            HERO WITHIN v2.2
           </span>
         </div>
 
