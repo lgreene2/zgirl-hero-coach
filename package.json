@@ -1,6 +1,6 @@
 {
   "name": "zgirl-hero-coach",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "review:credentials": "node scripts/generate-review-credentials.mjs",
-    "review:verify-assets": "node scripts/verify-review-assets.mjs"
+    "review:activation-bundle": "node scripts/create-vercel-activation-bundle.mjs",
+    "review:verify-assets": "node scripts/verify-review-assets.mjs",
+    "review:verify-activation": "node scripts/verify-review-activation.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
