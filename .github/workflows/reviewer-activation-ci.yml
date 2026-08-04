@@ -23,7 +23,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -51,6 +51,7 @@ jobs:
           test -s /tmp/zgirl-activation-bundle/reviewer-credentials.csv
           test -s /tmp/zgirl-activation-bundle/apply-vercel-env.ps1
           test -s /tmp/zgirl-activation-bundle/verify-review-activation.mjs
+          test -s /tmp/zgirl-activation-bundle/.gitignore
           grep -q 'ZGIRL_REVIEW_ASSET_BASE_URL=https://example-gateway.vercel.app/api/review-assets' \
             /tmp/zgirl-activation-bundle/public-zgirl.env
           rm -rf /tmp/zgirl-activation-record.json /tmp/zgirl-activation-bundle
