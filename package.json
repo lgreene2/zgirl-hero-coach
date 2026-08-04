@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node --check scripts/create-vercel-activation-bundle.mjs && node --check scripts/verify-review-activation.mjs && node scripts/self-test-activation-tools.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "review:credentials": "node scripts/generate-review-credentials.mjs",
     "review:activation-bundle": "node scripts/create-vercel-activation-bundle.mjs",
+    "review:activation-self-test": "node scripts/self-test-activation-tools.mjs",
     "review:verify-assets": "node scripts/verify-review-assets.mjs",
     "review:verify-activation": "node scripts/verify-review-activation.mjs"
   },
