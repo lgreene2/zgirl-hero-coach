@@ -1,0 +1,56 @@
+name: Reviewer Activation CI
+
+on:
+  pull_request:
+    paths:
+      - "scripts/create-vercel-activation-bundle.mjs"
+      - "scripts/verify-review-activation.mjs"
+      - "package.json"
+      - "public/sw.js"
+      - ".github/workflows/reviewer-activation-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check activation scripts
+        run: |
+          node --check scripts/create-vercel-activation-bundle.mjs
+          node --check scripts/verify-review-activation.mjs
+
+      - name: Build application
+        run: npm run build
+
+      - name: Exercise confidential bundle generator
+        shell: bash
+        run: |
+          umask 077
+          npm run review:credentials -- --out /tmp/zgirl-activation-record.json
+          npm run review:activation-bundle -- \
+            --record /tmp/zgirl-activation-record.json \
+            --gateway-url https://example-gateway.vercel.app \
+            --out /tmp/zgirl-activation-bundle
+          test -s /tmp/zgirl-activation-bundle/private-gateway.env
+          test -s /tmp/zgirl-activation-bundle/public-zgirl.env
+          test -s /tmp/zgirl-activation-bundle/reviewer-credentials.csv
+          test -s /tmp/zgirl-activation-bundle/apply-vercel-env.ps1
+          test -s /tmp/zgirl-activation-bundle/verify-review-activation.mjs
+          grep -q 'ZGIRL_REVIEW_ASSET_BASE_URL=https://example-gateway.vercel.app/api/review-assets' \
+            /tmp/zgirl-activation-bundle/public-zgirl.env
+          rm -rf /tmp/zgirl-activation-record.json /tmp/zgirl-activation-bundle
