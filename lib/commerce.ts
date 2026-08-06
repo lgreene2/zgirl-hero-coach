@@ -136,7 +136,16 @@ export function getCommerceOffer(slug: string) {
   return commerceOffers.find((offer) => offer.slug === slug);
 }
 
+export function getSellerName() {
+  const sellerName = process.env.ZGIRL_SELLER_NAME?.trim();
+  return sellerName || null;
+}
+
 export function getCheckoutLink(slug: string) {
+  // Paid checkout remains disabled until an explicit commercial seller is named.
+  // This prevents a donation-oriented payment account from being used accidentally.
+  if (!getSellerName()) return null;
+
   const raw = process.env.ZGIRL_CHECKOUT_LINKS_JSON?.trim();
   if (!raw) return null;
 
