@@ -7,6 +7,8 @@ import { Analytics } from "@vercel/analytics/react";
 import VersionBadge from "@/components/VersionBadge";
 import AppFooter from "@/components/AppFooter";
 import PWAClient from "@/components/PWAClient";
+import HomeMarketLanes from "@/components/HomeMarketLanes";
+import LegacyResourceLinks from "@/components/LegacyResourceLinks";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zgirlinitiative.org"),
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
     template: "%s | Z-Girl",
   },
   description:
-    "A character-powered, safety-first reflection system that helps youth and adults turn difficult moments into achievable Hero Moves.",
+    "A character-powered, safety-first reflection system that helps youth, adults, families, faith communities, and athletes turn difficult moments into achievable Hero Moves.",
   applicationName: "Z-Girl: Hero Within",
   appleWebApp: {
     capable: true,
@@ -42,23 +44,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body
-        className="bg-[#061521] text-slate-50 antialiased min-h-screen flex flex-col"
-      >
+      <body className="bg-[#061521] text-slate-50 antialiased min-h-screen flex flex-col">
         <div className="flex-1">{children}</div>
 
-        {/* Footer renders everywhere except "/" */}
+        <HomeMarketLanes />
         <AppFooter />
 
-        {/* Version badge */}
         <div className="fixed bottom-3 left-3 z-50">
           <VersionBadge />
         </div>
-        {/* Conditional conversion CTA (one-pager & safety only) */}
+
         <ConditionalPilotCTA />
-
+        <LegacyResourceLinks />
         <PWAClient />
-
         <Analytics />
       </body>
     </html>
