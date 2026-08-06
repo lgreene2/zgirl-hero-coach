@@ -24,6 +24,8 @@ export default function AppFooter() {
   const isEdu = pathname.startsWith("/edu");
   const isFaith = pathname.startsWith("/faith");
   const isAthletes = pathname.startsWith("/athletes");
+  const isStore = pathname.startsWith("/store");
+  const isPartners = pathname.startsWith("/partners");
   const isSafety = pathname === "/safety" || pathname.startsWith("/safety/");
   const isAdults = pathname === "/for-adults" || pathname.startsWith("/for-adults/");
   const isPrivacy = pathname.startsWith("/privacy");
@@ -38,6 +40,8 @@ export default function AppFooter() {
           <Link href="/coach" className={navClass(isCoach)}>AI Coach</Link>
           <Link href="/faith" className={navClass(isFaith)}>Faith &amp; Values</Link>
           <Link href="/athletes" className={navClass(isAthletes)}>Athletes</Link>
+          <Link href="/store" className={navClass(isStore)}>Store</Link>
+          <Link href="/partners" className={navClass(isPartners)}>Founding Partners</Link>
           <Link href="/for-adults" className={navClass(isAdults)}>For Adults</Link>
           <Link href="/safety" className={navClass(isSafety)}>Safety &amp; Use Guidelines</Link>
           <Link href="/privacy" className={navClass(isPrivacy)}>Privacy</Link>
