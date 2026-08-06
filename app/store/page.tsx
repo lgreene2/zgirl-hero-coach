@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import CommerceLeadForm from "@/components/CommerceLeadForm";
+import CommerceActivationStatus from "@/components/CommerceActivationStatus";
 import { commerceOffers } from "@/lib/commerce";
 
 export const metadata: Metadata = {
@@ -37,16 +38,18 @@ export default async function StorePage({
               Start with one usable resource. Expand only when the audience is ready.
             </h1>
             <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300">
-              Choose an individual pack, a facilitator toolkit, or an institutional implementation. Digital products are checkout-ready; organization-wide offers begin with a short inquiry.
+              Choose an individual pack, a facilitator toolkit, or an institutional implementation. Digital products may be purchased when checkout is active or reserved through the inquiry form; organization-wide offers begin with a short scope review.
             </p>
           </div>
         </div>
       </section>
 
+      <CommerceActivationStatus />
+
       {checkoutPending && (
         <section className="border-b border-amber-300/20 bg-amber-300/10">
           <div className="mx-auto max-w-7xl px-5 py-4 text-sm leading-6 text-amber-50 sm:px-8 lg:px-12">
-            <strong>Checkout activation is pending for this offer.</strong> Use the interest form below to reserve the founding price or request an invoice. No payment was collected.
+            <strong>Checkout is not active for this offer.</strong> Use the interest form below to reserve the founding price or request an invoice. No payment was collected.
           </div>
         </section>
       )}
@@ -56,7 +59,7 @@ export default async function StorePage({
           <p className="section-kicker">Digital products</p>
           <h2 className="section-title">Immediate-use packs and toolkits</h2>
           <p className="section-copy">
-            Each digital product includes online access to a print-ready resource. Checkout links can be activated independently without another platform release.
+            Each digital product includes online access to a print-ready resource. Product purchases are commercial transactions—not charitable contributions—and no tax-deductible donation receipt is offered for these purchases.
           </p>
         </div>
 
