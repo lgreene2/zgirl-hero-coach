@@ -3,7 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Institutional Agreement, Renewal & Expansion | Z-Girl",
+  title: "Institutional Agreement, Renewal & Expansion",
   description: "A governed Z-Girl workflow for institutional renewal evidence, approvals, agreement execution, expansion decisions, and contract-to-delivery handoff.",
 };
 
