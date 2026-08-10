@@ -100,6 +100,7 @@ export default function InstitutionsPage() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a href="#institutional-interest" className="rounded-full bg-[#49d8c2] px-6 py-3.5 text-center text-sm font-black text-[#04151c] transition hover:bg-[#76ead6]">Request institutional fit review →</a>
               <Link href="/institutions/pilot-brief" className="button-secondary text-center">View pilot brief</Link>
+              <Link href="/institutions/implementation-kit" className="button-secondary text-center">Implementation kit</Link>
               <Link href="/partners" className="button-secondary text-center">View founding-partner paths</Link>
             </div>
           </div>
@@ -138,6 +139,13 @@ export default function InstitutionsPage() {
                 <p className="mt-3 text-sm leading-6 text-slate-400">{copy}</p>
               </article>
             ))}
+          </div>
+          <div className="mt-8 rounded-3xl border border-[#76ead6]/20 bg-[#49d8c2]/[.06] p-6 sm:flex sm:items-center sm:justify-between sm:gap-8">
+            <div>
+              <h3 className="font-display text-2xl font-black">The implementation kit operationalizes every stage.</h3>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-300">Readiness, scheduling, facilitator orientation, family communication, aggregate learning, closeout, and renewal decisions use one reusable institutional system.</p>
+            </div>
+            <Link href="/institutions/implementation-kit" className="button-secondary mt-5 inline-block shrink-0 text-center sm:mt-0">Explore the kit →</Link>
           </div>
         </div>
       </section>
