@@ -5,8 +5,10 @@ import { credentialLevelLabel, findPublicCredential, normalizeCredentialId } fro
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const XML_ENTITIES: Record<string, string> = { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" };
+
 function escapeXml(value: string) {
-  return value.replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[char] || char);
+  return value.replace(/[<>&"']/g, (char) => XML_ENTITIES[char] || char);
 }
 
 export async function GET(request: Request) {
