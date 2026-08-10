@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import CredentialVerifier from "@/components/credentials/CredentialVerifier";
 
@@ -27,7 +28,7 @@ export default function CredentialVerificationPage() {
       </section>
 
       <section className="mx-auto max-w-5xl px-5 py-16 sm:px-8 lg:px-12">
-        <CredentialVerifier />
+        <Suspense fallback={<div className="rounded-[2rem] border border-white/10 bg-white/[.04] p-8 text-sm text-slate-400">Loading credential verifier…</div>}><CredentialVerifier /></Suspense>
       </section>
 
       <section className="border-t border-white/10 bg-[#04111b]">
