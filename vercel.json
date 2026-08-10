@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "zgirl-v2.9-credential-issuance-renewal": false
+    }
+  }
+}
