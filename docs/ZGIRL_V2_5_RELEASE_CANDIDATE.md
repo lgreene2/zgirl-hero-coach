@@ -51,4 +51,6 @@ Those remain governed by the separate v2.4 commerce activation gate until Greene
 
 The first v2.5 Preview surfaced and led to correction of an unsupported lead-type value. The corrected branch no longer contains that type error.
 
-On 2026-08-10, Vercel resumed accepting Preview builds after the earlier account build-rate limit. Multiple corrected v2.5 branch commits subsequently built successfully with `READY` status. This release-candidate commit intentionally retriggers Vercel so the complete current PR head can receive one clean Preview verification before merge.
+On 2026-08-10, the complete v2.5 release-candidate head (`4cb61d3`) completed a clean Vercel Preview build with `READY` status. The build passed the reviewer-activation self-test, Next.js compilation, TypeScript validation, page-data collection, static generation for all 46 pages, and output deployment. The generated route manifest included both `/institutions` and `/institutions/pilot-brief`, and the institutional hub returned HTTP 200 in Preview verification.
+
+PR #11 was then squash-merged into `main`. The first automatic production build attempt after merge was rejected by the Vercel account build-rate limit, not by an application build error. This commit records the successful Preview verification and intentionally retriggers the production deployment from `main`.
