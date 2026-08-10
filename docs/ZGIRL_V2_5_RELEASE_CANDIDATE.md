@@ -51,4 +51,4 @@ Those remain governed by the separate v2.4 commerce activation gate until Greene
 
 The first v2.5 Preview surfaced and led to correction of an unsupported lead-type value. The corrected branch no longer contains that type error.
 
-The current GitHub Vercel check is blocked by the Vercel account build-rate limit rather than a reported application compile error. Keep PR #11 unmerged until a fresh Preview build can run or another trusted build path verifies the release candidate.
+On 2026-08-10, Vercel resumed accepting Preview builds after the earlier account build-rate limit. Multiple corrected v2.5 branch commits subsequently built successfully with `READY` status. This release-candidate commit intentionally retriggers Vercel so the complete current PR head can receive one clean Preview verification before merge.
