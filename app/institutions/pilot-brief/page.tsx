@@ -59,7 +59,6 @@ export default function PilotBriefPage() {
 
           <div className="mt-8 flex flex-wrap gap-3 print:hidden">
             <a href="#request" className="button-primary">Request an institutional fit review</a>
-            <button type="button" onClick={undefined} className="hidden" aria-hidden="true" />
             <Link href="/institutions" className="button-secondary">Institutional licensing overview</Link>
           </div>
         </div>
