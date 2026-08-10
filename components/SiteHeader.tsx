@@ -15,7 +15,7 @@ export default function SiteHeader() {
           <Link href="/faith" className="transition hover:text-white">Faith &amp; Values</Link>
           <Link href="/athletes" className="transition hover:text-white">Athletes</Link>
           <Link href="/store" className="transition hover:text-white">Store</Link>
-          <Link href="/partners" className="transition hover:text-white">Partners</Link>
+          <Link href="/institutions" className="transition hover:text-white">Institutions</Link>
           <Link href="/edu" className="hidden transition hover:text-white xl:inline">Z-Girl EDU</Link>
           <Link href="/safety" className="hidden transition hover:text-white xl:inline">Trust &amp; Safety</Link>
         </nav>
