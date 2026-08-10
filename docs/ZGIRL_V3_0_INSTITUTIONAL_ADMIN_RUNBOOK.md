@@ -36,14 +36,14 @@ Allowed Pathway values:
 Allowed Seat Role values:
 `facilitator`, `lead_facilitator`, `institutional_trainer`
 
-Site names that do not yet exist may be created automatically if the license site limit permits.
+Bulk imports enforce the same seat, distinct-site, and institutional-trainer limits as manual allocation. Site names that do not yet exist may be created automatically only when the license site limit permits.
 
 The import batch stores counts only; it does not preserve the uploaded raw CSV.
 
 ## License renewal
 The daily database automation marks current licenses as renewal-due when they enter the 90-day window. After expiration, an Active or Conditional license becomes Lapsed and active/reserved seats are changed to Blocked.
 
-Renewal restores the license to Active, sets the new expiration and seat limit, and restores blocked seats to Active.
+Renewal requires an executed renewal agreement reference. Recording renewal restores the license to Active, records the new expiration and seat limit, marks the agreement Executed, and restores blocked seats to Active. The new seat limit cannot be lower than current allocated-seat usage.
 
 ## Important boundary
 License lapse is an institutional-authority event, not an automatic individual-credential revocation event. Individual credential status must be governed through Credential Operations.
