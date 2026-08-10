@@ -64,6 +64,15 @@ export async function credentialRpc<T>(functionName: string, payload: Record<str
 }
 
 export function credentialErrorResponse(error: unknown) {
-  const storeError = error instanceof CredentialStoreError ? error : new CredentialStoreError("credential_store_request_failed", 500);
-  return Response.json({ ok: false, error: storeError.code }, { status: storeError.status });
+  if (error instanceof CredentialStoreError) {
+    return Response.json({ ok: false, error: error.code }, { status: error.status });
+  }
+
+  if (typeof error === "object" && error !== null && "code" in error && "status" in error) {
+    const code = typeof error.code === "string" ? error.code : "credential_store_request_failed";
+    const status = typeof error.status === "number" ? error.status : 500;
+    return Response.json({ ok: false, error: code }, { status });
+  }
+
+  return Response.json({ ok: false, error: "credential_store_request_failed" }, { status: 500 });
 }
