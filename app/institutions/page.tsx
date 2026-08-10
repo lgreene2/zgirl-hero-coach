@@ -178,7 +178,7 @@ export default function InstitutionsPage() {
 
       <section id="institutional-interest" className="mx-auto max-w-5xl px-5 py-20 sm:px-8 lg:px-12">
         <CommerceLeadForm
-          leadType="institutional-fit"
+          leadType="founding-partner"
           heading="Request an institutional fit review."
           intro="Share the organization, audience, setting, approximate group size, timing, and desired pathway. Do not include private information about youth, athletes, students, counseling, diagnoses, or safeguarding incidents."
           submitLabel="Send institutional inquiry"
