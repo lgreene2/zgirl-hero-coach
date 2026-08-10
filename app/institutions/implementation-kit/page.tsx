@@ -5,7 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 export const metadata: Metadata = {
   title: "Institutional Implementation Kit",
   description:
-    "Explore the Z-Girl institutional onboarding and implementation system for readiness, facilitation, family communication, aggregate learning, closeout, and renewal.",
+    "Explore the Z-Girl institutional onboarding and implementation system for readiness, facilitation, family communication, aggregate learning, closeout, renewal, and facilitator authorization.",
 };
 
 const stages = [
@@ -48,7 +48,7 @@ const stages = [
   {
     number: "7",
     title: "Renewal & expansion",
-    copy: "Choose a deliberate next step: stop, revise, repeat, renew, license, expand, or begin Train-the-Trainer readiness.",
+    copy: "Choose a deliberate next step: stop, revise, repeat, renew, license, expand, or enter the governed facilitator-authorization pathway.",
     asset: "Renewal & Expansion Decision Package",
   },
 ];
@@ -60,14 +60,34 @@ const guardrails = [
   "Z-Girl is not therapy, diagnosis, medical care, crisis intervention, clergy, spiritual direction, or sports medicine.",
   "Only approved aggregate implementation and experience measures are used for routine pilot learning.",
   "Institutions remain responsible for their own safeguarding, emergency, consent/permission, records, accessibility, technology, and legal obligations.",
-  "Commercial product and license payments remain separate from charitable donations.",
+  "Commercial product, license, training, and credential payments remain separate from charitable donations.",
 ];
 
 const productLayers = [
-  ["Institutional Pilot", "The complete implementation kit supports a controlled first cycle from readiness through closeout."],
-  ["Annual License", "The same operating system becomes the repeatable onboarding and quality framework for continuing use."],
-  ["Multi-site Expansion", "Readiness, calendar, orientation, scorecard, and closeout tools can be reused across approved sites, cohorts, teams, or programs."],
-  ["Train-the-Trainer", "Successful implementation evidence becomes a prerequisite for a future facilitator authorization and quality-assurance layer."],
+  {
+    title: "Institutional Pilot",
+    copy: "The complete implementation kit supports a controlled first cycle from readiness through closeout.",
+    href: "/institutions/pilot-brief",
+    action: "Review pilot",
+  },
+  {
+    title: "Annual License",
+    copy: "The same operating system becomes the repeatable onboarding and quality framework for continuing use.",
+    href: "/institutions",
+    action: "Review licensing",
+  },
+  {
+    title: "Multi-site Expansion",
+    copy: "Readiness, calendar, orientation, scorecard, and closeout tools can be reused across approved sites, cohorts, teams, or programs.",
+    href: "/partners#interest",
+    action: "Request fit review",
+  },
+  {
+    title: "Facilitator Authorization & Train-the-Trainer",
+    copy: "A controlled pathway prepares, assesses, authorizes, renews, and—where licensed—develops internal institutional trainers without lowering privacy or quality standards.",
+    href: "/institutions/train-the-trainer",
+    action: "Explore authorization",
+  },
 ];
 
 export default function InstitutionalImplementationKitPage() {
@@ -83,7 +103,7 @@ export default function InstitutionalImplementationKitPage() {
             <div className="flex flex-wrap gap-2">
               <span className="eyebrow">Institutional onboarding & implementation</span>
               <span className="rounded-full border border-[#76ead6]/25 bg-[#49d8c2]/10 px-3 py-1 text-xs font-black uppercase tracking-[.15em] text-[#b8fff3]">
-                Pilot → License → Scale
+                Pilot → License → Authorize → Scale
               </span>
             </div>
             <h1 className="mt-5 font-display text-5xl font-black leading-[.98] tracking-[-.045em] sm:text-6xl lg:text-7xl">
@@ -94,6 +114,7 @@ export default function InstitutionalImplementationKitPage() {
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/institutions/pilot-brief" className="button-primary text-center">View pilot brief</Link>
+              <Link href="/institutions/train-the-trainer" className="button-secondary text-center">Facilitator authorization</Link>
               <Link href="/institutions" className="button-secondary text-center">Institutional licensing overview</Link>
               <Link href="/partners#interest" className="button-secondary text-center">Request a fit review</Link>
             </div>
@@ -106,7 +127,7 @@ export default function InstitutionalImplementationKitPage() {
           <p className="section-kicker">Seven controlled stages</p>
           <h2 className="section-title">A reusable institutional operating system.</h2>
           <p className="section-copy">
-            Each stage produces a decision-useful asset. Together they reduce one-off consulting, protect implementation quality, and create a consistent pathway from first pilot to recurring license.
+            Each stage produces a decision-useful asset. Together they reduce one-off consulting, protect implementation quality, and create a consistent pathway from first pilot to recurring license and controlled facilitator scale.
           </p>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -143,13 +164,14 @@ export default function InstitutionalImplementationKitPage() {
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
         <div className="max-w-3xl">
           <p className="section-kicker">Build once. Reuse by tier.</p>
-          <h2 className="section-title">The same core kit supports the product ladder.</h2>
+          <h2 className="section-title">The same core kit supports the full institutional ladder.</h2>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {productLayers.map(([title, copy]) => (
-            <article key={title} className="rounded-3xl border border-white/10 bg-white/[.035] p-6">
-              <h3 className="font-display text-2xl font-black">{title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-400">{copy}</p>
+          {productLayers.map((layer) => (
+            <article key={layer.title} className="flex flex-col rounded-3xl border border-white/10 bg-white/[.035] p-6">
+              <h3 className="font-display text-2xl font-black">{layer.title}</h3>
+              <p className="mt-3 flex-1 text-sm leading-7 text-slate-400">{layer.copy}</p>
+              <Link href={layer.href} className="mt-5 text-sm font-black text-[#76ead6] transition hover:text-white">{layer.action} →</Link>
             </article>
           ))}
         </div>
@@ -160,10 +182,11 @@ export default function InstitutionalImplementationKitPage() {
           <p className="section-kicker">Institutional next step</p>
           <h2 className="mt-2 font-display text-4xl font-black">Start with fit. Earn the right to scale.</h2>
           <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-slate-300">
-            The implementation kit is designed to accompany approved institutional pilots and licenses. Begin with a fit review to confirm audience, implementation setting, group size, facilitator structure, accessibility needs, safeguarding process, timeline, and the right Z-Girl pathway.
+            The implementation kit and facilitator-authorization pathway accompany approved institutional pilots and licenses. Begin with a fit review to confirm audience, setting, group size, facilitator structure, accessibility needs, safeguarding process, timeline, and the right Z-Girl pathway.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link href="/partners#interest" className="button-primary">Request institutional fit review</Link>
+            <Link href="/institutions/train-the-trainer" className="button-secondary">Explore Train-the-Trainer</Link>
             <Link href="/institutions/pilot-brief" className="button-secondary">Review the pilot brief</Link>
           </div>
         </div>
