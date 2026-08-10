@@ -1,0 +1,69 @@
+import "server-only";
+
+const DEFAULT_SUPABASE_URL = "https://pysoqiubmmhsbfawrrrc.supabase.co";
+const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_l7Xnjeb-yym4OaVmGbcnYQ_g8i9UIsX";
+
+const SUPABASE_URL = (process.env.ZGIRL_CREDENTIAL_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, "");
+const SUPABASE_KEY = process.env.ZGIRL_CREDENTIAL_SUPABASE_PUBLISHABLE_KEY || DEFAULT_PUBLISHABLE_KEY;
+
+export class CredentialStoreError extends Error {
+  code: string;
+  status: number;
+
+  constructor(code: string, status = 400) {
+    super(code);
+    this.name = "CredentialStoreError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function normalizeRpcError(raw: string, status: number) {
+  const known = [
+    "invalid_access_code",
+    "access_code_too_short",
+    "unauthorized",
+    "candidate_not_found",
+    "credential_not_found",
+    "invalid_expiration",
+    "invalid_credential_level",
+  ];
+
+  const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
+  if (missingRequirement) return new CredentialStoreError(`missing_required_pass:${missingRequirement[1]}`, 409);
+
+  const matched = known.find((code) => raw.includes(code));
+  if (matched) {
+    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : 400;
+    return new CredentialStoreError(matched, mappedStatus);
+  }
+
+  if (status === 401 || status === 403) return new CredentialStoreError("unauthorized", 401);
+  return new CredentialStoreError("credential_store_request_failed", status >= 500 ? 502 : 400);
+}
+
+export async function credentialRpc<T>(functionName: string, payload: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const raw = await response.text();
+    throw normalizeRpcError(raw, response.status);
+  }
+
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+export function credentialErrorResponse(error: unknown) {
+  const storeError = error instanceof CredentialStoreError ? error : new CredentialStoreError("credential_store_request_failed", 500);
+  return Response.json({ ok: false, error: storeError.code }, { status: storeError.status });
+}
