@@ -86,9 +86,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "renew_license") {
-      const licenseId = typeof body.licenseId === "string" ? body.licenseId : ""; const expiresAt = typeof body.expiresAt === "string" ? body.expiresAt : ""; const seatLimit = Number(body.seatLimit);
-      if (!UUID.test(licenseId) || !DATE.test(expiresAt) || !Number.isInteger(seatLimit) || seatLimit < 1) return bad("invalid_license_renewal");
-      await credentialRpc<boolean>("zgirl_institution_renew_license", { p_session_token: token, p_license_id: licenseId, p_new_expires_at: expiresAt, p_new_seat_limit: seatLimit }); return Response.json({ ok: true });
+      const licenseId = typeof body.licenseId === "string" ? body.licenseId : "";
+      const expiresAt = typeof body.expiresAt === "string" ? body.expiresAt : "";
+      const seatLimit = Number(body.seatLimit);
+      const agreementReference = typeof body.agreementReference === "string" ? body.agreementReference.trim() : "";
+      if (!UUID.test(licenseId) || !DATE.test(expiresAt) || !Number.isInteger(seatLimit) || seatLimit < 1 || agreementReference.length < 1 || agreementReference.length > 180) return bad("invalid_license_renewal");
+      await credentialRpc<boolean>("zgirl_institution_renew_license_v3", { p_session_token: token, p_license_id: licenseId, p_new_expires_at: expiresAt, p_new_seat_limit: seatLimit, p_agreement_reference: agreementReference });
+      return Response.json({ ok: true });
     }
 
     if (action === "import_roster") {
