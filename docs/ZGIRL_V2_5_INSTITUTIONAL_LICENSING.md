@@ -1,6 +1,6 @@
 # Z-Girl v2.5 — Institutional Pilot & Licensing Layer
 
-Status: build candidate
+Status: release candidate pending deployment verification
 
 ## Purpose
 
@@ -10,7 +10,9 @@ Create one governed pathway that connects the existing Z-Girl EDU, Faith & Value
 
 This layer is designed to support institutional growth without giving organizations access to private participant reflections.
 
-## Public entry point
+## Public entry points
+
+### Institutional hub
 
 `/institutions`
 
@@ -21,7 +23,21 @@ The page serves as the institutional front door for:
 - athlete teams and leagues
 - approved specialized design partners
 
-The primary site navigation now routes institutional buyers and partners to this hub.
+The primary site navigation routes institutional buyers and partners to this hub.
+
+### Institutional pilot brief
+
+`/institutions/pilot-brief`
+
+This is a concise, print-friendly sales brief designed to work as:
+
+- a public shareable link
+- a prospect-facing one-pager
+- a meeting leave-behind
+- the source for a future PDF export
+- an institutional pilot conversation starter
+
+The institutional hub links directly to the pilot brief.
 
 ## Product ladder
 
@@ -75,6 +91,52 @@ Current model: opt-in faith/values implementation with governed profiles, congre
 
 Current model: four-week mindset and character pilot with coach orientation, athlete resources, family communication, accessibility guidance, and findings.
 
+## Institutional asset stack
+
+### Prospect / sales asset
+
+`docs/ZGIRL_INSTITUTIONAL_PILOT_SELL_SHEET.md`
+
+Purpose:
+
+- prospect education
+- founding-partner outreach
+- sales follow-up
+- institutional meeting handout
+- future PDF / branded one-pager source
+
+### Pilot contracting asset
+
+`docs/ZGIRL_INSTITUTIONAL_PILOT_AGREEMENT_SOW_TEMPLATE.md`
+
+Purpose:
+
+- define parties and approved pilot profile
+- define implementation scope and milestones
+- preserve private-reflection boundaries
+- define facilitator / Customer responsibilities
+- define IP and pilot license limits
+- define commercial terms
+- identify legal / procurement clauses requiring counsel review
+
+This is a business template for counsel and procurement review before execution.
+
+### Annual-license negotiation asset
+
+`docs/ZGIRL_ANNUAL_LICENSE_TERM_SHEET_TEMPLATE.md`
+
+Purpose:
+
+- move a successful pilot into annual commercial terms
+- define approved audience, locations, facilitator seats, and institutional profile
+- define licensed and excluded rights
+- preserve private-reflection boundaries
+- structure support levels and optional add-ons
+- create the basis for future standardized pricing bands
+- separate standard licensing from future train-the-trainer rights
+
+This is a commercial planning template for counsel review before final agreement execution.
+
 ## Governance requirements
 
 These remain non-negotiable across institutional versions:
@@ -87,13 +149,26 @@ These remain non-negotiable across institutional versions:
 6. Specialized content profiles are versioned and governed; they do not silently modify the core system.
 7. Commercial purchases and licenses remain distinct from charitable donations.
 
+## Privacy and legal-review posture
+
+The standard institutional model intentionally minimizes the need for Customer transfer of:
+
+- education records
+- medical or mental-health records
+- counseling records
+- diagnoses
+- safeguarding case files
+- private participant reflection text
+
+School, child, youth, and online data obligations must still be reviewed for the specific implementation. The agreement and term-sheet templates therefore avoid claiming universal legal compliance and instead require an implementation-specific privacy / procurement review where applicable.
+
 ## Commercial boundary
 
 Paid checkout remains intentionally gated until the approved commercial seller is fully active.
 
 The planned merchant of record is **Greene Leadership System LLC**. The Georgia formation filing was submitted on 2026-08-06 and was still awaiting acceptance at the last confirmed checkpoint.
 
-Do not activate commercial checkout merely because this institutional layer is deployed. Continue using inquiry / reservation workflows until seller activation requirements are complete.
+Do not activate commercial checkout merely because this institutional layer is deployed. Continue using inquiry / reservation / proposal / invoicing workflows until seller activation requirements are complete.
 
 ## Institutional pricing
 
@@ -146,15 +221,15 @@ Recommended aggregate measures:
 
 Do not include private reflection text in the institutional scorecard.
 
-## Next activation sequence
+## Current activation sequence
 
-1. Deploy and review `/institutions` in Preview.
-2. Confirm responsive layout and navigation.
-3. Test the institutional inquiry flow and fallback email behavior.
-4. Add the school / youth-program founding pathway to `/partners` if approved for public recruiting.
-5. Create a one-page institutional pilot sell sheet from this architecture.
-6. Create a reusable pilot agreement / statement-of-work template.
-7. Create a renewal and annual-license term sheet.
+1. Maintain PR #11 as the v2.5 release candidate.
+2. Wait for the Vercel build-rate limit to permit a fresh Preview build, or verify through another trusted build path.
+3. Confirm `/institutions` and `/institutions/pilot-brief` render correctly and responsively.
+4. Test the institutional inquiry flow and fallback email behavior.
+5. Print-test the public pilot brief.
+6. Review the Pilot Agreement / SOW template with counsel before first execution.
+7. Review the Annual License Term Sheet before first institutional renewal / conversion.
 8. When Greene Leadership System LLC is accepted and payment infrastructure is ready, activate the commercial seller configuration separately under the v2.4 revenue gate.
 
 ## Release intent
