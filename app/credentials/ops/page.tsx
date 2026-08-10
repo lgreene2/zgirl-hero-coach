@@ -17,7 +17,7 @@ export default function CredentialOperationsPage() {
         <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><span className="eyebrow">Restricted operations</span><h1 className="mt-3 font-display text-4xl font-black sm:text-5xl">Credential Operations Portal</h1><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">Manage adult facilitator/trainer candidates, evidence status, credential issuance, public verification, renewal, suspension/revocation, and audit history. Participant reflections are outside this system.</p></div>
-            <Link href="/credentials/verify" className="button-secondary shrink-0 text-center">Public verifier</Link>
+            <div className="flex flex-wrap gap-2"><Link href="/credentials/ops/automation" className="button-primary shrink-0 text-center">Renewal automation</Link><Link href="/credentials/verify" className="button-secondary shrink-0 text-center">Public verifier</Link></div>
           </div>
         </div>
       </section>
