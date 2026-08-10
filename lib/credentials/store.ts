@@ -26,8 +26,8 @@ function normalizeRpcError(raw: string, status: number) {
     "invalid_license_limits", "invalid_profiles", "invalid_levels", "invalid_agreement_status", "license_not_allocatable",
     "invalid_license_site", "invalid_seat_role", "trainer_limit_reached", "seat_limit_reached", "site_limit_reached",
     "allocation_not_found", "credential_candidate_mismatch", "credential_level_mismatch", "credential_level_not_allowed",
-    "invalid_license_renewal", "invalid_roster", "agreement_required_for_active_license", "seat_limit_below_usage",
-    "site_limit_below_usage", "trainer_limit_below_usage",
+    "invalid_license_renewal", "invalid_roster", "agreement_required_for_active_license", "renewal_agreement_required",
+    "seat_limit_below_usage", "site_limit_below_usage", "trainer_limit_below_usage",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -35,7 +35,7 @@ function normalizeRpcError(raw: string, status: number) {
 
   const matched = known.find((code) => raw.includes(code));
   if (matched) {
-    const conflict = matched.endsWith("_reached") || matched.endsWith("_below_usage") || matched === "agreement_required_for_active_license";
+    const conflict = matched.endsWith("_reached") || matched.endsWith("_below_usage") || matched === "agreement_required_for_active_license" || matched === "renewal_agreement_required";
     const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
   }
