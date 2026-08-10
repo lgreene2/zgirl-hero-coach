@@ -7,10 +7,16 @@ import { getCommerceOffer } from "@/lib/commerce";
 export const metadata: Metadata = {
   title: "Founding Partners",
   description:
-    "Become a founding congregation, team, school, league, or youth-organization partner for the Z-Girl Hero Within reflection system.",
+    "Become a founding school, congregation, team, league, or youth-organization partner for the Z-Girl Hero Within reflection system.",
 };
 
 const partnerTypes = [
+  {
+    title: "Founding School / Youth Program",
+    copy: "Run a supported 30-day Z-Girl EDU pilot with staff orientation, family communication, accessibility planning, aggregate outcome measures, and a structured closeout decision.",
+    price: "Founding pilot terms scoped by setting and group size",
+    offer: "",
+  },
   {
     title: "Founding Congregation",
     copy: "Implement four guided sessions, orient up to five facilitators, and help shape the faith-profile and family-resource pathway.",
@@ -69,6 +75,7 @@ export default async function PartnersPage({
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <a href="#interest" className="rounded-full bg-amber-300 px-6 py-3.5 text-center text-sm font-black text-[#201400] transition hover:bg-amber-200">Request founding terms →</a>
+              <Link href="/institutions" className="button-secondary text-center">Institutional licensing overview</Link>
               <Link href="/store" className="button-secondary text-center">View all offers</Link>
             </div>
           </div>
@@ -88,7 +95,7 @@ export default async function PartnersPage({
           <p className="section-kicker">Choose a partner path</p>
           <h2 className="section-title">One clear implementation. One measurable learning cycle.</h2>
         </div>
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {partnerTypes.map((partner) => (
             <article key={partner.title} className="flex min-h-[25rem] flex-col rounded-[2rem] border border-white/10 bg-white/[.035] p-7">
               <span className="text-xs font-black uppercase tracking-[.18em] text-amber-200">Founding pathway</span>
@@ -133,7 +140,7 @@ export default async function PartnersPage({
           <article className="rounded-3xl border border-white/10 bg-white/[.035] p-6">
             <span className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">2 · Implement</span>
             <h2 className="mt-3 text-2xl font-black">Run the focused cycle</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-400">Orient facilitators or coaches, communicate with families, and complete the agreed four-session or four-week sequence.</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">Orient facilitators or coaches, communicate with families, and complete the agreed four-session, four-week, or 30-day sequence.</p>
           </article>
           <article className="rounded-3xl border border-white/10 bg-white/[.035] p-6">
             <span className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">3 · Decide</span>
@@ -148,7 +155,7 @@ export default async function PartnersPage({
           leadType="founding-partner"
           defaultOffer={params.offer || ""}
           heading="Request founding-partner terms."
-          intro="Share the organization, audience, timeline, and desired pathway. Do not include private information about youth, athletes, or safeguarding incidents."
+          intro="Share the organization, audience, timeline, and desired pathway. Do not include private information about youth, athletes, students, counseling, diagnoses, or safeguarding incidents."
           submitLabel="Send founding-partner inquiry"
         />
       </section>
