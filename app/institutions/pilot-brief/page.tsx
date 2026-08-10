@@ -59,6 +59,7 @@ export default function PilotBriefPage() {
 
           <div className="mt-8 flex flex-wrap gap-3 print:hidden">
             <a href="#request" className="button-primary">Request an institutional fit review</a>
+            <Link href="/institutions/implementation-kit" className="button-secondary">Explore implementation kit</Link>
             <Link href="/institutions" className="button-secondary">Institutional licensing overview</Link>
           </div>
         </div>
@@ -126,6 +127,17 @@ export default function PilotBriefPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-5xl px-5 pb-12 sm:px-8 lg:px-12 print:hidden">
+        <div className="rounded-3xl border border-[#76ead6]/20 bg-[#49d8c2]/[.06] p-6 sm:flex sm:items-center sm:justify-between sm:gap-8">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">Implementation included</p>
+            <h2 className="mt-2 font-display text-2xl font-black">The pilot is backed by a complete onboarding and implementation system.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-300">Readiness assessment, implementation calendar, facilitator orientation, family notice, aggregate scorecard, closeout report, and renewal/expansion decision tools form one reusable institutional kit.</p>
+          </div>
+          <Link href="/institutions/implementation-kit" className="button-secondary mt-5 inline-block shrink-0 text-center sm:mt-0">See the full kit →</Link>
+        </div>
+      </section>
+
       <section id="request" className="border-t border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(73,216,194,.12),transparent_45%)] print:border-slate-200 print:bg-white">
         <div className="mx-auto max-w-5xl px-5 py-12 text-center sm:px-8 lg:px-12 print:px-0 print:py-7">
           <p className="section-kicker print:text-slate-600">Recommended next step</p>
@@ -135,6 +147,7 @@ export default function PilotBriefPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3 print:hidden">
             <a href="mailto:info@zgirlinitiative.org?subject=Z-Girl%20Institutional%20Fit%20Review" className="button-primary">Email Z-Girl</a>
+            <Link href="/institutions/implementation-kit" className="button-secondary">Implementation kit</Link>
             <Link href="/partners#interest" className="button-secondary">Founding partner inquiry</Link>
           </div>
           <div className="mt-5 text-sm font-bold text-slate-400 print:text-slate-800">info@zgirlinitiative.org</div>
