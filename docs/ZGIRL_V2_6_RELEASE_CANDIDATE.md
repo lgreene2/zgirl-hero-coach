@@ -88,6 +88,10 @@ The implementation kit is designed to be reusable across:
 
 v2.6 does not activate paid checkout. Commerce activation remains governed by the existing seller/checkout/lead-delivery gate. Institutional pilots and licenses should use approved commercial contracting/invoicing/checkout processes only after the merchant-of-record requirements are satisfied.
 
+## Deployment retry status
+
+On 2026-08-10, the prior final-head Preview check remained stale at Vercel's account build-rate-limit failure. This release-status commit intentionally retriggers Preview verification without changing v2.6 product behavior or governance boundaries.
+
 ## Recommended post-release build
 
 After this kit is validated through live institutional use, build the **Z-Girl Train-the-Trainer & Facilitator Credential System** with:
