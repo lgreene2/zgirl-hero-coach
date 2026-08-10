@@ -30,6 +30,7 @@ export default function AppFooter() {
   const isAdults = pathname === "/for-adults" || pathname.startsWith("/for-adults/");
   const isPrivacy = pathname.startsWith("/privacy");
   const isAccessibility = pathname.startsWith("/accessibility");
+  const isCredentialVerify = pathname.startsWith("/credentials/verify");
 
   return (
     <footer className="border-t border-white/10 bg-[#04111b]">
@@ -42,6 +43,7 @@ export default function AppFooter() {
           <Link href="/athletes" className={navClass(isAthletes)}>Athletes</Link>
           <Link href="/store" className={navClass(isStore)}>Store</Link>
           <Link href="/partners" className={navClass(isPartners)}>Founding Partners</Link>
+          <Link href="/credentials/verify" className={navClass(isCredentialVerify)}>Verify Credential</Link>
           <Link href="/for-adults" className={navClass(isAdults)}>For Adults</Link>
           <Link href="/safety" className={navClass(isSafety)}>Safety &amp; Use Guidelines</Link>
           <Link href="/privacy" className={navClass(isPrivacy)}>Privacy</Link>
