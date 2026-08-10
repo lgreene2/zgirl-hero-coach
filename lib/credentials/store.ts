@@ -20,13 +20,12 @@ export class CredentialStoreError extends Error {
 
 function normalizeRpcError(raw: string, status: number) {
   const known = [
-    "invalid_access_code",
-    "access_code_too_short",
-    "unauthorized",
-    "candidate_not_found",
-    "credential_not_found",
-    "invalid_expiration",
-    "invalid_credential_level",
+    "invalid_access_code", "access_code_too_short", "unauthorized", "candidate_not_found", "credential_not_found",
+    "invalid_expiration", "invalid_credential_level", "institution_not_found", "invalid_institution", "invalid_institution_type",
+    "invalid_institution_status", "site_not_found", "invalid_site", "license_not_found", "invalid_license", "invalid_license_term",
+    "invalid_license_limits", "invalid_profiles", "invalid_levels", "invalid_agreement_status", "license_not_allocatable",
+    "invalid_license_site", "invalid_seat_role", "trainer_limit_reached", "seat_limit_reached", "allocation_not_found",
+    "credential_candidate_mismatch", "credential_level_mismatch", "credential_level_not_allowed", "invalid_license_renewal", "invalid_roster",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -34,7 +33,7 @@ function normalizeRpcError(raw: string, status: number) {
 
   const matched = known.find((code) => raw.includes(code));
   if (matched) {
-    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : 400;
+    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : matched.endsWith("_reached") ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
   }
 
@@ -45,34 +44,20 @@ function normalizeRpcError(raw: string, status: number) {
 export async function credentialRpc<T>(functionName: string, payload: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
     method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(payload), cache: "no-store",
   });
-
-  if (!response.ok) {
-    const raw = await response.text();
-    throw normalizeRpcError(raw, response.status);
-  }
-
+  if (!response.ok) { const raw = await response.text(); throw normalizeRpcError(raw, response.status); }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
 export function credentialErrorResponse(error: unknown) {
-  if (error instanceof CredentialStoreError) {
-    return Response.json({ ok: false, error: error.code }, { status: error.status });
-  }
-
+  if (error instanceof CredentialStoreError) return Response.json({ ok: false, error: error.code }, { status: error.status });
   if (typeof error === "object" && error !== null && "code" in error && "status" in error) {
     const code = typeof error.code === "string" ? error.code : "credential_store_request_failed";
     const status = typeof error.status === "number" ? error.status : 500;
     return Response.json({ ok: false, error: code }, { status });
   }
-
   return Response.json({ ok: false, error: "credential_store_request_failed" }, { status: 500 });
 }
