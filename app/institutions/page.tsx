@@ -97,8 +97,9 @@ export default function InstitutionsPage() {
             <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300">
               Z-Girl gives schools, congregations, teams, and youth-serving organizations a controlled path from pilot to license without turning private reflection into surveillance data.
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a href="#institutional-interest" className="rounded-full bg-[#49d8c2] px-6 py-3.5 text-center text-sm font-black text-[#04151c] transition hover:bg-[#76ead6]">Request institutional fit review →</a>
+              <Link href="/institutions/pilot-brief" className="button-secondary text-center">View pilot brief</Link>
               <Link href="/partners" className="button-secondary text-center">View founding-partner paths</Link>
             </div>
           </div>
