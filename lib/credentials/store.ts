@@ -34,6 +34,11 @@ function normalizeRpcError(raw: string, status: number) {
     "workflow_not_ready", "workflow_already_open", "license_not_releasable", "executed_agreement_required", "evidence_packet_required",
     "approval_gates_incomplete", "invalid_approval_gate", "invalid_approval_status", "approval_actor_required", "approval_gate_not_found",
     "implementation_owner_required", "invalid_handoff", "handoff_not_found", "handoff_not_ready", "handoff_reference_required",
+    "invalid_pipeline_license", "invalid_opportunity_type", "invalid_contract_path", "existing_license_required", "invalid_pipeline_stage",
+    "invalid_priority", "invalid_pipeline_value", "invalid_currency", "invalid_probability", "invalid_pipeline_summary", "closed_reason_required",
+    "opportunity_locked", "opportunity_not_found", "invalid_partner_contact", "partner_contact_not_found", "invalid_partner_activity",
+    "invalid_proposal", "proposal_not_found", "invalid_followup", "followup_not_found", "opportunity_already_handed_off",
+    "accepted_proposal_required", "invalid_initial_contract_proposal", "initial_contract_requires_draft_license",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -44,7 +49,8 @@ function normalizeRpcError(raw: string, status: number) {
     const conflict = matched.endsWith("_reached") || matched.endsWith("_below_usage") || [
       "agreement_required_for_active_license", "renewal_agreement_required", "workflow_locked", "workflow_not_ready",
       "workflow_already_open", "license_not_releasable", "executed_agreement_required", "evidence_packet_required",
-      "approval_gates_incomplete", "handoff_not_ready",
+      "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
+      "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
     ].includes(matched);
     const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
