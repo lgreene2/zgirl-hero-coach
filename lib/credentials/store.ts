@@ -28,6 +28,12 @@ function normalizeRpcError(raw: string, status: number) {
     "allocation_not_found", "credential_candidate_mismatch", "credential_level_mismatch", "credential_level_not_allowed",
     "invalid_license_renewal", "invalid_roster", "agreement_required_for_active_license", "renewal_agreement_required",
     "seat_limit_below_usage", "site_limit_below_usage", "trainer_limit_below_usage",
+    "invalid_agreement", "invalid_agreement_license", "invalid_agreement_type", "invalid_agreement_version", "invalid_agreement_term",
+    "executed_agreement_requires_reference", "invalid_scope_summary", "agreement_not_found", "invalid_workflow", "invalid_workflow_type",
+    "invalid_workflow_agreement", "invalid_workflow_limits", "invalid_workflow_term", "workflow_not_found", "workflow_locked",
+    "workflow_not_ready", "workflow_already_open", "license_not_releasable", "executed_agreement_required", "evidence_packet_required",
+    "approval_gates_incomplete", "invalid_approval_gate", "invalid_approval_status", "approval_actor_required", "approval_gate_not_found",
+    "implementation_owner_required", "invalid_handoff", "handoff_not_found", "handoff_not_ready", "handoff_reference_required",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -35,7 +41,11 @@ function normalizeRpcError(raw: string, status: number) {
 
   const matched = known.find((code) => raw.includes(code));
   if (matched) {
-    const conflict = matched.endsWith("_reached") || matched.endsWith("_below_usage") || matched === "agreement_required_for_active_license" || matched === "renewal_agreement_required";
+    const conflict = matched.endsWith("_reached") || matched.endsWith("_below_usage") || [
+      "agreement_required_for_active_license", "renewal_agreement_required", "workflow_locked", "workflow_not_ready",
+      "workflow_already_open", "license_not_releasable", "executed_agreement_required", "evidence_packet_required",
+      "approval_gates_incomplete", "handoff_not_ready",
+    ].includes(matched);
     const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
   }
