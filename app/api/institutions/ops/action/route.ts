@@ -1,5 +1,6 @@
 import { credentialRpc, credentialErrorResponse } from "@/lib/credentials/store";
-import { clearCredentialSession, credentialSessionToken } from "@/lib/credentials/session";
+import { clearCredentialSession } from "@/lib/credentials/session";
+import { requireOperatorCapability } from "@/lib/identity/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,11 +22,12 @@ function bad(error: string) { return Response.json({ ok: false, error }, { statu
 function strings(value: unknown) { return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : []; }
 
 export async function POST(request: Request) {
-  const token = await credentialSessionToken();
-  if (!token) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
+    const candidateScope=typeof body.institutionId==="string"&&UUID.test(body.institutionId)?body.institutionId:null;
+    const scopeInstitution=["save_institution","save_site","save_license"].includes(action)?candidateScope:null;
+    const {token}=await requireOperatorCapability("license.write",scopeInstitution);
 
     if (action === "save_institution") {
       const id = typeof body.institutionId === "string" && UUID.test(body.institutionId) ? body.institutionId : null;
