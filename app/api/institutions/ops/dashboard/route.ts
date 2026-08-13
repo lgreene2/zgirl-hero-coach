@@ -12,11 +12,19 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const mode = url.searchParams.get("mode") || "";
     const institutionId = (url.searchParams.get("institutionId") || "").trim();
+    const reviewId = (url.searchParams.get("reviewId") || "").trim();
 
     if (mode === "tenantDirectory") {
       const { token } = await requireOperatorCapability("portfolio.read");
       const directory = await credentialRpc<Record<string, unknown>>("zgirl_tenant_directory", { p_session_token: token });
       return Response.json({ ok: true, directory }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
+
+    if (mode === "accessReviewPacket") {
+      if (!UUID.test(institutionId) || !UUID.test(reviewId)) return Response.json({ ok: false, error: "invalid_access_review" }, { status: 400 });
+      const { token } = await requireOperatorCapability("license.read", institutionId);
+      const packet = await credentialRpc<Record<string, unknown>>("zgirl_tenant_access_review_packet", { p_session_token: token, p_review_id: reviewId });
+      return Response.json({ ok: true, packet }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     if (institutionId) {
