@@ -14,12 +14,50 @@ const REVIEW_TYPES=new Set(["quarterly","semiannual","annual","event_driven","ss
 const CADENCES=new Set(["quarterly","semiannual","annual"]);
 const DECISIONS=new Set(["pending","retain","change","remove"]);
 const SCOPED_ROLES=new Set(["institutional_admin","pipeline_manager","credential_admin"]);
+const REPORT_TYPES=new Set(["access_review","annual_governance","sso_readiness","offboarding_closeout"]);
+const ATTESTATION_TYPES=new Set(["access_review_completion","annual_access_governance","sso_readiness","offboarding_closeout"]);
+const PACKAGE_TYPES=new Set(["access_review_evidence","annual_governance","sso_readiness","offboarding_closeout"]);
 const text=(v:unknown,max=1600)=>typeof v==="string"?v.trim().slice(0,max):"";
 
 export async function POST(request:Request){
  try{
   const body=(await request.json()) as Record<string,unknown>;
   const action=text(body.action,80);
+
+  if(action==="tenant_create_governance_report"){
+   const institutionId=text(body.institutionId,64),reportType=text(body.reportType,40),periodStart=text(body.periodStart,20),periodEnd=text(body.periodEnd,20),sourceReviewId=text(body.sourceReviewId,64),title=text(body.title,220),executiveSummary=text(body.executiveSummary,2400),preparedBy=text(body.preparedBy,120);
+   if(!UUID.test(institutionId)||!REPORT_TYPES.has(reportType)||!DATE.test(periodStart)||!DATE.test(periodEnd)||title.length<3||(sourceReviewId&&!UUID.test(sourceReviewId))||(reportType==="access_review"&&!UUID.test(sourceReviewId)))return Response.json({ok:false,error:"invalid_governance_report"},{status:400});
+   const {token}=await requireOperatorCapability("portfolio.review",institutionId);
+   const reportId=await credentialRpc<string>("zgirl_tenant_create_governance_report",{p_session_token:token,p_institution_id:institutionId,p_report_type:reportType,p_period_start:periodStart,p_period_end:periodEnd,p_source_review_id:sourceReviewId||null,p_title:title,p_executive_summary:executiveSummary,p_prepared_by:preparedBy});
+   return Response.json({ok:true,reportId});
+  }
+
+  if(action==="tenant_finalize_governance_report"){
+   const reportId=text(body.reportId,64);if(!UUID.test(reportId))return Response.json({ok:false,error:"invalid_governance_report"},{status:400});
+   const {token}=await requireOperatorCapability("identity.manage");
+   await credentialRpc<boolean>("zgirl_tenant_finalize_governance_report",{p_session_token:token,p_report_id:reportId});return Response.json({ok:true});
+  }
+
+  if(action==="tenant_prepare_attestation"){
+   const institutionId=text(body.institutionId,64),reportId=text(body.reportId,64),attestationType=text(body.attestationType,48);
+   if(!UUID.test(institutionId)||!UUID.test(reportId)||!ATTESTATION_TYPES.has(attestationType))return Response.json({ok:false,error:"invalid_access_attestation"},{status:400});
+   const {token}=await requireOperatorCapability("portfolio.review",institutionId);
+   const attestationId=await credentialRpc<string>("zgirl_tenant_prepare_attestation",{p_session_token:token,p_institution_id:institutionId,p_report_id:reportId,p_attestation_type:attestationType});return Response.json({ok:true,attestationId});
+  }
+
+  if(action==="tenant_attest_access_governance"){
+   const attestationId=text(body.attestationId,64),attestorName=text(body.attestorName,120),attestorTitle=text(body.attestorTitle,160),statement=text(body.statement,1800),reference=text(body.reference,300);
+   if(!UUID.test(attestationId)||attestorName.length<2||attestorTitle.length<2||statement.length<10)return Response.json({ok:false,error:"invalid_access_attestation"},{status:400});
+   const {token}=await requireOperatorCapability("identity.manage");
+   await credentialRpc<boolean>("zgirl_tenant_attest_access_governance",{p_session_token:token,p_attestation_id:attestationId,p_attestor_name:attestorName,p_attestor_title:attestorTitle,p_statement:statement,p_reference:reference});return Response.json({ok:true});
+  }
+
+  if(action==="tenant_create_audit_package"){
+   const reportId=text(body.reportId,64),packageType=text(body.packageType,48),generatedBy=text(body.generatedBy,120);
+   if(!UUID.test(reportId)||!PACKAGE_TYPES.has(packageType))return Response.json({ok:false,error:"invalid_audit_package"},{status:400});
+   const {token}=await requireOperatorCapability("identity.manage");
+   const packageId=await credentialRpc<string>("zgirl_tenant_create_audit_package",{p_session_token:token,p_report_id:reportId,p_package_type:packageType,p_generated_by:generatedBy});return Response.json({ok:true,packageId});
+  }
 
   if(action==="tenant_save_review_schedule"){
    const institutionId=text(body.institutionId,64),cadence=text(body.cadence,24),nextReviewDate=text(body.nextReviewDate,20),ownerName=text(body.ownerName,120);
