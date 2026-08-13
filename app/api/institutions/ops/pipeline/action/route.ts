@@ -1,5 +1,6 @@
 import { credentialRpc, credentialErrorResponse } from "@/lib/credentials/store";
-import { clearCredentialSession, credentialSessionToken } from "@/lib/credentials/session";
+import { clearCredentialSession } from "@/lib/credentials/session";
+import { requireOperatorCapability } from "@/lib/identity/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,12 +33,12 @@ function strings(value: unknown) { return Array.isArray(value) ? value.filter((i
 function cents(value: unknown) { if (value === null || value === undefined || value === "") return null; const n = Number(value); return Number.isInteger(n) ? n : undefined; }
 
 export async function POST(request: Request) {
-  const token = await credentialSessionToken();
-  if (!token) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const action = text(body.action, 80);
+    const capability=action==="handoff_to_workflow"?"pipeline.handoff":"pipeline.write";
+    const scopeInstitution=action==="save_opportunity"?optionalUuid(body.institutionId):null;
+    const {token}=await requireOperatorCapability(capability,scopeInstitution);
 
     if (action === "create_prospect_opportunity") {
       const name = text(body.institutionName, 180);
@@ -96,10 +97,7 @@ export async function POST(request: Request) {
       const fullName = text(body.fullName, 160); const email = text(body.email, 254).toLowerCase();
       const decisionRole = text(body.decisionRole, 30); const status = text(body.status, 20);
       if (!opportunityId || fullName.length < 2 || (email && !EMAIL.test(email)) || !DECISION_ROLES.has(decisionRole) || !CONTACT_STATUSES.has(status)) return bad("invalid_partner_contact");
-      const id = await credentialRpc<string>("zgirl_partner_save_contact", {
-        p_session_token: token, p_contact_id: contactId, p_opportunity_id: opportunityId, p_full_name: fullName,
-        p_role_title: text(body.roleTitle, 160), p_email: email, p_phone: text(body.phone, 60), p_decision_role: decisionRole, p_status: status,
-      });
+      const id = await credentialRpc<string>("zgirl_partner_save_contact", {p_session_token: token, p_contact_id: contactId, p_opportunity_id: opportunityId, p_full_name: fullName,p_role_title: text(body.roleTitle, 160), p_email: email, p_phone: text(body.phone, 60), p_decision_role: decisionRole, p_status: status});
       return Response.json({ ok: true, contactId: id });
     }
 
@@ -107,10 +105,7 @@ export async function POST(request: Request) {
       const opportunityId = requiredUuid(body.opportunityId); const activityType = text(body.activityType, 30); const direction = text(body.direction, 20);
       const summary = text(body.summary, 1600); const occurredAt = optionalTimestamp(body.occurredAt);
       if (!opportunityId || !ACTIVITY_TYPES.has(activityType) || !DIRECTIONS.has(direction) || summary.length < 2 || occurredAt === undefined) return bad("invalid_partner_activity");
-      const id = await credentialRpc<string>("zgirl_partner_log_activity", {
-        p_session_token: token, p_opportunity_id: opportunityId, p_activity_type: activityType, p_direction: direction,
-        p_summary: summary, p_actor_name: text(body.actorName, 120), p_occurred_at: occurredAt,
-      });
+      const id = await credentialRpc<string>("zgirl_partner_log_activity", {p_session_token: token, p_opportunity_id: opportunityId, p_activity_type: activityType, p_direction: direction,p_summary: summary, p_actor_name: text(body.actorName, 120), p_occurred_at: occurredAt});
       return Response.json({ ok: true, activityId: id });
     }
 
@@ -119,21 +114,14 @@ export async function POST(request: Request) {
       const proposalType = text(body.proposalType, 40); const status = text(body.status, 30); const version = optionalInt(body.version);
       const proposedValueCents = cents(body.proposedValueCents); const sentAt = optionalTimestamp(body.sentAt); const expiresAt = optionalDate(body.expiresAt);
       if (!opportunityId || !PROPOSAL_TYPES.has(proposalType) || !PROPOSAL_STATUSES.has(status) || version === undefined || version === null || version < 1 || proposedValueCents === undefined || sentAt === undefined || expiresAt === undefined || text(body.title, 220).length < 2) return bad("invalid_proposal");
-      const id = await credentialRpc<string>("zgirl_partner_save_proposal", {
-        p_session_token: token, p_proposal_id: proposalId, p_opportunity_id: opportunityId, p_proposal_type: proposalType, p_version: version,
-        p_status: status, p_title: text(body.title, 220), p_scope_summary: text(body.scopeSummary, 2400), p_proposed_value_cents: proposedValueCents,
-        p_currency: "USD", p_reference: text(body.reference, 180), p_sent_at: sentAt, p_expires_at: expiresAt,
-      });
+      const id = await credentialRpc<string>("zgirl_partner_save_proposal", {p_session_token: token, p_proposal_id: proposalId, p_opportunity_id: opportunityId, p_proposal_type: proposalType, p_version: version,p_status: status, p_title: text(body.title, 220), p_scope_summary: text(body.scopeSummary, 2400), p_proposed_value_cents: proposedValueCents,p_currency: "USD", p_reference: text(body.reference, 180), p_sent_at: sentAt, p_expires_at: expiresAt});
       return Response.json({ ok: true, proposalId: id });
     }
 
     if (action === "save_followup") {
       const opportunityId = requiredUuid(body.opportunityId); const followupId = optionalUuid(body.followupId); const dueAt = optionalTimestamp(body.dueAt); const priority = text(body.priority, 20);
       if (!opportunityId || dueAt === undefined || dueAt === null || !PRIORITIES.has(priority) || text(body.actionText, 500).length < 2) return bad("invalid_followup");
-      const id = await credentialRpc<string>("zgirl_partner_save_followup", {
-        p_session_token: token, p_followup_id: followupId, p_opportunity_id: opportunityId, p_action_text: text(body.actionText, 500),
-        p_due_at: dueAt, p_priority: priority, p_owner_name: text(body.ownerName, 120),
-      });
+      const id = await credentialRpc<string>("zgirl_partner_save_followup", {p_session_token: token, p_followup_id: followupId, p_opportunity_id: opportunityId, p_action_text: text(body.actionText, 500),p_due_at: dueAt, p_priority: priority, p_owner_name: text(body.ownerName, 120)});
       return Response.json({ ok: true, followupId: id });
     }
 
@@ -149,10 +137,7 @@ export async function POST(request: Request) {
       const seatLimit = optionalInt(body.seatLimit); const siteLimit = optionalInt(body.siteLimit); const trainerLimit = optionalInt(body.trainerLimit);
       const profiles = strings(body.profiles); const levels = strings(body.levels);
       if (!opportunityId || !proposalId || effectiveDate === undefined || effectiveDate === null || expiresAt === undefined || expiresAt === null || seatLimit === undefined || seatLimit === null || siteLimit === undefined || siteLimit === null || trainerLimit === undefined || trainerLimit === null || seatLimit < 1 || siteLimit < 1 || trainerLimit < 0 || profiles.length === 0 || profiles.some((value) => !PROFILES.has(value)) || levels.length === 0 || levels.some((value) => !LEVELS.has(value))) return bad("invalid_license_limits");
-      const handoff = await credentialRpc<Record<string, unknown>>("zgirl_partner_handoff_to_workflow", {
-        p_session_token: token, p_opportunity_id: opportunityId, p_proposal_id: proposalId, p_effective_date: effectiveDate, p_expires_at: expiresAt,
-        p_seat_limit: seatLimit, p_site_limit: siteLimit, p_trainer_limit: trainerLimit, p_profiles: profiles, p_levels: levels,
-      });
+      const handoff = await credentialRpc<Record<string, unknown>>("zgirl_partner_handoff_to_workflow", {p_session_token: token, p_opportunity_id: opportunityId, p_proposal_id: proposalId, p_effective_date: effectiveDate, p_expires_at: expiresAt,p_seat_limit: seatLimit, p_site_limit: siteLimit, p_trainer_limit: trainerLimit, p_profiles: profiles, p_levels: levels});
       return Response.json({ ok: true, handoff });
     }
 
