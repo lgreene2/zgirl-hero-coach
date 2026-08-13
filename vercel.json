@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "zgirl-v3.5-identity-rbac-sso-foundation": false,
-      "zgirl-v3.6-tenant-dashboards-access-reviews": false
+      "zgirl-v3.6-tenant-dashboards-access-reviews": false,
+      "zgirl-v3.7-access-review-evidence-audit-pack": false
     }
   }
 }
