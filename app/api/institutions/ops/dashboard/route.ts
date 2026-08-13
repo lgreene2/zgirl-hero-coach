@@ -35,6 +35,13 @@ export async function GET(request: Request) {
       return Response.json({ ok: true, evidence }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
+    if (mode === "governanceCalendar") {
+      if (!UUID.test(institutionId)) return Response.json({ ok: false, error: "invalid_institution" }, { status: 400 });
+      const { token } = await requireOperatorCapability("license.read", institutionId);
+      const governance = await credentialRpc<Record<string, unknown>>("zgirl_governance_calendar_dashboard", { p_session_token: token, p_institution_id: institutionId });
+      return Response.json({ ok: true, governance }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
+
     if (mode === "governanceReport") {
       if (!UUID.test(reportId)) return Response.json({ ok: false, error: "invalid_governance_report" }, { status: 400 });
       const { token } = await requireOperatorCapability("license.read", institutionId && UUID.test(institutionId) ? institutionId : undefined);
