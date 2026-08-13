@@ -5,8 +5,7 @@
       "zgirl-v3.5-identity-rbac-sso-foundation": false,
       "zgirl-v3.6-tenant-dashboards-access-reviews": false,
       "zgirl-v3.7-access-review-evidence-audit-pack": false,
-      "zgirl-v3.8-governance-calendar-retention-automation": false,
-      "zgirl-v3.8-governance-calendar-public": false
+      "zgirl-v3.8-governance-calendar-retention-automation": false
     }
   }
 }
