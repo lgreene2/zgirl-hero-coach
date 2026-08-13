@@ -46,6 +46,11 @@ function normalizeRpcError(raw: string, status: number) {
     "invalid_operator_roles", "invalid_operator_role", "global_role_required", "operator_not_found", "operator_not_authorized",
     "personal_access_code_too_short", "named_operator_required", "sso_required", "forbidden_capability",
     "invalid_scope_entity", "scope_entity_not_found",
+    "invalid_tenant_access_mode", "forbidden_tenant_owner", "forbidden_tenant_manage", "forbidden_tenant_read",
+    "invalid_access_review_schedule", "invalid_access_review", "access_review_not_found", "access_review_item_not_found",
+    "access_review_locked", "invalid_access_review_decision", "invalid_access_review_role", "access_review_pending_items",
+    "access_review_not_ready", "access_review_reference_required", "invalid_sso_onboarding", "sso_activation_evidence_required",
+    "invalid_offboarding", "operator_not_in_tenant", "offboarding_not_found", "offboarding_locked", "offboarding_reference_required",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -60,9 +65,16 @@ function normalizeRpcError(raw: string, status: number) {
       "workflow_already_open", "license_not_releasable", "executed_agreement_required", "evidence_packet_required",
       "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
       "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
+      "access_review_locked", "access_review_pending_items", "access_review_not_ready", "offboarding_locked",
     ].includes(matched);
-    const notFound = ["executive_briefing_delivery_not_found", "executive_briefing_not_found", "operator_not_found", "scope_entity_not_found"].includes(matched);
-    const forbidden = ["operator_inactive", "operator_not_authorized", "sso_required", "named_operator_required", "forbidden_capability"].includes(matched);
+    const notFound = [
+      "executive_briefing_delivery_not_found", "executive_briefing_not_found", "operator_not_found", "scope_entity_not_found",
+      "access_review_not_found", "access_review_item_not_found", "offboarding_not_found",
+    ].includes(matched);
+    const forbidden = [
+      "operator_inactive", "operator_not_authorized", "sso_required", "named_operator_required", "forbidden_capability",
+      "forbidden_tenant_owner", "forbidden_tenant_manage", "forbidden_tenant_read",
+    ].includes(matched);
     const authFailure = ["unauthorized", "invalid_access_code", "invalid_operator_login", "invalid_operator_invite"].includes(matched);
     const mappedStatus = authFailure ? 401 : forbidden ? 403 : notFound ? 404 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
