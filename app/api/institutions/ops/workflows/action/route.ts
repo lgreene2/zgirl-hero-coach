@@ -1,5 +1,6 @@
 import { credentialRpc, credentialErrorResponse } from "@/lib/credentials/store";
-import { clearCredentialSession, credentialSessionToken } from "@/lib/credentials/session";
+import { clearCredentialSession } from "@/lib/credentials/session";
+import { requireOperatorCapability } from "@/lib/identity/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,11 +21,12 @@ function optionalDate(value: unknown) { if (value === null || value === undefine
 function optionalInt(value: unknown) { if (value === null || value === undefined || value === "") return null; const number = Number(value); return Number.isInteger(number) ? number : undefined; }
 
 export async function POST(request: Request) {
-  const token = await credentialSessionToken();
-  if (!token) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
+    const capability=action==="set_gate"?"workflow.approve":action==="release_handoff"?"workflow.release":"workflow.write";
+    const scopeInstitution=action==="save_agreement"&&typeof body.institutionId==="string"&&UUID.test(body.institutionId)?body.institutionId:null;
+    const {token}=await requireOperatorCapability(capability,scopeInstitution);
     if (action === "save_agreement") {
       const agreementId = typeof body.agreementId === "string" && UUID.test(body.agreementId) ? body.agreementId : null;
       const institutionId = typeof body.institutionId === "string" ? body.institutionId : "";
