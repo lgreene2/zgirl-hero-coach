@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     const mode = url.searchParams.get("mode") || "";
     const institutionId = (url.searchParams.get("institutionId") || "").trim();
     const reviewId = (url.searchParams.get("reviewId") || "").trim();
+    const reportId = (url.searchParams.get("reportId") || "").trim();
 
     if (mode === "tenantDirectory") {
       const { token } = await requireOperatorCapability("portfolio.read");
@@ -24,6 +25,20 @@ export async function GET(request: Request) {
       if (!UUID.test(institutionId) || !UUID.test(reviewId)) return Response.json({ ok: false, error: "invalid_access_review" }, { status: 400 });
       const { token } = await requireOperatorCapability("license.read", institutionId);
       const packet = await credentialRpc<Record<string, unknown>>("zgirl_tenant_access_review_packet", { p_session_token: token, p_review_id: reviewId });
+      return Response.json({ ok: true, packet }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
+
+    if (mode === "evidenceDashboard") {
+      if (!UUID.test(institutionId)) return Response.json({ ok: false, error: "invalid_institution" }, { status: 400 });
+      const { token } = await requireOperatorCapability("license.read", institutionId);
+      const evidence = await credentialRpc<Record<string, unknown>>("zgirl_tenant_evidence_dashboard", { p_session_token: token, p_institution_id: institutionId });
+      return Response.json({ ok: true, evidence }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
+
+    if (mode === "governanceReport") {
+      if (!UUID.test(reportId)) return Response.json({ ok: false, error: "invalid_governance_report" }, { status: 400 });
+      const { token } = await requireOperatorCapability("license.read", institutionId && UUID.test(institutionId) ? institutionId : undefined);
+      const packet = await credentialRpc<Record<string, unknown>>("zgirl_tenant_governance_report_packet", { p_session_token: token, p_report_id: reportId });
       return Response.json({ ok: true, packet }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
