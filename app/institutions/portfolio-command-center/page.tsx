@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
-export const metadata:Metadata={title:"Institutional Portfolio & Executive Reporting | Z-Girl",description:"A governed Z-Girl executive layer for institutional growth, license health, renewal, credential capacity, implementation, and expansion reporting."};
+export const metadata:Metadata={title:"Institutional Portfolio & Executive Reporting",description:"A governed Z-Girl executive layer for institutional growth, license health, renewal, credential capacity, implementation, and expansion reporting."};
 
 const sections=[
  ["Portfolio truth","Unify prospects, pilots, active institutions, licenses, agreement workflows, credential capacity, implementation handoffs, renewals, and expansion opportunities without duplicating the underlying operational records."],
