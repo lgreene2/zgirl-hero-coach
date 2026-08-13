@@ -1,0 +1,8 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
+import IdentityAccessConsole from "@/components/institutions/IdentityAccessConsole";
+
+export const metadata:Metadata={title:"Institutional Identity & Access Administration",description:"Restricted named identity, role, scope, session and SSO-readiness administration for Z-Girl institutional operations.",robots:{index:false,follow:false}};
+
+export default function IdentityAdminPage(){return <main className="min-h-screen bg-[#061521] text-white"><SiteHeader/><section className="border-b border-white/10 bg-[#04111b]"><div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12"><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><span className="eyebrow">Restricted identity operations · v3.5</span><h1 className="mt-3 font-display text-4xl font-black sm:text-5xl">Institutional Identity & Access Administration</h1><p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">Create named operators, assign least-privilege roles, scope operational authority, govern authentication mode, revoke sessions, and prepare institutional SSO without expanding access to participant reflections.</p></div><div className="flex flex-wrap gap-2"><Link href="/institutions/ops/portfolio" className="button-primary">Executive portfolio</Link><Link href="/institutions/ops/briefings" className="button-secondary">Briefings</Link><Link href="/institutions/ops/pipeline" className="button-secondary">Pipeline</Link><Link href="/credentials/ops" className="button-secondary">Credentials</Link></div></div></div></section><section className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12"><IdentityAccessConsole/></section></main>}
