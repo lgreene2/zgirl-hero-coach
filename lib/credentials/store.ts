@@ -39,6 +39,7 @@ function normalizeRpcError(raw: string, status: number) {
     "opportunity_locked", "opportunity_not_found", "invalid_partner_contact", "partner_contact_not_found", "invalid_partner_activity",
     "invalid_proposal", "proposal_not_found", "invalid_followup", "followup_not_found", "opportunity_already_handed_off",
     "accepted_proposal_required", "invalid_initial_contract_proposal", "initial_contract_requires_draft_license",
+    "invalid_portfolio_health", "invalid_portfolio_priority", "invalid_expansion_readiness", "invalid_portfolio_summary", "invalid_portfolio_snapshot",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
