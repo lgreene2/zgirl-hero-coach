@@ -1,5 +1,6 @@
 import { credentialRpc, credentialErrorResponse } from "@/lib/credentials/store";
-import { clearCredentialSession, credentialSessionToken } from "@/lib/credentials/session";
+import { clearCredentialSession } from "@/lib/credentials/session";
+import { requireOperatorCapability } from "@/lib/identity/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,17 +14,14 @@ const REASONS = new Set(["quality", "conduct", "privacy", "safety", "scope", "ad
 const NOTIFICATION_STATUSES = new Set(["prepared", "sent", "dismissed"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-function bad(error: string) {
-  return Response.json({ ok: false, error }, { status: 400 });
-}
+function bad(error: string) { return Response.json({ ok: false, error }, { status: 400 }); }
 
 export async function POST(request: Request) {
-  const token = await credentialSessionToken();
-  if (!token) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
+    const capability=action==="issue"?"credential.issue":action==="change_status"||action==="renew"?"credential.status":"credential.write";
+    const {token}=await requireOperatorCapability(capability);
 
     if (action === "set_requirement") {
       const candidateId = typeof body.candidateId === "string" ? body.candidateId : "";
