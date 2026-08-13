@@ -40,6 +40,8 @@ function normalizeRpcError(raw: string, status: number) {
     "invalid_proposal", "proposal_not_found", "invalid_followup", "followup_not_found", "opportunity_already_handed_off",
     "accepted_proposal_required", "invalid_initial_contract_proposal", "initial_contract_requires_draft_license",
     "invalid_portfolio_health", "invalid_portfolio_priority", "invalid_expansion_readiness", "invalid_portfolio_summary", "invalid_portfolio_snapshot",
+    "invalid_executive_briefing_type", "invalid_executive_briefing_mode", "invalid_executive_briefing", "invalid_executive_briefing_settings",
+    "invalid_executive_briefing_email", "invalid_executive_briefing_delivery", "executive_briefing_delivery_not_found", "executive_briefing_not_found",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -53,7 +55,8 @@ function normalizeRpcError(raw: string, status: number) {
       "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
       "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
     ].includes(matched);
-    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : conflict ? 409 : 400;
+    const notFound = ["executive_briefing_delivery_not_found", "executive_briefing_not_found"].includes(matched);
+    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : notFound ? 404 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
   }
 
