@@ -42,10 +42,15 @@ function normalizeRpcError(raw: string, status: number) {
     "invalid_portfolio_health", "invalid_portfolio_priority", "invalid_expansion_readiness", "invalid_portfolio_summary", "invalid_portfolio_snapshot",
     "invalid_executive_briefing_type", "invalid_executive_briefing_mode", "invalid_executive_briefing", "invalid_executive_briefing_settings",
     "invalid_executive_briefing_email", "invalid_executive_briefing_delivery", "executive_briefing_delivery_not_found", "executive_briefing_not_found",
+    "operator_inactive", "invalid_operator_login", "invalid_operator_invite", "invalid_operator_auth_mode", "invalid_operator_status",
+    "invalid_operator_roles", "invalid_operator_role", "global_role_required", "operator_not_found", "operator_not_authorized",
+    "personal_access_code_too_short", "named_operator_required", "sso_required", "forbidden_capability",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
   if (missingRequirement) return new CredentialStoreError(`missing_required_pass:${missingRequirement[1]}`, 409);
+  const forbiddenCapability = raw.match(/forbidden_capability:([a-z_.]+)/i);
+  if (forbiddenCapability) return new CredentialStoreError(`forbidden_capability:${forbiddenCapability[1]}`, 403);
 
   const matched = known.find((code) => raw.includes(code));
   if (matched) {
@@ -55,12 +60,15 @@ function normalizeRpcError(raw: string, status: number) {
       "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
       "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
     ].includes(matched);
-    const notFound = ["executive_briefing_delivery_not_found", "executive_briefing_not_found"].includes(matched);
-    const mappedStatus = matched === "unauthorized" || matched === "invalid_access_code" ? 401 : notFound ? 404 : conflict ? 409 : 400;
+    const notFound = ["executive_briefing_delivery_not_found", "executive_briefing_not_found", "operator_not_found"].includes(matched);
+    const forbidden = ["operator_inactive", "operator_not_authorized", "sso_required", "named_operator_required", "forbidden_capability"].includes(matched);
+    const authFailure = ["unauthorized", "invalid_access_code", "invalid_operator_login", "invalid_operator_invite"].includes(matched);
+    const mappedStatus = authFailure ? 401 : forbidden ? 403 : notFound ? 404 : conflict ? 409 : 400;
     return new CredentialStoreError(matched, mappedStatus);
   }
 
-  if (status === 401 || status === 403) return new CredentialStoreError("unauthorized", 401);
+  if (status === 401) return new CredentialStoreError("unauthorized", 401);
+  if (status === 403) return new CredentialStoreError("forbidden", 403);
   return new CredentialStoreError("credential_store_request_failed", status >= 500 ? 502 : 400);
 }
 
