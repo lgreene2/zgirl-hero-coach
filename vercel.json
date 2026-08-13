@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "zgirl-v3.5-identity-rbac-sso-foundation": false
+      "zgirl-v3.5-identity-rbac-sso-foundation": false,
+      "zgirl-v3.6-tenant-dashboards-access-reviews": false
     }
   }
 }
