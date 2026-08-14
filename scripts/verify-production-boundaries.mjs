@@ -81,17 +81,37 @@ const publicRoutes = [
 ];
 for (const route of publicRoutes) await expectStatus(`public route ${route}`, route, 200);
 
+const fakeInstitution = "00000000-0000-4000-8000-000000000000";
+const fakeRecord = "00000000-0000-4000-8000-000000000001";
 const restrictedApis = [
-  "/api/credentials/ops/dashboard",
-  "/api/institutions/ops/dashboard",
-  "/api/institutions/ops/portfolio/dashboard",
-  "/api/institutions/ops/briefings/dashboard",
-  "/api/institutions/ops/identity/dashboard",
-  "/api/institutions/ops/pipeline/dashboard",
-  "/api/institutions/ops/workflows/dashboard",
-  "/api/institutions/ops/board-governance/dashboard?institutionId=00000000-0000-4000-8000-000000000000&periodStart=2026-01-01&periodEnd=2026-12-31"
+  ["credential dashboard", "/api/credentials/ops/dashboard"],
+  ["institution dashboard", "/api/institutions/ops/dashboard"],
+  ["tenant dashboard mode", `/api/institutions/ops/dashboard?institutionId=${fakeInstitution}`],
+  ["evidence dashboard mode", `/api/institutions/ops/dashboard?mode=evidenceDashboard&institutionId=${fakeInstitution}`],
+  ["governance calendar mode", `/api/institutions/ops/dashboard?mode=governanceCalendar&institutionId=${fakeInstitution}`],
+  ["portfolio dashboard", "/api/institutions/ops/portfolio/dashboard"],
+  ["briefing dashboard", "/api/institutions/ops/briefings/dashboard"],
+  ["identity dashboard", "/api/institutions/ops/identity/dashboard"],
+  ["pipeline dashboard", "/api/institutions/ops/pipeline/dashboard"],
+  ["workflow dashboard", "/api/institutions/ops/workflows/dashboard"],
+  ["board governance dashboard", `/api/institutions/ops/board-governance/dashboard?institutionId=${fakeInstitution}&periodStart=2026-01-01&periodEnd=2026-12-31`],
+  ["board governance ICS export", `/api/institutions/ops/board-governance/export?institutionId=${fakeInstitution}&periodStart=2026-01-01&periodEnd=2026-12-31&kind=ics`],
+  ["board governance packet", `/api/institutions/ops/board-governance/packet?id=${fakeRecord}`]
 ];
-for (const route of restrictedApis) await expectStatus(`unauthenticated boundary ${route.split("?")[0]}`, route, 401);
+for (const [name, route] of restrictedApis) await expectStatus(`unauthenticated boundary ${name}`, route, 401);
+
+const noindexPages = [
+  "/institutions/ops/identity",
+  "/institutions/ops/tenant",
+  "/institutions/governance-board"
+];
+for (const route of noindexPages) {
+  const result = await expectStatus(`restricted shell ${route}`, route, 200);
+  if (result) {
+    if (/noindex/i.test(result.text)) pass(`noindex metadata ${route}`);
+    else fail(`noindex metadata ${route}`, "HTML did not contain noindex");
+  }
+}
 
 const credential = await expectStatus("unknown exact-format credential request", "/api/credentials/verify?id=ZG-AF-2026-DEADBEEF00", 200);
 if (credential?.json) {
