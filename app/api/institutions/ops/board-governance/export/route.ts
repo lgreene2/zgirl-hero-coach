@@ -40,7 +40,7 @@ export async function GET(request:Request){
 
   if(kind==="evidence_csv"){
    const evidence=snapshot?.evidenceIndex||{};
-   const rows:[[string,string,string,string,string,string]]|any[]=[];
+   const rows:any[][]=[];
    for(const r of Array.isArray(evidence.reports)?evidence.reports:[])rows.push(["governance_report",r.reportCode,r.reportType,r.status,r.title,r.finalizedAt||r.periodEnd]);
    for(const a of Array.isArray(evidence.attestations)?evidence.attestations:[])rows.push(["attestation",a.attestationCode,a.attestationType,a.status,`${a.attestorName||""}${a.attestorTitle?` — ${a.attestorTitle}`:""}`,a.attestedAt]);
    for(const p of Array.isArray(evidence.packages)?evidence.packages:[])rows.push(["audit_package",p.packageCode,p.packageType,p.status,p.generatedBy,p.createdAt]);
