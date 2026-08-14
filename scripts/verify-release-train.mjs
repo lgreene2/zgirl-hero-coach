@@ -40,14 +40,12 @@ if (manifest.productionBaseline?.mainSha !== "f92fa742199d8fbc5719ec8562e781f1b6
 for (const file of manifest.requiredFiles ?? []) requireFile(file);
 for (const migration of manifest.requiredSourceMigrations ?? []) requireFile(migration);
 
-// Guard against accidentally granting direct CRUD access on Z-Girl tables in the consolidated migrations.
 const directTableGrant = /grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
 for (const migration of manifest.requiredSourceMigrations ?? []) {
   if (!fs.existsSync(path.join(root, migration))) continue;
   if (directTableGrant.test(read(migration))) errors.push(`Direct anon/authenticated Z-Girl table grant detected in ${migration}`);
 }
 
-// Authentication/authorization must remain server-side on every high-power consolidated surface.
 const guardedRoutes = [
   ["app/api/institutions/ops/briefings/dashboard/route.ts", /requireOperatorCapability|credentialSessionToken/],
   ["app/api/institutions/ops/identity/dashboard/route.ts", /credentialSessionToken/],
@@ -64,7 +62,6 @@ const guardedRoutes = [
 ];
 for (const [file, guard] of guardedRoutes) requireText(file, [guard, /credentialErrorResponse|unauthorized/]);
 
-// Commerce must remain seller-first and HTTPS-only; four public digital offers are the current checkout gate.
 requireText("lib/commerce.ts", [
   /if\s*\(!getSellerName\(\)\)\s*return\s+null/,
   /ZGIRL_CHECKOUT_LINKS_JSON/,
@@ -75,7 +72,6 @@ const checkoutOfferCount = (commerceSource.match(/mode:\s*["']checkout["']/g) ??
 if (checkoutOfferCount !== 4) errors.push(`Expected 4 checkout offers; found ${checkoutOfferCount}. Reconcile commerce gate before release.`);
 requireText("app/api/commerce/status/route.ts", [/sellerConfigured/, /leadDeliveryConfigured/, /readyForPaidLaunch/, /Cache-Control/]);
 
-// Business formation milestones must not silently become software/payment activation authority.
 const business = manifest.businessActivation ?? {};
 if (business.commercialSeller !== "Greene Leadership System LLC") errors.push("Commercial seller identity in the release manifest is not Greene Leadership System LLC.");
 if (business.georgiaFormationComplete !== true || business.einConfirmed !== true || business.businessBankEstablished !== true) {
@@ -88,7 +84,6 @@ if (business.checkoutLinksConfigured !== 0 || business.leadDeliveryConfigured !=
   errors.push("v3.10 software consolidation must keep checkout, lead delivery, purchase-test and paid-launch authorization separately gated.");
 }
 
-// Scheduled jobs in the release manifest must remain uniquely named and uniquely scheduled in the intended order.
 const jobs = manifest.scheduledJobs ?? [];
 if (new Set(jobs.map((job) => job.name)).size !== jobs.length) errors.push("Duplicate scheduled job name in release manifest.");
 const expectedJobs = [
@@ -104,7 +99,6 @@ for (const [name, schedule] of expectedJobs) {
   if (!job || job.schedule !== schedule) errors.push(`Scheduled job mismatch: ${name} expected ${schedule}`);
 }
 
-// Track the known lockfile debt explicitly. Do not silently switch back to npm ci until the lock is actually current.
 const lock = readJson("package-lock.json");
 const lockRoot = lock.packages?.[""] ?? {};
 const lockHasQr = Boolean(lockRoot.dependencies?.qrcode && lockRoot.devDependencies?.["@types/qrcode"]);
@@ -117,12 +111,17 @@ if (!lockIsCurrent) {
     warnings.push(`Known lockfile debt remains: root=${lock.version}/${lockRoot.version}, qrcodeRecorded=${lockHasQr}. CI must use npm install.`);
   }
 } else if (manifest.knownDebt?.packageLockStale === true) {
-  warnings.push("package-lock.json now appears current; remove the stale-lockfile debt from the manifest and restore npm ci after re-verification.");
+  errors.push("package-lock.json is current but the release manifest still marks it stale.");
 }
 
 const verifyWorkflow = read(".github/workflows/verify-release.yml");
+const reviewerWorkflow = read(".github/workflows/reviewer-activation-ci.yml");
 if (!lockIsCurrent && !/npm install --no-audit --no-fund/.test(verifyWorkflow)) {
   errors.push("Stale lockfile requires Verify Release to use npm install until package-lock.json is regenerated.");
+}
+if (lockIsCurrent) {
+  if (!/npm ci --no-audit --no-fund/.test(verifyWorkflow)) errors.push("Current lockfile requires Verify Release to use npm ci.");
+  if (!/npm ci --no-audit --no-fund/.test(reviewerWorkflow)) errors.push("Current lockfile requires Reviewer Activation CI to use npm ci.");
 }
 
 if ((manifest.databaseBaseline?.zgirlPublicTables ?? 0) < 43) errors.push("Release manifest database baseline unexpectedly lost Z-Girl tables.");
@@ -140,4 +139,5 @@ console.log(`Z-Girl release-train verification passed for ${pkg.version}.`);
 console.log(`Required source migrations: ${(manifest.requiredSourceMigrations ?? []).length}`);
 console.log(`Required consolidated files: ${(manifest.requiredFiles ?? []).length}`);
 console.log(`Scheduled governance jobs: ${jobs.length}`);
+console.log(`Lockfile current: ${lockIsCurrent}`);
 console.log(`Known warnings: ${warnings.length}`);
