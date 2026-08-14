@@ -1,6 +1,6 @@
 # Z-Girl Revenue Activation Status
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 
 ## Live now
 
@@ -12,61 +12,66 @@ Last updated: 2026-08-13
 - Secret-safe activation status endpoint
 - Commercial-purchase / non-donation notice
 - Checkout gate requiring an explicit commercial seller
-- Institutional pilot, licensing, credential, agreement, renewal, partner-pipeline, and executive-reporting layers through the current production release
+- Institutional pilot, licensing, credential, agreement, renewal, partner-pipeline, executive-reporting, identity/RBAC, tenant-governance, evidence, governance-calendar, and board-reporting layers are built in the current release train
 
-## Formation contingency — resolved
+## Business activation milestones completed
 
-The prior commerce gate required an approved commercial legal seller before paid checkout could be activated.
-
-That legal-entity decision is now resolved:
+The commercial legal-entity, tax-identity, and banking prerequisites are now established:
 
 - Commercial seller / operating entity: **Greene Leadership System LLC**
 - Georgia formation: **complete**
-- Effective date: **2026-08-06**
-- Formation gate: **CLEARED**
+- LLC effective date: **2026-08-06**
+- EIN: **assigned / confirmed**
+- Business banking relationship: **established**
+- Formation / EIN / banking gate: **CLEARED**
 
-This does **not** mean paid checkout is automatically ready. The remaining financial and technical activation requirements below still govern.
+These milestones do **not** automatically activate paid checkout. Merchant/payment-provider setup, application environment configuration, controlled transaction testing, and explicit launch authorization remain separate gates.
 
-## Current activation state
+## Current application activation state
 
 The public endpoint `/api/commerce/status` reports only configuration booleans and never exposes credentials.
 
-Current governed state:
+Verified production state on 2026-08-14:
 
 - Legal commercial seller selected: **yes — Greene Leadership System LLC**
-- `ZGIRL_SELLER_NAME` environment configuration: **not yet verified**
-- EIN: **not yet confirmed in the activation record**
-- Business bank / merchant setup: **pending**
-- Paid checkout links: **not yet verified/configured for launch**
-- Server-side lead delivery: **not yet verified for launch**
+- `ZGIRL_SELLER_NAME` application environment configuration: **not configured / not verified**
+- Commercial merchant / Stripe configuration: **not yet verified for Z-Girl launch**
+- Paid checkout links configured in Z-Girl: **0 of 4**
+- Server-side lead delivery configured: **no**
+- Lead delivery mode: **fallback**
 - Reservation and prepared-email fallback: **active**
+- `readyForPaidLaunch`: **false**
 - Paid launch: **intentionally disabled until the full commerce gate passes**
 
-## Remaining external actions
+## Remaining commercial activation actions
 
-1. Obtain and archive the Greene Leadership System LLC EIN.
-2. Open / confirm the GLS LLC business banking relationship.
-3. Configure the commercial merchant / Stripe account under the approved seller.
-4. Add `ZGIRL_SELLER_NAME=Greene Leadership System LLC` in Vercel Preview and Production.
-5. Create four commercial Stripe Payment Links under the approved seller:
+1. Configure / confirm the commercial merchant or Stripe account under **Greene Leadership System LLC**.
+2. Confirm the business-bank settlement connection used by the merchant account.
+3. Add `ZGIRL_SELLER_NAME=Greene Leadership System LLC` in the deliberately selected Vercel environments.
+4. Create four commercial Stripe Payment Links under the approved seller:
    - Christian Reflection Starter Pack — $19
    - Athlete Reflection Starter Pack — $19
    - Hero Within Coach Toolkit — $99
    - Congregation Starter Toolkit — $149
-6. Add the four links as `ZGIRL_CHECKOUT_LINKS_JSON`.
-7. Configure one lead delivery method:
+5. Add the four links as `ZGIRL_CHECKOUT_LINKS_JSON`.
+6. Configure one server-side lead-delivery method:
    - Resend: `RESEND_API_KEY`, `ZGIRL_LEAD_EMAIL_TO`, `ZGIRL_LEAD_EMAIL_FROM`
    - or webhook: `ZGIRL_LEAD_WEBHOOK_URL`
-8. Redeploy after configuration changes.
-9. Verify `/api/commerce/status` returns `readyForPaidLaunch: true`.
-10. Complete one low-value test purchase and one test inquiry.
-11. Record the test result before authorizing broad paid promotion.
+7. Redeploy after the deliberately approved configuration changes.
+8. Verify `/api/commerce/status` reports the intended seller, 4 of 4 checkout links, configured lead delivery, and `readyForPaidLaunch:true`.
+9. Complete one controlled low-value test purchase and one test inquiry.
+10. Verify merchant receipt, bank settlement path, customer-facing receipt/descriptor, product-delivery path, lead delivery, and refund/support routing.
+11. Record the test evidence and explicitly authorize broad paid launch.
 
 ## Canonical activation sequence
 
-**LLC formed → EIN confirmed → bank activated → merchant configured → seller/payment environment configured → test purchase passed → paid launch authorized.**
+**LLC formed → EIN confirmed → bank established → merchant configured → seller/payment environment configured → test purchase/inquiry passed → paid launch explicitly authorized.**
 
-Product development, institutional inquiry, licensing preparation, reviewer/credential operations, and other non-payment work do not need to pause while the financial gate is being completed.
+Product development, institutional inquiry, licensing preparation, reviewer/credential operations, and other non-payment work do not need to pause while the remaining merchant/payment gate is completed.
+
+## Release-train boundary
+
+Z-Girl v3.10 production-readiness work is **not** commerce activation. A successful software release does not set merchant credentials, create payment links, or authorize paid promotion. The v3.10 release boundary suite is expected to keep `readyForPaidLaunch:false` unless a separate commercial activation decision deliberately changes that posture.
 
 ## Governance boundary
 

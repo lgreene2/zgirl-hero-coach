@@ -1,5 +1,6 @@
 import { credentialRpc, credentialErrorResponse } from "@/lib/credentials/store";
-import { clearCredentialSession, credentialSessionToken } from "@/lib/credentials/session";
+import { clearCredentialSession } from "@/lib/credentials/session";
+import { requireEntityCapability, requireOperatorCapability } from "@/lib/identity/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,11 +21,10 @@ function optionalDate(value: unknown) { if (value === null || value === undefine
 function optionalInt(value: unknown) { if (value === null || value === undefined || value === "") return null; const number = Number(value); return Number.isInteger(number) ? number : undefined; }
 
 export async function POST(request: Request) {
-  const token = await credentialSessionToken();
-  if (!token) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
+
     if (action === "save_agreement") {
       const agreementId = typeof body.agreementId === "string" && UUID.test(body.agreementId) ? body.agreementId : null;
       const institutionId = typeof body.institutionId === "string" ? body.institutionId : "";
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       const scopeSummary = typeof body.scopeSummary === "string" ? body.scopeSummary.trim() : "";
       if (!UUID.test(institutionId) || !AGREEMENT_TYPES.has(agreementType) || !Number.isInteger(version) || version < 1 || version > 999 || !AGREEMENT_STATUSES.has(status) || effectiveDate === undefined || expiresAt === undefined || reference.length > 180 || scopeSummary.length > 1200) return bad("invalid_agreement");
       if (status === "executed" && (!reference || !effectiveDate)) return bad("executed_agreement_requires_reference");
+      const {token}=await requireOperatorCapability("workflow.write",institutionId);
       const id = await credentialRpc<string>("zgirl_institution_save_agreement", { p_session_token: token, p_agreement_id: agreementId, p_institution_id: institutionId, p_license_id: licenseId, p_agreement_type: agreementType, p_version: version, p_status: status, p_reference: reference, p_effective_date: effectiveDate, p_expires_at: expiresAt, p_scope_summary: scopeSummary });
       return Response.json({ ok: true, agreementId: id });
     }
@@ -53,15 +54,43 @@ export async function POST(request: Request) {
       if (requestedTrainerLimit !== null && (requestedTrainerLimit < 0 || requestedTrainerLimit > 1000)) return bad("invalid_workflow_limits");
       if (requestedProfiles.length && requestedProfiles.some((value) => !PROFILES.has(value))) return bad("invalid_profiles");
       if (requestedLevels.length && requestedLevels.some((value) => !LEVELS.has(value))) return bad("invalid_levels");
+      const {token}=await requireEntityCapability("workflow.write","license",licenseId);
       const id = await credentialRpc<string>("zgirl_institution_create_workflow", { p_session_token: token, p_workflow_id: workflowId, p_license_id: licenseId, p_workflow_type: workflowType, p_agreement_id: agreementId, p_requested_effective_date: requestedEffectiveDate, p_requested_expires_at: requestedExpiresAt, p_requested_seat_limit: requestedSeatLimit, p_requested_site_limit: requestedSiteLimit, p_requested_trainer_limit: requestedTrainerLimit, p_requested_profiles: requestedProfiles.length ? requestedProfiles : null, p_requested_levels: requestedLevels.length ? requestedLevels : null, p_target_start_date: targetStartDate, p_request_reference: requestReference });
       return Response.json({ ok: true, workflowId: id });
     }
-    if (action === "link_agreement") { const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const agreementId = typeof body.agreementId === "string" ? body.agreementId : ""; if (!UUID.test(workflowId) || !UUID.test(agreementId)) return bad("invalid_workflow_agreement"); await credentialRpc<boolean>("zgirl_institution_link_workflow_agreement", { p_session_token: token, p_workflow_id: workflowId, p_agreement_id: agreementId }); return Response.json({ ok: true }); }
-    if (action === "build_evidence") { const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; if (!UUID.test(workflowId)) return bad("workflow_not_found"); const packetId = await credentialRpc<string>("zgirl_institution_build_evidence_packet", { p_session_token: token, p_workflow_id: workflowId }); return Response.json({ ok: true, packetId }); }
-    if (action === "set_gate") { const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const gateKey = typeof body.gateKey === "string" ? body.gateKey : ""; const status = typeof body.status === "string" ? body.status : ""; const decidedBy = typeof body.decidedBy === "string" ? body.decidedBy.trim() : ""; const decisionReference = typeof body.decisionReference === "string" ? body.decisionReference.trim() : ""; if (!UUID.test(workflowId) || !GATES.has(gateKey) || !GATE_STATUSES.has(status) || decidedBy.length > 120 || decisionReference.length > 180 || (status !== "pending" && decidedBy.length < 2)) return bad("invalid_approval_gate"); await credentialRpc<boolean>("zgirl_institution_set_approval_gate", { p_session_token: token, p_workflow_id: workflowId, p_gate_key: gateKey, p_status: status, p_decided_by: decidedBy, p_decision_reference: decisionReference }); return Response.json({ ok: true }); }
-    if (action === "finalize_workflow") { const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const implementationOwner = typeof body.implementationOwner === "string" ? body.implementationOwner.trim() : ""; const handoffReference = typeof body.handoffReference === "string" ? body.handoffReference.trim() : ""; if (!UUID.test(workflowId) || implementationOwner.length < 2 || implementationOwner.length > 120 || handoffReference.length > 180) return bad("invalid_handoff"); const handoffId = await credentialRpc<string>("zgirl_institution_finalize_workflow", { p_session_token: token, p_workflow_id: workflowId, p_implementation_owner: implementationOwner, p_handoff_reference: handoffReference }); return Response.json({ ok: true, handoffId }); }
-    if (action === "release_handoff") { const handoffId = typeof body.handoffId === "string" ? body.handoffId : ""; const releaseReference = typeof body.releaseReference === "string" ? body.releaseReference.trim() : ""; if (!UUID.test(handoffId) || releaseReference.length < 3 || releaseReference.length > 180) return bad("invalid_handoff"); await credentialRpc<boolean>("zgirl_institution_release_handoff", { p_session_token: token, p_handoff_id: handoffId, p_release_reference: releaseReference }); return Response.json({ ok: true }); }
-    if (action === "run_automation") { const automation = await credentialRpc<Record<string, unknown>>("zgirl_institution_workflow_run_automation", { p_session_token: token }); return Response.json({ ok: true, automation }); }
+    if (action === "link_agreement") {
+      const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const agreementId = typeof body.agreementId === "string" ? body.agreementId : "";
+      if (!UUID.test(workflowId) || !UUID.test(agreementId)) return bad("invalid_workflow_agreement");
+      const {token}=await requireEntityCapability("workflow.write","workflow",workflowId);
+      await credentialRpc<boolean>("zgirl_institution_link_workflow_agreement", { p_session_token: token, p_workflow_id: workflowId, p_agreement_id: agreementId }); return Response.json({ ok: true });
+    }
+    if (action === "build_evidence") {
+      const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; if (!UUID.test(workflowId)) return bad("workflow_not_found");
+      const {token}=await requireEntityCapability("workflow.write","workflow",workflowId);
+      const packetId = await credentialRpc<string>("zgirl_institution_build_evidence_packet", { p_session_token: token, p_workflow_id: workflowId }); return Response.json({ ok: true, packetId });
+    }
+    if (action === "set_gate") {
+      const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const gateKey = typeof body.gateKey === "string" ? body.gateKey : ""; const status = typeof body.status === "string" ? body.status : ""; const decidedBy = typeof body.decidedBy === "string" ? body.decidedBy.trim() : ""; const decisionReference = typeof body.decisionReference === "string" ? body.decisionReference.trim() : "";
+      if (!UUID.test(workflowId) || !GATES.has(gateKey) || !GATE_STATUSES.has(status) || decidedBy.length > 120 || decisionReference.length > 180 || (status !== "pending" && decidedBy.length < 2)) return bad("invalid_approval_gate");
+      const {token}=await requireEntityCapability("workflow.approve","workflow",workflowId);
+      await credentialRpc<boolean>("zgirl_institution_set_approval_gate", { p_session_token: token, p_workflow_id: workflowId, p_gate_key: gateKey, p_status: status, p_decided_by: decidedBy, p_decision_reference: decisionReference }); return Response.json({ ok: true });
+    }
+    if (action === "finalize_workflow") {
+      const workflowId = typeof body.workflowId === "string" ? body.workflowId : ""; const implementationOwner = typeof body.implementationOwner === "string" ? body.implementationOwner.trim() : ""; const handoffReference = typeof body.handoffReference === "string" ? body.handoffReference.trim() : "";
+      if (!UUID.test(workflowId) || implementationOwner.length < 2 || implementationOwner.length > 120 || handoffReference.length > 180) return bad("invalid_handoff");
+      const {token}=await requireEntityCapability("workflow.write","workflow",workflowId);
+      const handoffId = await credentialRpc<string>("zgirl_institution_finalize_workflow", { p_session_token: token, p_workflow_id: workflowId, p_implementation_owner: implementationOwner, p_handoff_reference: handoffReference }); return Response.json({ ok: true, handoffId });
+    }
+    if (action === "release_handoff") {
+      const handoffId = typeof body.handoffId === "string" ? body.handoffId : ""; const releaseReference = typeof body.releaseReference === "string" ? body.releaseReference.trim() : "";
+      if (!UUID.test(handoffId) || releaseReference.length < 3 || releaseReference.length > 180) return bad("invalid_handoff");
+      const {token}=await requireEntityCapability("workflow.release","handoff",handoffId);
+      await credentialRpc<boolean>("zgirl_institution_release_handoff", { p_session_token: token, p_handoff_id: handoffId, p_release_reference: releaseReference }); return Response.json({ ok: true });
+    }
+    if (action === "run_automation") {
+      const {token}=await requireOperatorCapability("workflow.write");
+      const automation = await credentialRpc<Record<string, unknown>>("zgirl_institution_workflow_run_automation", { p_session_token: token }); return Response.json({ ok: true, automation });
+    }
     return bad("unsupported_action");
   } catch (error) { const response = credentialErrorResponse(error); if (response.status === 401) await clearCredentialSession(); return response; }
 }

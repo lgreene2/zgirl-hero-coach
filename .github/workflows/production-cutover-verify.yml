@@ -1,0 +1,55 @@
+name: Production Cutover Verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Production or Preview base URL to verify
+        required: true
+        default: https://zgirlinitiative.org
+        type: string
+      expected_version:
+        description: Expected Z-Girl release version
+        required: true
+        default: 3.10.0
+        type: string
+      expected_git_commit:
+        description: Optional expected deployed Git commit SHA
+        required: false
+        default: ""
+        type: string
+      allow_paid_launch:
+        description: Allow readyForPaidLaunch=true during verification
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  boundaries:
+    name: Custom-domain boundary suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify public, security, credential, and commerce boundaries
+        shell: bash
+        run: |
+          args=(
+            --base-url "${{ inputs.base_url }}"
+            --expected-version "${{ inputs.expected_version }}"
+          )
+          if [[ -n "${{ inputs.expected_git_commit }}" ]]; then
+            args+=(--expected-git-commit "${{ inputs.expected_git_commit }}")
+          fi
+          if [[ "${{ inputs.allow_paid_launch }}" == "true" ]]; then
+            args+=(--allow-paid-launch)
+          fi
+          node scripts/verify-production-boundaries.mjs "${args[@]}"

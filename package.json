@@ -1,13 +1,15 @@
 {
   "name": "zgirl-hero-coach",
-  "version": "3.3.0",
+  "version": "3.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node --check scripts/create-vercel-activation-bundle.mjs && node --check scripts/verify-review-activation.mjs && node scripts/self-test-activation-tools.mjs",
+    "prebuild": "node --check scripts/create-vercel-activation-bundle.mjs && node --check scripts/verify-review-activation.mjs && node scripts/self-test-activation-tools.mjs && node scripts/verify-release-train.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "release:train-check": "node scripts/verify-release-train.mjs",
+    "release:verify-production": "node scripts/verify-production-boundaries.mjs",
     "review:credentials": "node scripts/generate-review-credentials.mjs",
     "review:activation-bundle": "node scripts/create-vercel-activation-bundle.mjs",
     "review:activation-self-test": "node scripts/self-test-activation-tools.mjs",
