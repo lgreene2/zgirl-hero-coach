@@ -27,5 +27,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Verify release train integrity
+        run: npm run release:train-check
       - name: Build
         run: npm run build
