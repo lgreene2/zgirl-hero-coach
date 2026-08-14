@@ -75,6 +75,19 @@ const checkoutOfferCount = (commerceSource.match(/mode:\s*["']checkout["']/g) ??
 if (checkoutOfferCount !== 4) errors.push(`Expected 4 checkout offers; found ${checkoutOfferCount}. Reconcile commerce gate before release.`);
 requireText("app/api/commerce/status/route.ts", [/sellerConfigured/, /leadDeliveryConfigured/, /readyForPaidLaunch/, /Cache-Control/]);
 
+// Business formation milestones must not silently become software/payment activation authority.
+const business = manifest.businessActivation ?? {};
+if (business.commercialSeller !== "Greene Leadership System LLC") errors.push("Commercial seller identity in the release manifest is not Greene Leadership System LLC.");
+if (business.georgiaFormationComplete !== true || business.einConfirmed !== true || business.businessBankEstablished !== true) {
+  errors.push("v3.10 business milestone record must reflect completed formation, EIN and business banking before release.");
+}
+if (business.merchantConfigurationVerified !== false || business.sellerEnvironmentConfigured !== false) {
+  errors.push("v3.10 must not imply merchant or seller-environment activation before separate verification.");
+}
+if (business.checkoutLinksConfigured !== 0 || business.leadDeliveryConfigured !== false || business.controlledPurchaseTestPassed !== false || business.paidLaunchAuthorized !== false) {
+  errors.push("v3.10 software consolidation must keep checkout, lead delivery, purchase-test and paid-launch authorization separately gated.");
+}
+
 // Scheduled jobs in the release manifest must remain uniquely named and uniquely scheduled in the intended order.
 const jobs = manifest.scheduledJobs ?? [];
 if (new Set(jobs.map((job) => job.name)).size !== jobs.length) errors.push("Duplicate scheduled job name in release manifest.");
