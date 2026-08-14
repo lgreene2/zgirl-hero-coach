@@ -144,33 +144,41 @@ Unless a separate commercial activation decision is made, the production boundar
 
 Commercial product/license payments remain separate from charitable donations.
 
-## Known bounded technical debt
+## Dependency reproducibility repaired in v3.10
 
-`package-lock.json` predates the v2.9 QR dependency addition and still carries legacy root-version metadata. The repository's verified build path therefore uses:
+The historical `package-lock.json` debt that dated to the v2.9 QR addition is resolved in this release candidate.
 
-`npm install --no-audit --no-fund`
+A one-time branch-only GitHub Actions job regenerated the lockfile using Node 22 / npm 10 after the v3.10 package definition was frozen. The one-time workflow removed itself after committing the result.
 
-rather than `npm ci`.
+The committed lockfile now:
 
-The v3.10 verifier makes this debt explicit and will fail if the build silently switches back to `npm ci` before the lockfile is genuinely regenerated. After the release train is stable, regenerate the lockfile through a normal networked npm operation, verify the result, remove the debt marker, and restore `npm ci`.
+- identifies `zgirl-hero-coach@3.10.0`
+- records the `qrcode` dependency
+- records `@types/qrcode`
+- contains the QR transitive dependency tree
 
-This lockfile debt is not a reason to weaken dependency or security checks.
+Both release workflows are restored to:
+
+`npm ci --no-audit --no-fund`
+
+The release-train verifier now fails if the lockfile becomes stale again or if locked installs are removed from the two principal CI workflows.
 
 ## Required release gates
 
 v3.10 is not production-ready until all of these pass on the consolidated lineage:
 
 1. current `main` reconciled
-2. release-train integrity check
-3. exact-head GitHub production build
-4. exact-head Reviewer Activation CI
-5. exact-head Vercel Preview READY
-6. Preview route/boundary checks
-7. single merge to `main`
-8. production deployment READY
-9. custom-domain production boundary suite
-10. database RLS/grant/migration/scheduler verification
-11. production runtime error/fatal-log review
+2. release-train integrity check against the committed repository state
+3. exact-head `npm ci`
+4. exact-head GitHub production build + TypeScript
+5. exact-head Reviewer Activation CI
+6. exact-head Vercel Preview READY
+7. Preview route/boundary checks
+8. single merge to `main`
+9. production deployment READY
+10. custom-domain production boundary suite
+11. database RLS/grant/migration/scheduler verification
+12. production runtime error/fatal-log review
 
 ## Superseded PR policy
 
