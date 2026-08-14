@@ -25,9 +25,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Verify release train integrity
-        run: npm run release:train-check
+      - name: Verify release train integrity before dependency mutation
+        run: node scripts/verify-release-train.mjs
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
       - name: Build
         run: npm run build
