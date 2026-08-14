@@ -6,7 +6,8 @@
       "zgirl-v3.6-tenant-dashboards-access-reviews": false,
       "zgirl-v3.7-access-review-evidence-audit-pack": false,
       "zgirl-v3.8-governance-calendar-retention-automation": false,
-      "zgirl-v3.9-board-governance-evidence-export": false
+      "zgirl-v3.9-board-governance-evidence-export": false,
+      "zgirl-v3.10-release-train-production-readiness": false
     }
   }
 }
