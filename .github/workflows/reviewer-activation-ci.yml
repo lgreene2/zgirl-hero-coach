@@ -6,6 +6,7 @@ on:
       - "scripts/create-vercel-activation-bundle.mjs"
       - "scripts/verify-review-activation.mjs"
       - "package.json"
+      - "package-lock.json"
       - "public/sw.js"
       - ".github/workflows/reviewer-activation-ci.yml"
   workflow_dispatch:
@@ -26,8 +27,8 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Check activation scripts
         run: |
