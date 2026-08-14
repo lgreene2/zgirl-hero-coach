@@ -39,48 +39,12 @@
     "supersededPullRequestsMustRemainOpenUntil": "v3.10 consolidated candidate passes exact-head CI, exact-head Preview, production deployment and custom-domain verification"
   },
   "releases": [
-    {
-      "version": "3.4.0",
-      "pullRequest": 20,
-      "head": "7b2c703831c2bb7f5759d3b11b45c3377c18bfe4",
-      "capability": "Executive Briefing & Renewal Intelligence Automation",
-      "verification": "exact-head GitHub CI passed; Vercel Preview was quota-blocked"
-    },
-    {
-      "version": "3.5.0",
-      "pullRequest": 21,
-      "head": "14b52b551dd319b95c375ed2d07ab0511082891f",
-      "capability": "Institutional Identity, RBAC & SSO Foundation",
-      "verification": "exact-head GitHub CI passed"
-    },
-    {
-      "version": "3.6.0",
-      "pullRequest": 23,
-      "head": "e926f5c4cbf7b94f643448a87fb383f5c76587f0",
-      "capability": "Institutional Tenant Dashboards & Access Governance",
-      "verification": "exact-head GitHub CI passed; historical package metadata mismatch is superseded by later versions"
-    },
-    {
-      "version": "3.7.0",
-      "pullRequest": 25,
-      "head": "5fa5ba1d5e94b382a178cb0363c55486627e8d0e",
-      "capability": "Access Review Evidence & Audit Pack",
-      "verification": "exact-head GitHub CI passed"
-    },
-    {
-      "version": "3.8.0",
-      "pullRequest": 26,
-      "head": "562099d30352d6f654e11a5de884046f560ecf9e",
-      "capability": "Governance Calendar, Evidence Retention & Annual Review",
-      "verification": "database/runtime verified; intermediate Preview build passed; final Vercel Preview was quota-blocked"
-    },
-    {
-      "version": "3.9.0",
-      "pullRequest": 28,
-      "head": "9cb86e713e5ba71c80839ddd946304db918b49da",
-      "capability": "Board Governance & Evidence Export",
-      "verification": "exact-head GitHub CI passed"
-    }
+    {"version":"3.4.0","pullRequest":20,"head":"7b2c703831c2bb7f5759d3b11b45c3377c18bfe4","capability":"Executive Briefing & Renewal Intelligence Automation","verification":"exact-head GitHub CI passed; Vercel Preview was quota-blocked"},
+    {"version":"3.5.0","pullRequest":21,"head":"14b52b551dd319b95c375ed2d07ab0511082891f","capability":"Institutional Identity, RBAC & SSO Foundation","verification":"exact-head GitHub CI passed"},
+    {"version":"3.6.0","pullRequest":23,"head":"e926f5c4cbf7b94f643448a87fb383f5c76587f0","capability":"Institutional Tenant Dashboards & Access Governance","verification":"exact-head GitHub CI passed; historical package metadata mismatch is superseded by later versions"},
+    {"version":"3.7.0","pullRequest":25,"head":"5fa5ba1d5e94b382a178cb0363c55486627e8d0e","capability":"Access Review Evidence & Audit Pack","verification":"exact-head GitHub CI passed"},
+    {"version":"3.8.0","pullRequest":26,"head":"562099d30352d6f654e11a5de884046f560ecf9e","capability":"Governance Calendar, Evidence Retention & Annual Review","verification":"database/runtime verified; intermediate Preview build passed; final Vercel Preview was quota-blocked"},
+    {"version":"3.9.0","pullRequest":28,"head":"9cb86e713e5ba71c80839ddd946304db918b49da","capability":"Board Governance & Evidence Export","verification":"exact-head GitHub CI passed"}
   ],
   "requiredSourceMigrations": [
     "supabase/migrations/20260813_zgirl_executive_briefing_renewal_intelligence_v3_4.sql",
@@ -152,12 +116,12 @@
     "supabase/verification/zgirl_v3_10_production_readiness.sql"
   ],
   "scheduledJobs": [
-    {"name": "zgirl-tenant-access-review-daily", "schedule": "47 9 * * *"},
-    {"name": "zgirl-institution-workflow-daily", "schedule": "7 10 * * *"},
-    {"name": "zgirl-credential-renewal-daily", "schedule": "17 10 * * *"},
-    {"name": "zgirl-institution-license-daily", "schedule": "27 10 * * *"},
-    {"name": "zgirl-executive-briefing-daily", "schedule": "37 11 * * *"},
-    {"name": "zgirl-governance-calendar-daily", "schedule": "7 12 * * *"}
+    {"name":"zgirl-tenant-access-review-daily","schedule":"47 9 * * *"},
+    {"name":"zgirl-institution-workflow-daily","schedule":"7 10 * * *"},
+    {"name":"zgirl-credential-renewal-daily","schedule":"17 10 * * *"},
+    {"name":"zgirl-institution-license-daily","schedule":"27 10 * * *"},
+    {"name":"zgirl-executive-briefing-daily","schedule":"37 11 * * *"},
+    {"name":"zgirl-governance-calendar-daily","schedule":"7 12 * * *"}
   ],
   "databaseBaseline": {
     "zgirlPublicTables": 43,
@@ -166,12 +130,14 @@
     "institutionalOperationalRecordCountsExpectedAtCutover": 0
   },
   "knownDebt": {
-    "packageLockStale": true,
-    "packageLockDescription": "package-lock.json still carries the legacy 2.2.0 root metadata and does not include the later qrcode dependency tree; CI/Vercel use npm install. Regenerate with npm after the release train is stable, then restore npm ci only after exact-head verification."
+    "packageLockStale": false,
+    "packageLockResolvedInV310": true,
+    "packageLockDescription": "package-lock.json was regenerated on Node 22/npm 10 after the v3.10 package definition was frozen; it now records version 3.10.0 and the qrcode/@types-qrcode dependency tree. Release CI is restored to npm ci."
   },
   "releaseGates": [
     "current main is still reconciled into the candidate",
     "exact-head release-train static verification passes",
+    "exact-head npm ci succeeds from the committed lockfile",
     "exact-head Next.js production build and TypeScript pass",
     "Reviewer Activation CI passes without exposing secrets",
     "Vercel Preview for the consolidated exact head is READY",
