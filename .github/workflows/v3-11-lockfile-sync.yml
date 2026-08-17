@@ -1,0 +1,28 @@
+name: v3.11 Lockfile Sync
+on:
+  push:
+    branches: [zgirl-v3.11-operational-activation-pilot-engine]
+    paths: [.github/workflows/v3-11-lockfile-sync.yml]
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: zgirl-v3.11-operational-activation-pilot-engine
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - shell: bash
+        run: |
+          rm .github/workflows/v3-11-lockfile-sync.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/workflows/v3-11-lockfile-sync.yml
+          git diff --cached --quiet && exit 1
+          git commit -m "Regenerate package-lock for Z-Girl v3.11"
+          git push origin HEAD:zgirl-v3.11-operational-activation-pilot-engine
