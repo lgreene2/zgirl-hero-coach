@@ -22,7 +22,8 @@
   "requiredMigrations": [
     "supabase/migrations/20260816_zgirl_operational_activation_pilot_engine_v3_11.sql",
     "supabase/migrations/20260816_zgirl_pilot_lifecycle_evidence_hardening_v3_11.sql",
-    "supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql"
+    "supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql",
+    "supabase/migrations/20260816_zgirl_pilot_metric_compatibility_v3_11.sql"
   ],
   "requiredFiles": [
     "app/institutions/pilot-engine/page.tsx",
@@ -39,7 +40,14 @@
     "components/institutions/PilotEvidencePackage.tsx",
     "components/institutions/PilotCommercialPackage.tsx",
     "components/institutions/PilotPermissions.tsx",
-    "lib/gls/pilot-bridge.ts"
+    "lib/gls/pilot-bridge.ts",
+    "docs/ZGIRL_V3_11_OPERATIONAL_ACTIVATION_RUNBOOK.md",
+    "docs/ZGIRL_V3_11_INSTITUTIONAL_PILOT_ENGINE.md",
+    "docs/ZGIRL_V3_11_FIRST_PILOT_SELECTION_SCORECARD.md",
+    "docs/ZGIRL_V3_11_PILOT_EVIDENCE_CASE_STUDY_STANDARD.md",
+    "docs/ZGIRL_V3_11_COMMERCIAL_PILOT_PACKAGE.md",
+    "docs/ZGIRL_V3_11_GLS_BRIDGE_BOUNDARY.md",
+    "docs/ZGIRL_V3_11_RELEASE_CANDIDATE.md"
   ],
   "pilotTables": [
     "zgirl_pilot_programs",
