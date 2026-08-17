@@ -51,6 +51,11 @@ function normalizeRpcError(raw: string, status: number) {
     "access_review_locked", "invalid_access_review_decision", "invalid_access_review_role", "access_review_pending_items",
     "access_review_not_ready", "access_review_reference_required", "invalid_sso_onboarding", "sso_activation_evidence_required",
     "invalid_offboarding", "operator_not_in_tenant", "offboarding_not_found", "offboarding_locked", "offboarding_reference_required",
+    "pilot_not_found", "invalid_pilot", "invalid_pilot_profiles", "invalid_pilot_boundary", "invalid_pilot_capacity",
+    "named_system_owner_required", "gls_opportunity_required", "invalid_pilot_team", "pilot_team_not_found",
+    "invalid_pilot_cohort", "pilot_cohort_not_found", "invalid_pilot_milestone", "pilot_milestone_not_found",
+    "invalid_pilot_metric_source", "invalid_pilot_evidence", "invalid_pilot_permissions", "invalid_competency_signal",
+    "invalid_pilot_stage", "pilot_stage_transition_not_allowed", "pilot_qualification_incomplete", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required", "pilot_implementation_owner_required", "pilot_safety_contact_required", "pilot_executed_agreement_required", "pilot_commercial_authority_required", "pilot_evidence_required", "pilot_closeout_required", "pilot_metric_integrity_failed", "pilot_closeout_stage_required", "invalid_pilot_price", "invalid_pilot_dates", "pilot_permission_reference_required",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -66,10 +71,12 @@ function normalizeRpcError(raw: string, status: number) {
       "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
       "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
       "access_review_locked", "access_review_pending_items", "access_review_not_ready", "offboarding_locked",
+      "named_system_owner_required", "gls_opportunity_required", "pilot_stage_transition_not_allowed", "pilot_qualification_incomplete", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required", "pilot_implementation_owner_required", "pilot_safety_contact_required", "pilot_executed_agreement_required", "pilot_commercial_authority_required", "pilot_evidence_required", "pilot_closeout_required", "pilot_metric_integrity_failed", "pilot_closeout_stage_required", "pilot_permission_reference_required",
     ].includes(matched);
     const notFound = [
       "executive_briefing_delivery_not_found", "executive_briefing_not_found", "operator_not_found", "scope_entity_not_found",
-      "access_review_not_found", "access_review_item_not_found", "offboarding_not_found",
+      "access_review_not_found", "access_review_item_not_found", "offboarding_not_found", "pilot_not_found", "pilot_team_not_found",
+      "pilot_cohort_not_found", "pilot_milestone_not_found",
     ].includes(matched);
     const forbidden = [
       "operator_inactive", "operator_not_authorized", "sso_required", "named_operator_required", "forbidden_capability",

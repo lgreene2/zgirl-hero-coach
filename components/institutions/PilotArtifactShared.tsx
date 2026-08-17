@@ -1,0 +1,21 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+export type J=Record<string,unknown>;
+export type Detail={pilot:J;institution:J;readiness:{passed:number;total:number;missing:string[];ready:boolean};intake:J|null;team:J[];cohorts:J[];milestones:J[];metrics:J[];evidence:J[];permissions:J|null;competencySignals:J[];closeout:J|null;events:J[]};
+export const s=(r:J|null|undefined,k:string)=>typeof r?.[k]==="string"?r[k] as string:"";
+export const n=(r:J|null|undefined,k:string)=>typeof r?.[k]==="number"?r[k] as number:0;
+export const pretty=(v:string)=>v.replaceAll("_"," ").replace(/\b\w/g,m=>m.toUpperCase());
+export const money=(cents:number,currency:string)=>cents?new Intl.NumberFormat("en-US",{style:"currency",currency:currency||"USD",maximumFractionDigits:0}).format(cents/100):"Not set in Z-Girl — use GLS proposal/contract record";
+export async function call<T>(url:string,init?:RequestInit):Promise<T>{const r=await fetch(url,{...init,cache:"no-store",headers:{"Content-Type":"application/json",...(init?.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"request_failed");return d as T;}
+export function usePilot(pilotId:string){const[data,setData]=useState<Detail|null>(null);const[error,setError]=useState("");const load=async()=>{try{const d=await call<{ok:true;dashboard:Detail}>(`/api/institutions/ops/pilots/dashboard?pilotId=${encodeURIComponent(pilotId)}`);setData(d.dashboard);setError("");}catch(e){setError(e instanceof Error?e.message:"request_failed");}};useEffect(()=>{void load();},[pilotId]);return{data,error,reload:load};}
+export function Packet({title,subtitle,children}:{title:string;subtitle:string;children:React.ReactNode}){return <div className="space-y-6"><div className="rounded-[2rem] border border-white/10 bg-white/[.035] p-7 print:border-slate-300 print:bg-white print:text-black"><p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6] print:text-slate-600">Z-Girl Hero Within · v3.11</p><h1 className="mt-2 font-display text-4xl font-black">{title}</h1><p className="mt-2 text-sm text-slate-400 print:text-slate-600">{subtitle}</p><button onClick={()=>window.print()} className="button-secondary mt-5 print:hidden">Print / Save PDF</button></div>{children}</div>}
+export function Section({title,children}:{title:string;children:React.ReactNode}){return <section className="rounded-[2rem] border border-white/10 bg-white/[.035] p-6 print:border-slate-300 print:bg-white print:text-black"><h2 className="font-display text-2xl font-black">{title}</h2><div className="mt-4">{children}</div></section>}
+export function Notice({children}:{children:React.ReactNode}){return <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[.05] p-5 text-sm leading-7 text-amber-100 print:border-slate-300 print:bg-white print:text-black">{children}</div>}
+export function Grid({children}:{children:React.ReactNode}){return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>}
+export function Card({label,value}:{label:string;value:string|number}){return <div className="rounded-xl border border-white/10 p-4 print:border-slate-300"><div className="text-[10px] font-black uppercase tracking-[.12em] text-slate-500">{label}</div><div className="mt-2 text-lg font-black">{value}</div></div>}
+export function Rows({rows}:{rows:string[][]}){return <div className="divide-y divide-white/10 print:divide-slate-200">{rows.map(([a,b])=><div key={a} className="flex items-start justify-between gap-5 py-3 text-sm"><span className="text-slate-500">{a}</span><strong className="max-w-[68%] text-right">{b}</strong></div>)}</div>}
+export function Text({value}:{value:string}){return <p className="mb-3 whitespace-pre-wrap text-sm leading-7 text-slate-300 print:text-black">{value}</p>}
+export function Input({label,value,set,type="text"}:{label:string;value:string;set:(v:string)=>void;type?:string}){return <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-[.12em] text-slate-400">{label}</span><input className="input w-full" type={type} value={value} onChange={e=>set(e.target.value)}/></label>}
+export function State({text}:{text:string}){return <div className="rounded-[2rem] border border-white/10 bg-white/[.035] p-7 text-sm text-slate-400">{text}</div>}

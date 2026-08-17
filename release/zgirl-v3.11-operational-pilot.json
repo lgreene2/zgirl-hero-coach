@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "release": "3.11.0",
+  "purpose": "Operational Activation & reusable Institutional Pilot Engine built on the live governed v3.10 platform.",
+  "productionBaseline": {
+    "mainSha": "169482c26c144869fa3333830cddbdfe54d35899",
+    "priorRelease": "3.10.0",
+    "customDomain": "https://zgirlinitiative.org",
+    "supabaseProjectRef": "pysoqiubmmhsbfawrrrc"
+  },
+  "operatingModel": {
+    "commercialSourceOfTruth": "Greene Leadership System",
+    "implementationSourceOfTruth": "Z-Girl",
+    "realPilotRequiresNamedSystemOwner": true,
+    "commercialRealPilotRequiresGlsOpportunity": true,
+    "publicCheckoutRequiredForInstitutionalPilot": false,
+    "publicPaidLaunchExpected": false,
+    "individualParticipantRegistryInInstitutionAdmin": false,
+    "participantPrivateReflectionAdminAccess": false,
+    "fakeProductionEvidenceAllowed": false
+  },
+  "requiredMigrations": [
+    "supabase/migrations/20260816_zgirl_operational_activation_pilot_engine_v3_11.sql",
+    "supabase/migrations/20260816_zgirl_pilot_lifecycle_evidence_hardening_v3_11.sql",
+    "supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql",
+    "supabase/migrations/20260816_zgirl_pilot_metric_compatibility_v3_11.sql"
+  ],
+  "requiredFiles": [
+    "app/institutions/pilot-engine/page.tsx",
+    "app/institutions/ops/pilots/page.tsx",
+    "app/institutions/ops/pilots/[id]/page.tsx",
+    "app/institutions/ops/pilots/[id]/evidence-package/page.tsx",
+    "app/institutions/ops/pilots/[id]/commercial-package/page.tsx",
+    "app/institutions/ops/pilots/[id]/permissions/page.tsx",
+    "app/api/institutions/ops/pilots/dashboard/route.ts",
+    "app/api/institutions/ops/pilots/action/route.ts",
+    "app/api/institutions/ops/pilots/scope/route.ts",
+    "app/api/institutions/ops/pilots/gls-sync/route.ts",
+    "components/institutions/PilotOperationsConsole.tsx",
+    "components/institutions/PilotEvidencePackage.tsx",
+    "components/institutions/PilotCommercialPackage.tsx",
+    "components/institutions/PilotPermissions.tsx",
+    "lib/gls/pilot-bridge.ts",
+    "docs/ZGIRL_V3_11_OPERATIONAL_ACTIVATION_RUNBOOK.md",
+    "docs/ZGIRL_V3_11_INSTITUTIONAL_PILOT_ENGINE.md",
+    "docs/ZGIRL_V3_11_FIRST_PILOT_SELECTION_SCORECARD.md",
+    "docs/ZGIRL_V3_11_PILOT_EVIDENCE_CASE_STUDY_STANDARD.md",
+    "docs/ZGIRL_V3_11_COMMERCIAL_PILOT_PACKAGE.md",
+    "docs/ZGIRL_V3_11_GLS_BRIDGE_BOUNDARY.md",
+    "docs/ZGIRL_V3_11_RELEASE_CANDIDATE.md"
+  ],
+  "pilotTables": [
+    "zgirl_pilot_programs",
+    "zgirl_pilot_intakes",
+    "zgirl_pilot_team_assignments",
+    "zgirl_pilot_cohorts",
+    "zgirl_pilot_milestones",
+    "zgirl_pilot_metric_snapshots",
+    "zgirl_pilot_evidence",
+    "zgirl_pilot_permissions",
+    "zgirl_pilot_competency_signals",
+    "zgirl_pilot_closeouts",
+    "zgirl_pilot_events"
+  ],
+  "lifecycle": ["opportunity","qualified","agreement_scope","institution_setup","onboarding","pilot_ready","live","evidence_collection","completed","renewal","expansion"],
+  "evidenceProvenance": ["observed","participant_reported","facilitator_reported","administrator_reported","system_analytic","administrative_fact"],
+  "releaseGates": [
+    "v3.11 exact-head static verification passes",
+    "package-lock identifies 3.11.0 and npm ci succeeds",
+    "Next.js production build and TypeScript pass",
+    "Reviewer Activation CI passes",
+    "11/11 pilot tables have RLS and zero direct anon/authenticated table grants",
+    "pilot tables contain zero fabricated production records before first governed activation",
+    "exact-head Vercel Preview is READY",
+    "public pilot-engine route returns 200",
+    "restricted pilot APIs reject unauthenticated requests",
+    "existing credential non-disclosure boundary still passes",
+    "public commerce remains separately gated",
+    "production runtime error check is clean"
+  ]
+}
