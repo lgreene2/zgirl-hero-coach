@@ -461,4 +461,3 @@ grant execute on function public.zgirl_pilot_save_closeout(text,uuid,jsonb,boole
 grant execute on function public.zgirl_pilot_record_gls_sync(text,uuid,text,text,text,text) to anon,authenticated;
 grant execute on function public.zgirl_pilot_dashboard(text,uuid,uuid) to anon,authenticated;
 
-insert into public.zgirl_credential_migrations(name) values('zgirl_operational_activation_pilot_engine_v3_11') on conflict(name) do nothing;
