@@ -55,7 +55,7 @@ function normalizeRpcError(raw: string, status: number) {
     "named_system_owner_required", "gls_opportunity_required", "invalid_pilot_team", "pilot_team_not_found",
     "invalid_pilot_cohort", "pilot_cohort_not_found", "invalid_pilot_milestone", "pilot_milestone_not_found",
     "invalid_pilot_metric_source", "invalid_pilot_evidence", "invalid_pilot_permissions", "invalid_competency_signal",
-    "invalid_pilot_stage", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required",
+    "invalid_pilot_stage", "pilot_stage_transition_not_allowed", "pilot_qualification_incomplete", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required", "pilot_implementation_owner_required", "pilot_safety_contact_required", "pilot_executed_agreement_required", "pilot_commercial_authority_required", "pilot_evidence_required", "pilot_closeout_required", "pilot_metric_integrity_failed", "pilot_closeout_stage_required", "invalid_pilot_price", "invalid_pilot_dates", "pilot_permission_reference_required",
   ];
 
   const missingRequirement = raw.match(/missing_required_pass:([a-z_]+)/i);
@@ -71,7 +71,7 @@ function normalizeRpcError(raw: string, status: number) {
       "approval_gates_incomplete", "handoff_not_ready", "opportunity_locked", "opportunity_already_handed_off",
       "accepted_proposal_required", "existing_license_required", "initial_contract_requires_draft_license",
       "access_review_locked", "access_review_pending_items", "access_review_not_ready", "offboarding_locked",
-      "named_system_owner_required", "gls_opportunity_required", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required",
+      "named_system_owner_required", "gls_opportunity_required", "pilot_stage_transition_not_allowed", "pilot_qualification_incomplete", "pilot_readiness_incomplete", "pilot_cohort_required", "pilot_facilitator_required", "pilot_implementation_owner_required", "pilot_safety_contact_required", "pilot_executed_agreement_required", "pilot_commercial_authority_required", "pilot_evidence_required", "pilot_closeout_required", "pilot_metric_integrity_failed", "pilot_closeout_stage_required", "pilot_permission_reference_required",
     ].includes(matched);
     const notFound = [
       "executive_briefing_delivery_not_found", "executive_briefing_not_found", "operator_not_found", "scope_entity_not_found",
