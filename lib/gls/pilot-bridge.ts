@@ -1,5 +1,14 @@
 import "server-only";
 
+export const GLS_PILOT_BRIDGE_BOUNDARY={
+  commercialSourceOfTruth:"GLS",
+  implementationSourceOfTruth:"Z-Girl",
+  participantPrivateReflectionData:false,
+  participantCaseData:false,
+  credentialAssessmentDetail:false,
+  paymentCardData:false,
+} as const;
+
 export class GlsPilotBridgeError extends Error {
   code:string;
   status:number;
@@ -14,7 +23,7 @@ function config(){
 
 export function glsPilotBridgeStatus(){
   const {base,secret}=config();
-  return {configured:Boolean(base&&secret),urlConfigured:Boolean(base),secretConfigured:Boolean(secret)};
+  return {configured:Boolean(base&&secret),urlConfigured:Boolean(base),secretConfigured:Boolean(secret),boundary:GLS_PILOT_BRIDGE_BOUNDARY};
 }
 
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
