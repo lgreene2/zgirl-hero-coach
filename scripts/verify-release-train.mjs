@@ -13,6 +13,7 @@ if(manifest.release!==pkg.version)errors.push(`v3.11 manifest ${manifest.release
 if(manifest.productionBaseline?.mainSha!=="9f1dcb7b4e08ea8f83b0adab5e08a915d8182b93")errors.push("v3.11.1 production baseline changed; reconcile current main before release.");
 requireFile("release/zgirl-v3.10-release-train.json");
 for(const p of manifest.requiredFiles??[])requireFile(p);for(const p of manifest.requiredMigrations??[])requireFile(p);
+requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.11\.1["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.11\.1-first-owner-bootstrap["']/]);
 
 const directGrant=/grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
 for(const p of manifest.requiredMigrations??[]){if(fs.existsSync(path.join(root,p))&&directGrant.test(read(p)))errors.push(`Direct anon/authenticated table grant detected in ${p}`);}
