@@ -7,10 +7,10 @@ function requireFile(p){if(!fs.existsSync(path.join(root,p)))errors.push(`Missin
 function requireText(p,patterns){requireFile(p);if(!fs.existsSync(path.join(root,p)))return;const src=read(p);for(const re of patterns)if(!re.test(src))errors.push(`${p} missing required guard: ${re}`);}
 
 const pkg=json("package.json");
-if(pkg.version!=="3.11.0")errors.push(`package.json must be 3.11.0; found ${pkg.version}`);
+if(pkg.version!=="3.11.1")errors.push(`package.json must be 3.11.1; found ${pkg.version}`);
 const manifest=json("release/zgirl-v3.11-operational-pilot.json");
 if(manifest.release!==pkg.version)errors.push(`v3.11 manifest ${manifest.release} does not match package ${pkg.version}`);
-if(manifest.productionBaseline?.mainSha!=="169482c26c144869fa3333830cddbdfe54d35899")errors.push("v3.11 production baseline changed; reconcile current main before release.");
+if(manifest.productionBaseline?.mainSha!=="9f1dcb7b4e08ea8f83b0adab5e08a915d8182b93")errors.push("v3.11.1 production baseline changed; reconcile current main before release.");
 requireFile("release/zgirl-v3.10-release-train.json");
 for(const p of manifest.requiredFiles??[])requireFile(p);for(const p of manifest.requiredMigrations??[])requireFile(p);
 
@@ -28,10 +28,29 @@ requireText(lifecycle,[/zgirl_pilot_transition_allowed/,/pilot_qualification_inc
 const permissions="supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql";
 requireText(permissions,[/zgirl_pilot_save_scope_metadata/,/pilot_permission_reference_required/,/pilot\.evidence/]);
 
-for(const route of ["app/api/institutions/ops/pilots/dashboard/route.ts","app/api/institutions/ops/pilots/action/route.ts","app/api/institutions/ops/pilots/scope/route.ts","app/api/institutions/ops/pilots/gls-sync/route.ts"])requireText(route,[/credentialSessionToken|requireOperatorCapability/,/credentialErrorResponse|unauthorized/]);
+const bootstrap="supabase/migrations/20260818_zgirl_first_owner_bootstrap_gls_candidate_queue_v3_11_1.sql";
+requireText(bootstrap,[
+ /private\.zgirl_bootstrap_first_system_owner/,
+ /first_owner_bootstrap_closed/,
+ /exists\(select 1 from public\.zgirl_operator_identities\)/,
+ /gen_random_bytes\(24\)/,
+ /revoke all on function private\.zgirl_bootstrap_first_system_owner\(text,text\) from anon/,
+ /revoke all on function private\.zgirl_bootstrap_first_system_owner\(text,text\) from authenticated/,
+ /public\.zgirl_gls_pilot_candidates/,
+ /pipeline\.read/,
+ /duplicateCrmCreated','?false|duplicateCrmCreated',false/,
+ /participantPrivateReflectionData','?false|participantPrivateReflectionData',false/
+]);
+const bootstrapSrc=read(bootstrap);
+if(/grant execute on function private\.zgirl_bootstrap_first_system_owner/i.test(bootstrapSrc))errors.push("First-owner bootstrap must not be granted to application roles.");
+if(/insert into public\.gls_opportunities/i.test(bootstrapSrc))errors.push("Z-Girl candidate queue must not create GLS opportunities or duplicate CRM state.");
+
+for(const route of ["app/api/institutions/ops/pilots/dashboard/route.ts","app/api/institutions/ops/pilots/action/route.ts","app/api/institutions/ops/pilots/scope/route.ts","app/api/institutions/ops/pilots/gls-sync/route.ts","app/api/institutions/ops/pilots/gls-candidates/route.ts"])requireText(route,[/credentialSessionToken|requireOperatorCapability/,/credentialErrorResponse|unauthorized/]);
 requireText("app/api/institutions/ops/pilots/action/route.ts",[/create_pilot/,/pilotId/,/save_permissions/,/advance_stage/]);
 requireText("lib/gls/pilot-bridge.ts",[/ZGIRL_GLS_BRIDGE_URL/,/ZGIRL_GLS_BRIDGE_SECRET/,/participantPrivateReflectionData/]);
 const bridge=read("lib/gls/pilot-bridge.ts");if(/SERVICE_ROLE|SUPABASE_SECRET/i.test(bridge))errors.push("Z-Girl GLS bridge must not use database service-role credentials.");
+requireText("components/institutions/GlsPilotCandidateQueue.tsx",[/GLS source-of-truth queue/,/No qualified GLS opportunity is currently recorded/,/does not carry participant reflection text/i]);
+requireText("app/institutions/ops/pilots/page.tsx",[/GlsPilotCandidateQueue/,/v3\.11\.1/]);
 
 requireText("components/institutions/PilotEvidencePackage.tsx",[/participant_reported/,/facilitator_reported/,/system_analytic/,/Private reflection text is excluded/]);
 requireText("components/institutions/PilotCommercialPackage.tsx",[/GLS remains the source of truth/,/Public self-service checkout is not required/,/Statement-of-work structure/]);
@@ -42,6 +61,8 @@ const checkoutOfferCount=(read("lib/commerce.ts").match(/mode:\s*["']checkout["'
 if(manifest.operatingModel?.publicCheckoutRequiredForInstitutionalPilot!==false||manifest.operatingModel?.publicPaidLaunchExpected!==false)errors.push("v3.11 institutional pilot release must keep public commerce separately gated.");
 if(manifest.operatingModel?.participantPrivateReflectionAdminAccess!==false||manifest.operatingModel?.individualParticipantRegistryInInstitutionAdmin!==false)errors.push("v3.11 manifest weakens participant privacy boundary.");
 if(manifest.operatingModel?.realPilotRequiresNamedSystemOwner!==true||manifest.operatingModel?.commercialRealPilotRequiresGlsOpportunity!==true)errors.push("v3.11 real-pilot activation gates are missing from manifest.");
+if(manifest.operatingModel?.firstOwnerBootstrapDatabaseAdminOnly!==true||manifest.operatingModel?.firstOwnerBootstrapReusableAfterAnyNamedIdentityExists!==false)errors.push("v3.11.1 first-owner bootstrap boundary missing from manifest.");
+if(manifest.operatingModel?.glsCandidateQueueCreatesDuplicateCrm!==false||manifest.operatingModel?.glsCandidateQueueCarriesParticipantPrivateReflectionData!==false)errors.push("v3.11.1 GLS candidate queue boundary missing from manifest.");
 
 const lock=json("package-lock.json"),rootLock=lock.packages?.[""]??{};const lockOk=lock.version===pkg.version&&rootLock.version===pkg.version&&Boolean(rootLock.dependencies?.qrcode)&&Boolean(rootLock.devDependencies?.["@types/qrcode"]);if(!lockOk)errors.push(`package-lock is not reproducible for ${pkg.version}`);
 for(const wf of [".github/workflows/verify-release.yml",".github/workflows/reviewer-activation-ci.yml"])requireText(wf,[/npm ci --no-audit --no-fund/]);
@@ -49,4 +70,4 @@ for(const wf of [".github/workflows/verify-release.yml",".github/workflows/revie
 if((manifest.pilotTables??[]).length!==11)errors.push("v3.11 manifest must enumerate all 11 pilot tables.");
 if((manifest.lifecycle??[]).join(",")!=="opportunity,qualified,agreement_scope,institution_setup,onboarding,pilot_ready,live,evidence_collection,completed,renewal,expansion")errors.push("v3.11 lifecycle manifest drift detected.");
 
-for(const w of warnings)console.warn(`WARN: ${w}`);if(errors.length){for(const e of errors)console.error(`ERROR: ${e}`);console.error(`v3.11 verification failed with ${errors.length} error(s).`);process.exit(1);}console.log(`Z-Girl operational pilot verification passed for ${pkg.version}.`);console.log(`Pilot tables: ${(manifest.pilotTables??[]).length}`);console.log(`Required migrations: ${(manifest.requiredMigrations??[]).length}`);console.log(`Required files: ${(manifest.requiredFiles??[]).length}`);
+for(const w of warnings)console.warn(`WARN: ${w}`);if(errors.length){for(const e of errors)console.error(`ERROR: ${e}`);console.error(`v3.11.1 verification failed with ${errors.length} error(s).`);process.exit(1);}console.log(`Z-Girl operational activation verification passed for ${pkg.version}.`);console.log(`Pilot tables: ${(manifest.pilotTables??[]).length}`);console.log(`Required migrations: ${(manifest.requiredMigrations??[]).length}`);console.log(`Required files: ${(manifest.requiredFiles??[]).length}`);
