@@ -48,6 +48,7 @@
     "components/institutions/PilotPermissions.tsx",
     "components/institutions/GlsPilotCandidateQueue.tsx",
     "lib/gls/pilot-bridge.ts",
+    "lib/release.ts",
     "docs/ZGIRL_V3_11_OPERATIONAL_ACTIVATION_RUNBOOK.md",
     "docs/ZGIRL_V3_11_INSTITUTIONAL_PILOT_ENGINE.md",
     "docs/ZGIRL_V3_11_FIRST_PILOT_SELECTION_SCORECARD.md",
@@ -75,6 +76,7 @@
   "releaseGates": [
     "v3.11.1 exact-head static verification passes",
     "package-lock identifies 3.11.1 and npm ci succeeds",
+    "runtime release identity reports 3.11.1 and v3.11.1-first-owner-bootstrap",
     "Next.js production build and TypeScript pass",
     "Reviewer Activation CI passes",
     "first-owner bootstrap has no anon/authenticated execution privilege",
