@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
-  "release": "3.11.0",
-  "purpose": "Operational Activation & reusable Institutional Pilot Engine built on the live governed v3.10 platform.",
+  "schemaVersion": 2,
+  "release": "3.11.1",
+  "purpose": "Operational Activation & reusable Institutional Pilot Engine with one-time first-owner bootstrap and a read-only GLS source-of-truth candidate queue.",
   "productionBaseline": {
-    "mainSha": "169482c26c144869fa3333830cddbdfe54d35899",
-    "priorRelease": "3.10.0",
+    "mainSha": "9f1dcb7b4e08ea8f83b0adab5e08a915d8182b93",
+    "priorRelease": "3.11.0",
     "customDomain": "https://zgirlinitiative.org",
     "supabaseProjectRef": "pysoqiubmmhsbfawrrrc"
   },
@@ -17,13 +17,18 @@
     "publicPaidLaunchExpected": false,
     "individualParticipantRegistryInInstitutionAdmin": false,
     "participantPrivateReflectionAdminAccess": false,
-    "fakeProductionEvidenceAllowed": false
+    "fakeProductionEvidenceAllowed": false,
+    "firstOwnerBootstrapDatabaseAdminOnly": true,
+    "firstOwnerBootstrapReusableAfterAnyNamedIdentityExists": false,
+    "glsCandidateQueueCreatesDuplicateCrm": false,
+    "glsCandidateQueueCarriesParticipantPrivateReflectionData": false
   },
   "requiredMigrations": [
     "supabase/migrations/20260816_zgirl_operational_activation_pilot_engine_v3_11.sql",
     "supabase/migrations/20260816_zgirl_pilot_lifecycle_evidence_hardening_v3_11.sql",
     "supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql",
-    "supabase/migrations/20260816_zgirl_pilot_metric_compatibility_v3_11.sql"
+    "supabase/migrations/20260816_zgirl_pilot_metric_compatibility_v3_11.sql",
+    "supabase/migrations/20260818_zgirl_first_owner_bootstrap_gls_candidate_queue_v3_11_1.sql"
   ],
   "requiredFiles": [
     "app/institutions/pilot-engine/page.tsx",
@@ -36,10 +41,12 @@
     "app/api/institutions/ops/pilots/action/route.ts",
     "app/api/institutions/ops/pilots/scope/route.ts",
     "app/api/institutions/ops/pilots/gls-sync/route.ts",
+    "app/api/institutions/ops/pilots/gls-candidates/route.ts",
     "components/institutions/PilotOperationsConsole.tsx",
     "components/institutions/PilotEvidencePackage.tsx",
     "components/institutions/PilotCommercialPackage.tsx",
     "components/institutions/PilotPermissions.tsx",
+    "components/institutions/GlsPilotCandidateQueue.tsx",
     "lib/gls/pilot-bridge.ts",
     "docs/ZGIRL_V3_11_OPERATIONAL_ACTIVATION_RUNBOOK.md",
     "docs/ZGIRL_V3_11_INSTITUTIONAL_PILOT_ENGINE.md",
@@ -47,7 +54,8 @@
     "docs/ZGIRL_V3_11_PILOT_EVIDENCE_CASE_STUDY_STANDARD.md",
     "docs/ZGIRL_V3_11_COMMERCIAL_PILOT_PACKAGE.md",
     "docs/ZGIRL_V3_11_GLS_BRIDGE_BOUNDARY.md",
-    "docs/ZGIRL_V3_11_RELEASE_CANDIDATE.md"
+    "docs/ZGIRL_V3_11_RELEASE_CANDIDATE.md",
+    "docs/ZGIRL_V3_11_1_FIRST_OWNER_AND_PILOT_ACTIVATION.md"
   ],
   "pilotTables": [
     "zgirl_pilot_programs",
@@ -65,15 +73,19 @@
   "lifecycle": ["opportunity","qualified","agreement_scope","institution_setup","onboarding","pilot_ready","live","evidence_collection","completed","renewal","expansion"],
   "evidenceProvenance": ["observed","participant_reported","facilitator_reported","administrator_reported","system_analytic","administrative_fact"],
   "releaseGates": [
-    "v3.11 exact-head static verification passes",
-    "package-lock identifies 3.11.0 and npm ci succeeds",
+    "v3.11.1 exact-head static verification passes",
+    "package-lock identifies 3.11.1 and npm ci succeeds",
     "Next.js production build and TypeScript pass",
     "Reviewer Activation CI passes",
+    "first-owner bootstrap has no anon/authenticated execution privilege",
+    "first-owner bootstrap closes permanently after any named identity exists",
+    "GLS candidate queue requires global pipeline.read authority",
+    "GLS candidate queue creates no duplicate CRM and carries no participant private-reflection data",
     "11/11 pilot tables have RLS and zero direct anon/authenticated table grants",
-    "pilot tables contain zero fabricated production records before first governed activation",
+    "pilot/owner/bridge tables contain zero fabricated production records before real activation",
     "exact-head Vercel Preview is READY",
     "public pilot-engine route returns 200",
-    "restricted pilot APIs reject unauthenticated requests",
+    "restricted pilot and GLS-candidate APIs reject unauthenticated requests",
     "existing credential non-disclosure boundary still passes",
     "public commerce remains separately gated",
     "production runtime error check is clean"
