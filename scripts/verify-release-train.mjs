@@ -10,7 +10,7 @@ const pkg=json("package.json");
 if(pkg.version!=="3.11.1")errors.push(`package.json must be 3.11.1; found ${pkg.version}`);
 const manifest=json("release/zgirl-v3.11-operational-pilot.json");
 if(manifest.release!==pkg.version)errors.push(`v3.11 manifest ${manifest.release} does not match package ${pkg.version}`);
-if(manifest.productionBaseline?.mainSha!=="9f1dcb7b4e08ea8f83b0adab5e08a915d8182b93")errors.push("v3.11.1 production baseline changed; reconcile current main before release.");
+if(manifest.productionBaseline?.mainSha!=="4f7f2b4e255d0dbd6e81d2da627932b2586fe776")errors.push("v3.11.1 operational baseline changed; reconcile current main before release.");
 requireFile("release/zgirl-v3.10-release-train.json");
 for(const p of manifest.requiredFiles??[])requireFile(p);for(const p of manifest.requiredMigrations??[])requireFile(p);
 requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.11\.1["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.11\.1-first-owner-bootstrap["']/]);
@@ -45,6 +45,11 @@ requireText(bootstrap,[
 const bootstrapSrc=read(bootstrap);
 if(/grant execute on function private\.zgirl_bootstrap_first_system_owner/i.test(bootstrapSrc))errors.push("First-owner bootstrap must not be granted to application roles.");
 if(/insert into public\.gls_opportunities/i.test(bootstrapSrc))errors.push("Z-Girl candidate queue must not create GLS opportunities or duplicate CRM state.");
+
+const hotfix="supabase/migrations/20260819_zgirl_first_owner_bootstrap_audit_event_hotfix_v3_11_1.sql";
+requireText(hotfix,[/private\.zgirl_bootstrap_first_system_owner/,/event_type,summary/,/'operator_created'/,/revoke all on function private\.zgirl_bootstrap_first_system_owner\(text,text\) from anon/,/revoke all on function private\.zgirl_bootstrap_first_system_owner\(text,text\) from authenticated/]);
+const hotfixSrc=read(hotfix);
+if(/first_system_owner_bootstrap_prepared/.test(hotfixSrc))errors.push("Bootstrap audit hotfix must use an established allowed audit event type.");
 
 for(const route of ["app/api/institutions/ops/pilots/dashboard/route.ts","app/api/institutions/ops/pilots/action/route.ts","app/api/institutions/ops/pilots/scope/route.ts","app/api/institutions/ops/pilots/gls-sync/route.ts","app/api/institutions/ops/pilots/gls-candidates/route.ts"])requireText(route,[/credentialSessionToken|requireOperatorCapability/,/credentialErrorResponse|unauthorized/]);
 requireText("app/api/institutions/ops/pilots/action/route.ts",[/create_pilot/,/pilotId/,/save_permissions/,/advance_stage/]);

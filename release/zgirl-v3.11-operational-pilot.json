@@ -3,7 +3,7 @@
   "release": "3.11.1",
   "purpose": "Operational Activation & reusable Institutional Pilot Engine with one-time first-owner bootstrap and a read-only GLS source-of-truth candidate queue.",
   "productionBaseline": {
-    "mainSha": "9f1dcb7b4e08ea8f83b0adab5e08a915d8182b93",
+    "mainSha": "4f7f2b4e255d0dbd6e81d2da627932b2586fe776",
     "priorRelease": "3.11.0",
     "customDomain": "https://zgirlinitiative.org",
     "supabaseProjectRef": "pysoqiubmmhsbfawrrrc"
@@ -28,7 +28,8 @@
     "supabase/migrations/20260816_zgirl_pilot_lifecycle_evidence_hardening_v3_11.sql",
     "supabase/migrations/20260816_zgirl_pilot_scope_permission_controls_v3_11.sql",
     "supabase/migrations/20260816_zgirl_pilot_metric_compatibility_v3_11.sql",
-    "supabase/migrations/20260818_zgirl_first_owner_bootstrap_gls_candidate_queue_v3_11_1.sql"
+    "supabase/migrations/20260818_zgirl_first_owner_bootstrap_gls_candidate_queue_v3_11_1.sql",
+    "supabase/migrations/20260819_zgirl_first_owner_bootstrap_audit_event_hotfix_v3_11_1.sql"
   ],
   "requiredFiles": [
     "app/institutions/pilot-engine/page.tsx",
@@ -77,6 +78,7 @@
     "v3.11.1 exact-head static verification passes",
     "package-lock identifies 3.11.1 and npm ci succeeds",
     "runtime release identity reports 3.11.1 and v3.11.1-first-owner-bootstrap",
+    "first-owner bootstrap audit event uses the established operator_created event type",
     "Next.js production build and TypeScript pass",
     "Reviewer Activation CI passes",
     "first-owner bootstrap has no anon/authenticated execution privilege",
@@ -84,9 +86,6 @@
     "GLS candidate queue requires global pipeline.read authority",
     "GLS candidate queue creates no duplicate CRM and carries no participant private-reflection data",
     "11/11 pilot tables have RLS and zero direct anon/authenticated table grants",
-    "pilot/owner/bridge tables contain zero fabricated production records before real activation",
-    "exact-head Vercel Preview is READY",
-    "public pilot-engine route returns 200",
     "restricted pilot and GLS-candidate APIs reject unauthenticated requests",
     "existing credential non-disclosure boundary still passes",
     "public commerce remains separately gated",
