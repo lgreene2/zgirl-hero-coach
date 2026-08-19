@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "release": "3.12.0",
+  "purpose": "Embedded role-aware voice-guided institutional operations coaching for Z-Girl Command Centers.",
+  "productionBaseline": {
+    "mainSha": "695fe870fa14797154de790500fd2d95a9b936fc",
+    "priorRelease": "3.11.1",
+    "customDomain": "https://zgirlinitiative.org"
+  },
+  "guidedCoach": {
+    "voiceUserInitiatedOnly": true,
+    "captionsAvailable": true,
+    "voicePreferenceLocalOnly": true,
+    "completionTrackingLocalOnly": true,
+    "grantsRoles": false,
+    "satisfiesApprovalGates": false,
+    "createsCredentials": false,
+    "readsAuthenticationSecrets": false,
+    "readsParticipantPrivateReflections": false,
+    "bypassesPipelinePermissions": false,
+    "mutatesOpportunityState": false,
+    "mutatesPilotState": false,
+    "roleAware": true,
+    "pageAware": true,
+    "pilotStateAwareWhenAuthorized": true
+  },
+  "requiredFiles": [
+    "components/institutions/InstitutionGuidedCoach.tsx",
+    "lib/institutions/guided-coach.ts",
+    "app/institutions/ops/guide/page.tsx",
+    "components/SiteHeader.tsx",
+    "components/institutions/GlsPilotCandidateQueue.tsx",
+    "components/institutions/InstitutionOperatorAccess.tsx",
+    "app/institutions/ops/portfolio/page.tsx",
+    "app/institutions/ops/pilots/page.tsx",
+    "app/lib/voice.ts",
+    "docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md"
+  ],
+  "initialCoverage": [
+    "institutional-sign-in",
+    "executive-portfolio",
+    "partner-pipeline-ops",
+    "pilot-command-center",
+    "agreement-workflows",
+    "license-administration",
+    "identity-access",
+    "command-center-map",
+    "operator-orientation"
+  ],
+  "releaseGates": [
+    "package and runtime release identity are 3.12.0",
+    "package-lock is reproducible with npm ci",
+    "Guided Coach voice requires an explicit user action",
+    "captions/transcript remain available",
+    "existing Z-Girl natural-voice ranking helper is reused",
+    "authentication secrets are excluded from guide content",
+    "participant private reflection text is excluded from guide content",
+    "Pilot Command Center state awareness uses the existing authorized GLS candidate API",
+    "the guide cannot mutate opportunity, pilot, agreement, license, credential, payment, or access state",
+    "Pilot Command Center is directly reachable from Executive Portfolio",
+    "first-time guidance can be dismissed and does not autoplay",
+    "exact-head GitHub production build and TypeScript pass",
+    "Reviewer Activation CI passes",
+    "exact-head Vercel Preview is READY",
+    "production custom-domain acceptance passes before release is called live"
+  ]
+}
