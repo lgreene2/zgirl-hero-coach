@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import InstitutionGuidedCoach from "@/components/institutions/InstitutionGuidedCoach";
 
 export default function SiteHeader() {
   return (
@@ -21,6 +22,7 @@ export default function SiteHeader() {
         </nav>
         <Link href="/reflect" className="shrink-0 rounded-full bg-[#49d8c2] px-4 py-2.5 text-xs font-black text-[#04151c] transition hover:bg-[#76ead6] sm:text-sm">Start reflection</Link>
       </div>
+      <InstitutionGuidedCoach />
     </header>
   );
 }
