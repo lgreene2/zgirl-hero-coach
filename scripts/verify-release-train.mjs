@@ -49,13 +49,13 @@ requireText("lib/commerce.ts",[/if\s*\(!getSellerName\(\)\)\s*return\s+null/,/ZG
 const checkoutOfferCount=(read("lib/commerce.ts").match(/mode:\s*["']checkout["']/g)??[]).length;
 if(checkoutOfferCount!==4)errors.push(`Expected unchanged four-offer checkout gate; found ${checkoutOfferCount}`);
 
-// Guided Coach implementation and voice boundary.
+// Guided Coach implementation, professional narration filter, and Show-on-page visibility boundary.
 const coachPath="components/institutions/InstitutionGuidedCoach.tsx";
 requireText(coachPath,[
  /usePathname/,
  /@\/app\/lib\/voice/,
  /pickVoice/,
- /rankVoices/,
+ /curateNarrationVoices/,
  /SpeechSynthesisUtterance/,
  /onClick=\{speak\}/,
  /Show captions\/transcript/,
@@ -65,7 +65,11 @@ requireText(coachPath,[
  /localStorage/,
  /Guide Me/,
  /Command Center map/,
- /Full orientation/
+ /Full orientation/,
+ /Show on page/,
+ /Return to Guide/,
+ /setOpen\(false\)/,
+ /bright teal outline/i
 ]);
 const coachSrc=read(coachPath);
 for(const forbidden of [/method:\s*["']POST["']/,/\/api\/institutions\/auth\/login/,/\/api\/institutions\/auth\/accept-invite/,/accessCode\s*:/,/inviteCode\s*:/,/SUPABASE_SECRET/i,/SERVICE_ROLE/i])if(forbidden.test(coachSrc))errors.push(`Guided Coach contains a forbidden mutation/secret access pattern: ${forbidden}`);
@@ -92,7 +96,7 @@ requireText("components/SiteHeader.tsx",[/InstitutionGuidedCoach/]);
 requireText("app/institutions/ops/portfolio/page.tsx",[/href="\/institutions\/ops\/pilots"/,/Pilot Command Center/,/href="\/institutions\/ops\/guide"/]);
 requireText("app/institutions/ops/pilots/page.tsx",[/v3\.12/,/Guided orientation/,/data-guide-target="pilot-operations"/]);
 requireText("components/institutions/InstitutionOperatorAccess.tsx",[/data-guide-target="auth-mode"/]);
-requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/rankVoices/,/pickVoice/]);
+requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/DISTRACTING_NARRATION_HINTS/,/isSuitableNarrationVoice/,/curateNarrationVoices/,/rankVoices/,/pickVoice/]);
 requireText("docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md",[/Listen → See → Do → Confirm/,/never autoplays audio/i,/Completion is a usability marker only/,/must never narrate or intentionally capture/i]);
 
 if(guidedManifest.guidedCoach?.voiceUserInitiatedOnly!==true)errors.push("Guided Coach manifest must require user-initiated voice.");
