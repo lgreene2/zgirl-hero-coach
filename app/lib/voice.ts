@@ -124,6 +124,13 @@ const FEMININE_HINTS = [
   "amala",
   "anna",
   "petra",
+  "allison",
+  "fiona",
+  "kathy",
+  "moira",
+  "nicky",
+  "vicki",
+  "zoe",
   "google uk english female",
 ];
 
@@ -139,6 +146,48 @@ const MASCULINE_HINTS = [
   "guy",
 ];
 
+// Apple and other operating systems may expose novelty, character, compact,
+// or intentionally stylized voices through the same Web Speech API used for
+// accessibility narration. They are valid device voices, but they are not
+// appropriate defaults for a professional institutional Guided Coach.
+const DISTRACTING_NARRATION_HINTS = [
+  "albert",
+  "bad news",
+  "bahh",
+  "bells",
+  "boing",
+  "bubbles",
+  "cellos",
+  "good news",
+  "jester",
+  "organ",
+  "superstar",
+  "trinoids",
+  "whisper",
+  "wobble",
+  "zarvox",
+  "eddy",
+  "flo",
+  "grandma",
+  "grandpa",
+  "reed",
+  "rocko",
+  "sandy",
+  "shelley",
+  "compact",
+  "espeak",
+  "festival",
+];
+
+const PROFESSIONAL_NARRATION_HINTS = [
+  "siri",
+  "microsoft",
+  "google us english",
+  "google uk english",
+  ...NATURAL_HINTS,
+  ...FEMININE_HINTS,
+];
+
 function languageBase(lang: string): string {
   return (lang || "").trim().toLowerCase().split("-")[0];
 }
@@ -149,6 +198,15 @@ export function voiceMatchesLanguage(
 ): boolean {
   const target = languageBase(lang);
   return Boolean(target && languageBase(voice.lang) === target);
+}
+
+export function isSuitableNarrationVoice(
+  voice: SpeechSynthesisVoice,
+  lang = "en-US"
+): boolean {
+  if (!voiceMatchesLanguage(voice, lang)) return false;
+  const name = (voice.name || "").toLowerCase();
+  return !DISTRACTING_NARRATION_HINTS.some((hint) => name.includes(hint));
 }
 
 export function rankVoices(
@@ -169,6 +227,7 @@ export function rankVoices(
     if (NATURAL_HINTS.some((hint) => name.includes(hint))) points += 24;
     if (FEMININE_HINTS.some((hint) => name.includes(hint))) points += 36;
     if (MASCULINE_HINTS.some((hint) => name.includes(hint))) points -= 70;
+    if (DISTRACTING_NARRATION_HINTS.some((hint) => name.includes(hint))) points -= 500;
     if (voice.default) points += 3;
     if (voice.localService) points += 1;
 
@@ -179,6 +238,20 @@ export function rankVoices(
     const difference = score(b) - score(a);
     return difference || a.name.localeCompare(b.name);
   });
+}
+
+export function curateNarrationVoices(
+  voices: SpeechSynthesisVoice[],
+  lang = "en-US",
+  limit = 6
+): SpeechSynthesisVoice[] {
+  const safe = voices.filter((voice) => isSuitableNarrationVoice(voice, lang));
+  const professional = safe.filter((voice) => {
+    const name = (voice.name || "").toLowerCase();
+    return PROFESSIONAL_NARRATION_HINTS.some((hint) => name.includes(hint));
+  });
+  const pool = professional.length ? professional : safe;
+  return rankVoices(pool, lang).slice(0, Math.max(1, limit));
 }
 
 export function pickVoice(
