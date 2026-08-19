@@ -57,7 +57,7 @@ export default function GlsPilotCandidateQueue() {
   }, []);
 
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-white/[.035] p-6 sm:p-8">
+    <section data-guide-target="gls-queue" className="rounded-[2rem] border border-white/10 bg-white/[.035] p-6 sm:p-8">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="section-kicker">GLS source-of-truth queue</p>
@@ -92,8 +92,8 @@ export default function GlsPilotCandidateQueue() {
 
       {state === "ready" && queue && queue.count > 0 && (
         <div className="mt-6 space-y-3">
-          {queue.opportunities.map((opportunity) => (
-            <article key={opportunity.id} className="rounded-2xl border border-white/10 bg-[#04111b] p-5">
+          {queue.opportunities.map((opportunity, index) => (
+            <article key={opportunity.id} data-guide-target={index === 0 ? "gls-opportunity-card" : undefined} className="rounded-2xl border border-white/10 bg-[#04111b] p-5">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="text-xs font-black uppercase tracking-[.12em] text-[#76ead6]">
