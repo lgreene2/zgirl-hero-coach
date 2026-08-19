@@ -223,7 +223,7 @@ export default function GlsPilotCandidateQueue() {
       )}
 
       <p className="mt-5 text-xs leading-6 text-slate-500">
-        This queue carries adult institutional and aggregate implementation metadata only. No participant reflection text, participant case data, clinical records or credential-assessment detail crosses the commercial handoff. Preparing a workspace does not activate a live pilot.
+        This queue carries adult institutional and aggregate implementation metadata only and does not carry participant reflection text. Participant case data, clinical records and credential-assessment detail also remain outside the commercial handoff. Preparing a workspace does not activate a live pilot.
       </p>
     </section>
   );
