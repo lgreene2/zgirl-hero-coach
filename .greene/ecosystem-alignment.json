@@ -1,0 +1,13 @@
+{
+  "contract": "greene.ecosystem-alignment-lock.v1",
+  "version": "1.0",
+  "canonicalSource": "lgreene2/lead-with-greene/governance/ecosystem-alignment-lock-v1.json",
+  "systemId": "z-girl",
+  "classification": "active",
+  "role": "specialized-the4lessons-leap-application-profile",
+  "owns": ["z-girl-application-experience", "z-girl-reflection-workflows"],
+  "consumes": ["leap-master-definition", "the4lessons-character-canon", "the4lessons-approved-asset-identities"],
+  "mustNotClaim": ["greene-principles", "lead-cycle", "leap-master-definition", "the4lessons-character-canon", "gls-credentialing", "cross-system-routing"],
+  "frameworkRule": "Z-Girl may specialize approved GLS/T4L concepts but may not become a new umbrella framework.",
+  "humanApprovalRequiredForPublicRelease": true
+}
