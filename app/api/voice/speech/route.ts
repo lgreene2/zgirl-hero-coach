@@ -1,0 +1,208 @@
+import { GoogleGenAI } from "@google/genai";
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const MODEL = "gemini-3.1-flash-tts-preview";
+const VOICE = "Sulafat";
+const PROFILE = "zgirl-live-coach-en-us-candidate-v1";
+const MAX_TEXT_LENGTH = 1_200;
+const WINDOW_MS = 60_000;
+const REQUESTS_PER_WINDOW = 10;
+
+type RateEntry = { count: number; resetAt: number };
+
+const rateEntries = new Map<string, RateEntry>();
+
+function noStoreHeaders(extra: HeadersInit = {}): HeadersInit {
+  return {
+    "Cache-Control": "private, no-store, max-age=0",
+    "X-Content-Type-Options": "nosniff",
+    ...extra,
+  };
+}
+
+function requestKey(req: NextRequest): string {
+  return (
+    req.headers.get("x-vercel-forwarded-for") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
+function rateLimit(req: NextRequest): number | null {
+  const now = Date.now();
+  const key = requestKey(req);
+  const current = rateEntries.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateEntries.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return null;
+  }
+
+  current.count += 1;
+  if (current.count <= REQUESTS_PER_WINDOW) return null;
+  return Math.max(1, Math.ceil((current.resetAt - now) / 1_000));
+}
+
+function isSameOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    return new URL(origin).host === req.nextUrl.host;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeForSpeech(value: string): string {
+  return value
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\((?:https?:\/\/|mailto:)[^)]*\)/g, "$1")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[\[\]{}<>]/g, " ")
+    .replace(/[*_#~|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildPerformancePrompt(transcript: string): string {
+  return `
+# AUDIO PROFILE: Z-Girl — The Grounded Hero Coach
+
+Read only the TRANSCRIPT below. The directions are not part of the transcript.
+
+## DIRECTOR'S NOTES
+- Warm, grounded, compassionate, and confident.
+- Youthful adult energy without sounding childish, clinical, theatrical, or like a commercial announcer.
+- Natural conversational rhythm with small, human pauses and a gentle vocal smile.
+- Calm down the energy for sensitive feelings; never sound alarmed, diagnosing, or overly cheerful.
+- Speak clearly at an unhurried everyday pace.
+- Pronounce “Z-Girl” as “Zee Girl.”
+- Recite the transcript faithfully. Do not add commentary, stage directions, sound effects, laughter, or extra words.
+
+## TRANSCRIPT
+${transcript}
+  `.trim();
+}
+
+export async function GET() {
+  return NextResponse.json(
+    {
+      configured: Boolean(process.env.GEMINI_API_KEY?.trim()),
+      candidate: true,
+      language: "en-US",
+      model: MODEL,
+      profile: PROFILE,
+      voice: VOICE,
+      providerStorageDisabled: true,
+      deviceFallback: true,
+      publicReleaseApproved: false,
+    },
+    { headers: noStoreHeaders() }
+  );
+}
+
+export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) {
+    return NextResponse.json(
+      { ok: false, code: "CROSS_ORIGIN_BLOCKED" },
+      { status: 403, headers: noStoreHeaders() }
+    );
+  }
+
+  const retryAfter = rateLimit(req);
+  if (retryAfter) {
+    return NextResponse.json(
+      { ok: false, code: "VOICE_RATE_LIMITED", retryAfter },
+      {
+        status: 429,
+        headers: noStoreHeaders({ "Retry-After": String(retryAfter) }),
+      }
+    );
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
+    return NextResponse.json(
+      { ok: false, code: "VOICE_NOT_CONFIGURED" },
+      { status: 503, headers: noStoreHeaders() }
+    );
+  }
+
+  const body = (await req.json().catch(() => null)) as
+    | { text?: unknown; language?: unknown }
+    | null;
+  const rawText = typeof body?.text === "string" ? body.text.trim() : "";
+  const language = body?.language === "en-US" ? "en-US" : null;
+
+  if (!rawText || rawText.length > MAX_TEXT_LENGTH || !language) {
+    return NextResponse.json(
+      { ok: false, code: "INVALID_VOICE_REQUEST" },
+      { status: 400, headers: noStoreHeaders() }
+    );
+  }
+
+  const transcript = normalizeForSpeech(rawText);
+  if (!transcript) {
+    return NextResponse.json(
+      { ok: false, code: "EMPTY_SPOKEN_TRANSCRIPT" },
+      { status: 400, headers: noStoreHeaders() }
+    );
+  }
+
+  try {
+    const client = new GoogleGenAI({ apiKey });
+    const interaction = await client.interactions.create({
+      model: MODEL,
+      input: buildPerformancePrompt(transcript),
+      response_format: {
+        type: "audio",
+        mime_type: "audio/mp3",
+        bit_rate: 128_000,
+        delivery: "inline",
+      },
+      generation_config: {
+        speech_config: [{ voice: VOICE, language }],
+      },
+      store: false,
+    });
+
+    const output = interaction.output_audio;
+    if (!output?.data) throw new Error("voice_audio_missing");
+
+    const audio = Buffer.from(output.data, "base64");
+    const contentType = output.mime_type || "audio/mpeg";
+
+    return new NextResponse(audio, {
+      status: 200,
+      headers: noStoreHeaders({
+        "Content-Type": contentType,
+        "Content-Length": String(audio.byteLength),
+        "X-ZGirl-Voice-Profile": PROFILE,
+        "X-ZGirl-Voice-Candidate": "true",
+      }),
+    });
+  } catch (error) {
+    const status =
+      typeof error === "object" && error && "status" in error
+        ? Number((error as { status?: unknown }).status)
+        : 0;
+    console.error("Z-Girl voice generation failed", {
+      status: Number.isFinite(status) ? status : 0,
+      profile: PROFILE,
+    });
+
+    return NextResponse.json(
+      { ok: false, code: "VOICE_GENERATION_FAILED" },
+      { status: status === 429 ? 429 : 502, headers: noStoreHeaders() }
+    );
+  }
+}

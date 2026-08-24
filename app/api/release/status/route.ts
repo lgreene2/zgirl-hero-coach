@@ -20,6 +20,12 @@ export async function GET() {
       livePilotHumanDecisionRequired: true,
       humanDecisionAutoAdvancesStage: false,
       testPilotLiveReleaseAllowed: false,
+      naturalAiVoiceCandidate: true,
+      naturalAiVoiceLanguage: "en-US",
+      naturalAiVoiceHumanListeningRequired: true,
+      naturalAiVoicePublicReleaseApproved: false,
+      naturalAiVoiceAutoplay: false,
+      deviceVoiceFallback: true,
     },
     {
       headers: {

@@ -10,19 +10,28 @@ function requireFile(p){if(!fs.existsSync(path.join(root,p)))errors.push(`Missin
 function requireText(p,patterns){requireFile(p);if(!fs.existsSync(path.join(root,p)))return;const src=read(p);for(const re of patterns)if(!re.test(src))errors.push(`${p} missing required guard: ${re}`);}
 
 const pkg=json("package.json");
-if(pkg.version!=="3.14.0")errors.push(`package.json must be 3.14.0; found ${pkg.version}`);
+if(pkg.version!=="3.14.1")errors.push(`package.json must be 3.14.1; found ${pkg.version}`);
 
-const currentManifest=json("release/zgirl-v3.14-human-readiness-release-evidence.json");
-if(currentManifest.release!==pkg.version)errors.push(`v3.14 manifest ${currentManifest.release} does not match package ${pkg.version}`);
+const currentManifest=json("release/zgirl-v3.14.1-natural-ai-voice-candidate.json");
+if(currentManifest.release!==pkg.version)errors.push(`v3.14.1 manifest ${currentManifest.release} does not match package ${pkg.version}`);
 for(const p of currentManifest.requiredFiles??[])requireFile(p);
-for(const p of currentManifest.requiredMigrations??[])requireFile(p);
-if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")errors.push("v3.14 must remain bound to Ecosystem Alignment Lock v1.");
-if(currentManifest.operatingModel?.livePilotHumanReleaseRequired!==true)errors.push("v3.14 must preserve the final human live-release gate.");
-if(currentManifest.operatingModel?.participantPrivateReflectionTransfer!==false)errors.push("v3.14 must prohibit participant private-reflection transfer.");
-if(currentManifest.operatingModel?.humanDecisionAutoAdvancesStage!==false)errors.push("v3.14 human decisions must not auto-advance the pilot stage.");
-if(currentManifest.operatingModel?.testPilotReleaseAuthorizationAllowed!==false||currentManifest.operatingModel?.testPilotLiveStageAllowed!==false)errors.push("v3.14 must prohibit real release authorization and Live stage for test pilots.");
-if((currentManifest.releaseEvidenceGates??[]).length!==11)errors.push("v3.14 must define exactly 11 governed release-evidence gates.");
-if(JSON.stringify(currentManifest.humanDecisions)!==JSON.stringify(["ready","ready_with_conditions","not_ready"]))errors.push("v3.14 human decision vocabulary changed.");
+if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")errors.push("v3.14.1 must remain bound to Ecosystem Alignment Lock v1.");
+if(currentManifest.alignment?.cedarIdentityReused!==false||currentManifest.alignment?.nativeLanguageReviewAssetsReused!==false)errors.push("v3.14.1 must not reuse Cedar or protected native-language review identities.");
+if(currentManifest.voiceCandidate?.providerStorageDisabled!==true)errors.push("v3.14.1 must disable provider-side Interaction storage.");
+if(currentManifest.voiceCandidate?.autoplayEnabled!==false)errors.push("v3.14.1 voice must remain user initiated.");
+if(currentManifest.voiceCandidate?.humanListeningRequired!==true||currentManifest.voiceCandidate?.publicReleaseApproved!==false)errors.push("v3.14.1 must remain listening-gated until explicit product-owner approval.");
+if(currentManifest.privacy?.sendsMicrophoneAudio!==false||currentManifest.privacy?.sendsConversationHistory!==false||currentManifest.privacy?.storesGeneratedAudio!==false||currentManifest.privacy?.logsSpokenTranscript!==false)errors.push("v3.14.1 voice privacy boundary changed.");
+
+const humanManifest=json("release/zgirl-v3.14-human-readiness-release-evidence.json");
+if(humanManifest.release!=="3.14.0")errors.push(`Human-readiness baseline must remain 3.14.0; found ${humanManifest.release}`);
+for(const p of humanManifest.requiredFiles??[])requireFile(p);
+for(const p of humanManifest.requiredMigrations??[])requireFile(p);
+if(humanManifest.operatingModel?.livePilotHumanReleaseRequired!==true)errors.push("v3.14 must preserve the final human live-release gate.");
+if(humanManifest.operatingModel?.participantPrivateReflectionTransfer!==false)errors.push("v3.14 must prohibit participant private-reflection transfer.");
+if(humanManifest.operatingModel?.humanDecisionAutoAdvancesStage!==false)errors.push("v3.14 human decisions must not auto-advance the pilot stage.");
+if(humanManifest.operatingModel?.testPilotReleaseAuthorizationAllowed!==false||humanManifest.operatingModel?.testPilotLiveStageAllowed!==false)errors.push("v3.14 must prohibit real release authorization and Live stage for test pilots.");
+if((humanManifest.releaseEvidenceGates??[]).length!==11)errors.push("v3.14 must define exactly 11 governed release-evidence gates.");
+if(JSON.stringify(humanManifest.humanDecisions)!==JSON.stringify(["ready","ready_with_conditions","not_ready"]))errors.push("v3.14 human decision vocabulary changed.");
 
 const handoffManifest=json("release/zgirl-v3.13-gls-qualification-activation-handoff.json");
 if(handoffManifest.release!=="3.13.0")errors.push(`GLS handoff baseline must remain 3.13.0; found ${handoffManifest.release}`);
@@ -41,7 +50,7 @@ for(const p of prior.requiredFiles??[])requireFile(p);
 for(const p of prior.requiredMigrations??[])requireFile(p);
 requireFile("release/zgirl-v3.10-release-train.json");
 
-requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.14\.0["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.14-human-readiness-release-evidence["']/,/evidence-backed-human-live-release/]);
+requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.14\.1["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.14\.1-natural-ai-voice-candidate["']/,/listening-gated-ai-voice-device-fallback/]);
 
 // Preserve the v3.11 tenant/privacy foundation.
 const directGrant=/grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
@@ -159,6 +168,41 @@ requireText("components/institutions/InstitutionOperatorAccess.tsx",[/data-guide
 requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/DISTRACTING_NARRATION_HINTS/,/isSuitableNarrationVoice/,/curateNarrationVoices/,/rankVoices/,/pickVoice/]);
 requireText("docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md",[/Listen → See → Do → Confirm/,/never autoplays audio/i,/Completion is a usability marker only/,/must never narrate or intentionally capture/i]);
 
+// v3.14.1 live Coach voice is server-generated, disclosed, stateless and listening-gated.
+const liveVoiceRoute="app/api/voice/speech/route.ts";
+requireText(liveVoiceRoute,[
+ /gemini-3\.1-flash-tts-preview/,
+ /zgirl-live-coach-en-us-candidate-v1/,
+ /const VOICE = ["']Sulafat["']/,
+ /GEMINI_API_KEY/,
+ /store:\s*false/,
+ /providerStorageDisabled:\s*true/,
+ /publicReleaseApproved:\s*false/,
+ /Cache-Control["']:\s*["']private, no-store/,
+ /isSameOrigin/,
+ /rateLimit/,
+ /Pronounce “Z-Girl” as “Zee Girl/,
+]);
+const liveVoiceRouteSrc=read(liveVoiceRoute);
+for(const forbidden of [/console\.(?:log|info|warn)\([^)]*(?:rawText|transcript)/,/store:\s*true/,/CEDAR/i,/BIGH?HAWK/i])if(forbidden.test(liveVoiceRouteSrc))errors.push(`Live Coach voice route contains a forbidden storage, identity or transcript-log pattern: ${forbidden}`);
+
+const publicCoachPath="app/coach/page.tsx";
+requireText(publicCoachPath,[
+ /Z-Girl AI Voice · Listening candidate/,
+ /AI-generated voice/,
+ /Provider interaction storage is turned off/,
+ /Playback never starts on its own/,
+ /Device voice fallback/,
+ /device’s voice is being used/,
+ /\/api\/voice\/speech/,
+ /generatedVoiceAbortRef/,
+ /URL\.revokeObjectURL/,
+ /speechLang === ["']en-US["']/,
+]);
+const publicCoachSrc=read(publicCoachPath);
+for(const forbidden of [/zgirlGreetingPlayed/,/Z-Girl Natural Voice · Recommended/,/autoPlay/i])if(forbidden.test(publicCoachSrc))errors.push(`Public Coach regressed its honest, user-initiated voice boundary: ${forbidden}`);
+requireText("docs/ZGIRL_V3_14_1_NATURAL_AI_VOICE_CANDIDATE.md",[/listening candidate/i,/store: false/,/iPhone/,/does not publish, replace or bypass/i,/v3\.14 human release gates remain authoritative/i]);
+
 if(guidedManifest.guidedCoach?.voiceUserInitiatedOnly!==true)errors.push("Guided Coach manifest must require user-initiated voice.");
 if(guidedManifest.guidedCoach?.readsAuthenticationSecrets!==false)errors.push("Guided Coach manifest must exclude authentication secrets.");
 if(guidedManifest.guidedCoach?.readsParticipantPrivateReflections!==false)errors.push("Guided Coach manifest must exclude participant private reflections.");
@@ -173,8 +217,8 @@ if(!lockOk)errors.push(`package-lock is not reproducible for ${pkg.version}`);
 for(const wf of [".github/workflows/verify-release.yml",".github/workflows/reviewer-activation-ci.yml"])requireText(wf,[/npm ci --no-audit --no-fund/]);
 
 for(const warning of warnings)console.warn(`WARN: ${warning}`);
-if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.14 verification failed with ${errors.length} error(s).`);process.exit(1);}
-console.log(`Z-Girl v3.14 human readiness and release-evidence verification passed for ${pkg.version}.`);
+if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.14.1 verification failed with ${errors.length} error(s).`);process.exit(1);}
+console.log(`Z-Girl v3.14.1 natural AI voice candidate verification passed for ${pkg.version}.`);
 console.log(`Initial guide coverage: ${(guidedManifest.initialCoverage??[]).length}`);
 console.log(`Required Guided Coach files: ${(guidedManifest.requiredFiles??[]).length}`);
 console.log(`Known warnings: ${warnings.length}`);

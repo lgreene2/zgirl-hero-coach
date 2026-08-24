@@ -178,6 +178,8 @@ type VoiceSettingsPersist = {
   preferredVoiceNames: Record<string, string>;
 };
 
+type VoicePlaybackState = "idle" | "generating" | "ai" | "device-fallback" | "error";
+
 type RiskLevel = "low" | "medium" | "high";
 type CoachAudience = "youth" | "adult" | "supporter";
 
@@ -226,6 +228,7 @@ export default function Home() {
   const [showBreathing, setShowBreathing] = useState(false);
   const [breathingStepIndex, setBreathingStepIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voicePlaybackState, setVoicePlaybackState] = useState<VoicePlaybackState>("idle");
 
   // Voice controls (persisted)
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -264,6 +267,9 @@ export default function Home() {
 
   // Optional, low-volume cue played only when spoken output begins.
   const voiceCueRef = useRef<HTMLAudioElement | null>(null);
+  const generatedVoiceRef = useRef<HTMLAudioElement | null>(null);
+  const generatedVoiceAbortRef = useRef<AbortController | null>(null);
+  const generatedVoiceUrlRef = useRef<string | null>(null);
 
   // Load persisted voice settings before allowing the defaults to be saved.
   useEffect(() => {
@@ -472,9 +478,20 @@ export default function Home() {
 
   const stopSpeaking = useCallback(() => {
     if (typeof window === "undefined") return;
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
+    generatedVoiceAbortRef.current?.abort();
+    generatedVoiceAbortRef.current = null;
+    if (generatedVoiceRef.current) {
+      generatedVoiceRef.current.pause();
+      generatedVoiceRef.current.removeAttribute("src");
+      generatedVoiceRef.current.load();
+    }
+    if (generatedVoiceUrlRef.current) {
+      URL.revokeObjectURL(generatedVoiceUrlRef.current);
+      generatedVoiceUrlRef.current = null;
+    }
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setIsSpeaking(false);
+    setVoicePlaybackState("idle");
   }, []);
 
   const resolveVoice = useCallback(
@@ -491,12 +508,12 @@ export default function Home() {
     [voices, selectedVoiceName]
   );
 
-  const speakText = useCallback(
-    (text: string): boolean => {
+  const speakWithDeviceVoice = useCallback(
+    (text: string, isFallback = false): boolean => {
       if (!voiceEnabled || !isSpeechSupported()) return false;
-
       const chosen = resolveVoice(speechLang);
       if (!chosen) {
+        setVoicePlaybackState("error");
         if (liveRegionRef.current) {
           liveRegionRef.current.textContent =
             "No matching voice is available for the selected language on this device.";
@@ -515,12 +532,16 @@ export default function Home() {
 
       utterance.onstart = () => {
         setIsSpeaking(true);
+        setVoicePlaybackState(isFallback ? "device-fallback" : "idle");
         if (soundsEnabled && voiceCueRef.current) {
           voiceCueRef.current.currentTime = 0;
           voiceCueRef.current.play().catch(() => {});
         }
       };
-      const done = () => setIsSpeaking(false);
+      const done = () => {
+        setIsSpeaking(false);
+        setVoicePlaybackState("idle");
+      };
       utterance.onend = done;
       utterance.onerror = done;
 
@@ -531,11 +552,107 @@ export default function Home() {
     [voiceEnabled, soundsEnabled, speechRate, speechPitch, speechLang, resolveVoice]
   );
 
+  const speakText = useCallback(
+    async (text: string): Promise<boolean> => {
+      if (!voiceEnabled || typeof window === "undefined") return false;
+
+      const useAiCandidate = speechLang === "en-US" && !selectedVoiceName;
+      stopSpeaking();
+      if (!useAiCandidate) return speakWithDeviceVoice(text);
+
+      // Prime one persistent media element during a user gesture. This keeps
+      // Preview/Speak reliable in iOS in-app browsers after the network roundtrip.
+      const player = generatedVoiceRef.current;
+      const unlockPlayback = player
+        ? (() => {
+            player.src = "/sounds/zgirl-startup.wav";
+            player.volume = 0;
+            player.currentTime = 0;
+            return player.play().then(() => player.pause()).catch(() => {});
+          })()
+        : Promise.resolve();
+
+      const controller = new AbortController();
+      generatedVoiceAbortRef.current = controller;
+      setVoicePlaybackState("generating");
+      if (liveRegionRef.current) {
+        liveRegionRef.current.textContent = "Preparing Z-Girl's AI-generated voice.";
+      }
+
+      try {
+        const response = await fetch("/api/voice/speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, language: speechLang }),
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`voice_${response.status}`);
+
+        const blob = await response.blob();
+        if (!blob.size) throw new Error("voice_empty");
+        const objectUrl = URL.createObjectURL(blob);
+        generatedVoiceUrlRef.current = objectUrl;
+        const audio = generatedVoiceRef.current || new Audio();
+        await unlockPlayback;
+        audio.src = objectUrl;
+        audio.volume = 1;
+        audio.preload = "auto";
+        generatedVoiceAbortRef.current = null;
+
+        audio.onplay = () => {
+          setIsSpeaking(true);
+          setVoicePlaybackState("ai");
+          if (soundsEnabled && voiceCueRef.current) {
+            voiceCueRef.current.currentTime = 0;
+            voiceCueRef.current.play().catch(() => {});
+          }
+        };
+        const finish = () => {
+          setIsSpeaking(false);
+          setVoicePlaybackState("idle");
+          generatedVoiceAbortRef.current = null;
+          if (generatedVoiceUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            generatedVoiceUrlRef.current = null;
+          }
+        };
+        audio.onended = finish;
+        audio.onerror = finish;
+
+        await audio.play();
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent = "Playing Z-Girl's AI-generated voice.";
+        }
+        return true;
+      } catch {
+        if (controller.signal.aborted) return false;
+        stopSpeaking();
+        setVoicePlaybackState("device-fallback");
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent =
+            "The AI voice is unavailable, so Z-Girl is using this device's voice.";
+        }
+        return speakWithDeviceVoice(text, true);
+      }
+    },
+    [
+      voiceEnabled,
+      speechLang,
+      selectedVoiceName,
+      soundsEnabled,
+      speakWithDeviceVoice,
+      stopSpeaking,
+    ]
+  );
+
+  useEffect(() => () => stopSpeaking(), [stopSpeaking]);
+
   const speakMessage = useCallback(
     (m: ChatMessage) => {
       if (m.role !== "assistant") return;
       if (mutedMessageIds[m.id]) return;
-      speakText(m.text);
+      void speakText(m.text);
     },
     [mutedMessageIds, speakText]
   );
@@ -586,16 +703,8 @@ export default function Home() {
     const greeting =
       LANG_OPTIONS.find((option) => option.code === speechLang)?.greeting ||
       LANG_OPTIONS[0].greeting;
-    return speakText(greeting);
+    void speakText(greeting);
   }, [speakText, speechLang]);
-
-  // auto greeting once per session
-  useEffect(() => {
-    if (typeof window === "undefined" || !voiceSettingsLoaded || !voices.length) return;
-    const already = window.sessionStorage.getItem("zgirlGreetingPlayed");
-    if (already) return;
-    if (playGreeting()) window.sessionStorage.setItem("zgirlGreetingPlayed", "1");
-  }, [playGreeting, voiceSettingsLoaded, voices.length]);
 
   // Deep-link support: /?chat=1 opens chat, and optional ?prompt=... pre-fills input
   useEffect(() => {
@@ -744,7 +853,7 @@ export default function Home() {
       const safeToAutoSpeak = apiRisk === "low";
       if (voiceEnabled && autoSpeakReplies && safeToAutoSpeak) {
         setTimeout(() => {
-          if (!mutedMessageIds[assistantMessage.id]) speakText(assistantText);
+          if (!mutedMessageIds[assistantMessage.id]) void speakText(assistantText);
         }, 250);
       }
 
@@ -870,6 +979,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
   const currentBreathingStep = BREATHING_STEPS[breathingStepIndex];
   const speechOk = typeof window === "undefined" ? true : isSpeechSupported();
+  const aiAudioOk = typeof window === "undefined" ? true : "Audio" in window;
   const speechRecOk =
     typeof window === "undefined" ? true : isSpeechRecognitionSupported();
 
@@ -881,6 +991,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
   const hasMatchingVoice = voices.some((voice) => voiceMatchesLanguage(voice, speechLang));
   const usingMismatchedVoice = Boolean(
     activeVoice && !voiceMatchesLanguage(activeVoice, speechLang)
+  );
+  const aiVoiceCandidateActive =
+    speechLang === "en-US" && !selectedVoiceName;
+  const voiceOutputOk = aiAudioOk || speechOk;
+  const canPreviewVoice = Boolean(
+    voiceEnabled &&
+      ((aiVoiceCandidateActive && aiAudioOk) ||
+        (!aiVoiceCandidateActive && speechOk && activeVoice))
   );
 
   const assistantMessages = messages.filter((m) => m.role === "assistant");
@@ -1046,7 +1164,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                 </button>
               </div>
 
-              {!speechOk && (
+              {!voiceOutputOk && (
                 <div className="text-[11px] text-amber-100 border border-amber-500/40 bg-amber-500/10 rounded-xl px-3 py-2">
                   Voice isn’t supported in this browser/device. You can still use chat normally.
                 </div>
@@ -1058,7 +1176,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     type="checkbox"
                     checked={voiceEnabled}
                     onChange={() => setVoiceEnabled((v) => !v)}
-                    disabled={!speechOk}
+                    disabled={!voiceOutputOk}
                     aria-label="Enable voice output"
                   />
                   <span>Voice output</span>
@@ -1069,7 +1187,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     type="checkbox"
                     checked={autoSpeakReplies}
                     onChange={() => setAutoSpeakReplies((v) => !v)}
-                    disabled={!speechOk || !voiceEnabled}
+                    disabled={!voiceOutputOk || !voiceEnabled}
                     aria-label="Auto speak replies"
                   />
                   <span>Auto-speak replies</span>
@@ -1112,33 +1230,51 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-[11px] font-semibold text-teal-100">
-                        Z-Girl Natural Voice · Recommended
+                        {aiVoiceCandidateActive
+                          ? "Z-Girl AI Voice · Listening candidate"
+                          : "Device voice fallback"}
                       </div>
                       <div className="mt-1 text-[10px] leading-4 text-slate-400">
-                        {activeVoice
-                          ? `Using ${activeVoice.name} · ${activeVoice.lang}`
-                          : voiceCatalogSettled
-                            ? "No matching voice is installed for this language."
-                            : "Finding the best voice on this device…"}
+                        {voicePlaybackState === "generating"
+                          ? "Preparing natural speech…"
+                          : aiVoiceCandidateActive
+                            ? "Sulafat · en-US · v3.14.1 review candidate"
+                            : activeVoice
+                              ? `Using device voice ${activeVoice.name} · ${activeVoice.lang}`
+                              : voiceCatalogSettled
+                                ? "No matching device voice is installed for this language."
+                                : "Finding a matching voice on this device…"}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={playGreeting}
-                      disabled={!speechOk || !voiceEnabled || !activeVoice}
+                      disabled={!canPreviewVoice || voicePlaybackState === "generating"}
                       className="inline-flex shrink-0 items-center justify-center rounded-full border border-teal-300/40 bg-teal-300/10 px-3 py-1.5 text-[11px] font-semibold text-teal-100 hover:bg-teal-300/20 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Preview Z-Girl's voice"
+                      aria-label="Preview Z-Girl's AI-generated voice candidate"
                     >
-                      Preview voice
+                      {voicePlaybackState === "generating" ? "Preparing…" : "Preview voice"}
                     </button>
                   </div>
 
-                  {!hasMatchingVoice && voiceCatalogSettled && !selectedVoiceName && (
+                  {aiVoiceCandidateActive && (
+                    <p className="mt-2 text-[10px] leading-4 text-slate-300">
+                      AI-generated voice. When you tap Speak or Preview, the visible Z-Girl reply is sent to the AI voice provider for speech. Provider interaction storage is turned off, and generated audio is not saved by this app. Playback never starts on its own.
+                    </p>
+                  )}
+
+                  {voicePlaybackState === "device-fallback" && (
+                    <p className="mt-2 text-[10px] leading-4 text-amber-100" role="status">
+                      The AI voice could not play, so this device’s voice is being used for this reply.
+                    </p>
+                  )}
+
+                  {!aiVoiceCandidateActive && !hasMatchingVoice && voiceCatalogSettled && !selectedVoiceName && (
                     <p className="mt-2 text-[10px] leading-4 text-amber-100">
                       Spoken output is paused so Z-Girl does not silently use a voice from the wrong language. You can install a matching device voice or choose one intentionally under Advanced voice options.
                     </p>
                   )}
-                  {usingMismatchedVoice && (
+                  {!aiVoiceCandidateActive && usingMismatchedVoice && (
                     <p className="mt-2 text-[10px] leading-4 text-amber-100">
                       This device voice does not match the selected language and may pronounce words incorrectly.
                     </p>
@@ -1160,7 +1296,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   {advancedVoiceOpen && (
                     <div id="advanced-voice-options" className="mt-2 grid grid-cols-1 gap-3">
                       <label className="text-[11px] text-slate-300">
-                        Device voice
+                        Device fallback voice
                         <select
                           className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1.5 text-[12px] text-slate-50"
                           value={selectedVoiceAvailable ? selectedVoiceName : ""}
@@ -1177,7 +1313,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           disabled={!speechOk || !voices.length}
                           aria-label="Select a device voice"
                         >
-                          <option value="">Z-Girl Natural Voice (recommended)</option>
+                          <option value="">Automatic device fallback</option>
                           {voiceOptions.map((voice) => (
                             <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
                               {voiceMatchesLanguage(voice, speechLang) ? "✓ " : ""}
@@ -1186,7 +1322,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           ))}
                         </select>
                         <span className="mt-1 block text-[10px] leading-4 text-slate-500">
-                          Matching-language voices appear first. Available voices vary by browser and device.
+                          Choosing a device voice overrides the AI candidate. Matching-language voices appear first and vary by browser and device.
                         </span>
                       </label>
 
@@ -1236,7 +1372,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                         }}
                         className="justify-self-start text-[10px] font-semibold text-sky-300 underline underline-offset-2 hover:text-sky-200"
                       >
-                        Reset natural voice settings
+                        Reset device fallback settings
                       </button>
                     </div>
                   )}
@@ -1466,7 +1602,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                                 <button
                                   type="button"
                                   onClick={() => speakMessage(m)}
-                                  disabled={!speechOk || !voiceEnabled || isMuted}
+                                  disabled={!voiceOutputOk || !voiceEnabled || isMuted}
                                   className="text-sky-200 hover:text-sky-100 disabled:opacity-50 disabled:cursor-not-allowed underline underline-offset-2"
                                   aria-label={isLastAssistant ? "Speak last reply" : "Speak reply"}
                                   title={isMuted ? "This message is muted" : "Speak this reply"}
@@ -1898,6 +2034,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
 
       {/* Optional voice-start cue; independent from spoken output. */}
       <audio ref={voiceCueRef} src="/sounds/zgirl-startup.wav" preload="auto" />
+      {/* Persistent player keeps user-initiated AI voice reliable on iPhone. */}
+      <audio ref={generatedVoiceRef} preload="none" playsInline />
     </div>
   );
 }
