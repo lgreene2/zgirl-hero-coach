@@ -180,10 +180,44 @@ type VoiceSettingsPersist = {
 type VoicePlaybackState =
   | "idle"
   | "generating"
+  | "retrying"
   | "ready"
   | "ai"
   | "device-fallback"
+  | "busy"
   | "error";
+
+const AI_VOICE_RETRY_LIMIT = 1;
+const AI_VOICE_DEFAULT_RETRY_MS = 5_000;
+const AI_VOICE_MAX_RETRY_MS = 8_000;
+
+function voiceRetryDelayMs(response: Response): number {
+  const retryAfterSeconds = Number(response.headers.get("Retry-After"));
+  if (!Number.isFinite(retryAfterSeconds) || retryAfterSeconds <= 0) {
+    return AI_VOICE_DEFAULT_RETRY_MS;
+  }
+  return Math.min(AI_VOICE_MAX_RETRY_MS, retryAfterSeconds * 1_000);
+}
+
+function waitForVoiceRetry(delayMs: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new Error("voice_aborted"));
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, delayMs);
+    const abort = () => {
+      window.clearTimeout(timer);
+      signal.removeEventListener("abort", abort);
+      reject(new Error("voice_aborted"));
+    };
+    signal.addEventListener("abort", abort, { once: true });
+  });
+}
 
 type RiskLevel = "low" | "medium" | "high";
 type CoachAudience = "youth" | "adult" | "supporter";
@@ -676,14 +710,35 @@ export default function Home() {
       }
 
       try {
-        const response = await fetch("/api/voice/speech", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, language: speechLang }),
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`voice_${response.status}`);
+        let response: Response | null = null;
+        for (let attempt = 0; attempt <= AI_VOICE_RETRY_LIMIT; attempt += 1) {
+          response = await fetch("/api/voice/speech", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, language: speechLang }),
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (response.ok) break;
+
+          const errorBody = (await response.json().catch(() => null)) as
+            | { code?: unknown }
+            | null;
+          const providerBusy =
+            response.status === 429 &&
+            errorBody?.code === "VOICE_GENERATION_RATE_LIMITED";
+          if (!providerBusy || attempt >= AI_VOICE_RETRY_LIMIT) {
+            throw new Error(response.status === 429 ? "voice_busy" : `voice_${response.status}`);
+          }
+
+          setVoicePlaybackState("retrying");
+          if (liveRegionRef.current) {
+            liveRegionRef.current.textContent =
+              "Z-Girl's natural voice service is busy. Retrying once.";
+          }
+          await waitForVoiceRetry(voiceRetryDelayMs(response), controller.signal);
+        }
+        if (!response?.ok) throw new Error("voice_busy");
 
         const blob = await response.blob();
         if (!blob.size) throw new Error("voice_empty");
@@ -750,13 +805,17 @@ export default function Home() {
           }
         }
         return true;
-      } catch {
+      } catch (error) {
         if (controller.signal.aborted) return false;
+        const providerBusy =
+          error instanceof Error && error.message === "voice_busy";
         stopSpeaking();
-        setVoicePlaybackState("error");
+        setVoicePlaybackState(providerBusy ? "busy" : "error");
         if (liveRegionRef.current) {
           liveRegionRef.current.textContent =
-            "Z-Girl's natural voice is unavailable. No device voice was substituted.";
+            providerBusy
+              ? "Z-Girl's natural voice service is busy. Tap Speak to try this reply again."
+              : "Z-Girl's natural voice is unavailable. No device voice was substituted.";
         }
         return false;
       }
@@ -1359,7 +1418,11 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           : "Device voice fallback"}
                       </div>
                       <div className="mt-1 text-[10px] leading-4 text-slate-400">
-                        {voicePlaybackState === "generating"
+                        {voicePlaybackState === "retrying"
+                          ? "Voice service busy — retrying once…"
+                          : voicePlaybackState === "busy"
+                            ? "Voice service busy — tap Speak to retry"
+                        : voicePlaybackState === "generating"
                           ? "Preparing natural speech…"
                           : voicePlaybackState === "ready"
                             ? "Natural voice ready — tap Play"
@@ -1375,7 +1438,12 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     <button
                       type="button"
                       onClick={playGreeting}
-                      disabled={!canPreviewVoice || voicePlaybackState === "generating"}
+                      disabled={
+                        !canPreviewVoice ||
+                        voicePlaybackState === "generating" ||
+                        voicePlaybackState === "retrying" ||
+                        voicePlaybackState === "ai"
+                      }
                       className="inline-flex shrink-0 items-center justify-center rounded-full border border-teal-300/40 bg-teal-300/10 px-3 py-1.5 text-[11px] font-semibold text-teal-100 hover:bg-teal-300/20 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={
                         voicePlaybackState === "ready"
@@ -1383,7 +1451,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           : "Preview Z-Girl's approved AI-generated voice"
                       }
                     >
-                      {voicePlaybackState === "generating"
+                      {voicePlaybackState === "retrying"
+                        ? "Retrying…"
+                        : voicePlaybackState === "generating"
                         ? "Preparing…"
                         : voicePlaybackState === "ready"
                           ? "Play natural voice"
@@ -1412,6 +1482,12 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   {voicePlaybackState === "error" && aiVoiceCandidateActive && (
                     <p className="mt-2 text-[10px] leading-4 text-amber-100" role="status">
                       The natural voice could not play. No robotic device voice was substituted. Please retry the preview.
+                    </p>
+                  )}
+
+                  {voicePlaybackState === "busy" && aiVoiceCandidateActive && (
+                    <p className="mt-2 text-[10px] leading-4 text-amber-100" role="status">
+                      The natural voice service is busy after one automatic retry. Tap Speak to try this reply again; no robotic device voice was substituted.
                     </p>
                   )}
 
@@ -1726,7 +1802,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     const isLastAssistant = m.role === "assistant" && lastAssistantId === m.id;
                     const isPreparingThisReply =
                       m.role === "assistant" &&
-                      voicePlaybackState === "generating" &&
+                      (voicePlaybackState === "generating" ||
+                        voicePlaybackState === "retrying") &&
                       generatedVoicePendingTextRef.current === m.text;
                     const isPlayingThisReply =
                       m.role === "assistant" &&
@@ -1761,6 +1838,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                                     !voiceEnabled ||
                                     isMuted ||
                                     voicePlaybackState === "generating" ||
+                                    voicePlaybackState === "retrying" ||
                                     voicePlaybackState === "ai"
                                   }
                                   className="text-sky-200 hover:text-sky-100 disabled:opacity-50 disabled:cursor-not-allowed underline underline-offset-2"
@@ -1776,7 +1854,9 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                                   }
                                 >
                                   {isPreparingThisReply
-                                    ? "⏳ Preparing…"
+                                    ? voicePlaybackState === "retrying"
+                                      ? "⏳ Retrying…"
+                                      : "⏳ Preparing…"
                                     : isPlayingThisReply
                                       ? "🔊 Playing…"
                                     : isLastAssistant
