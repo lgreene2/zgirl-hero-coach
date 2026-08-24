@@ -201,17 +201,22 @@ export async function POST(req: NextRequest) {
     if (!output?.data) throw new Error("voice_audio_missing");
 
     const generatedAudio = Buffer.from(output.data, "base64");
-    const isRawPcm = !output.mime_type || output.mime_type === "audio/l16";
-    const audio = isRawPcm
-      ? asWaveFile(
-          generatedAudio,
-          output.sample_rate || 24_000,
-          output.channels || 1
-        )
-      : generatedAudio;
-    const contentType = isRawPcm
-      ? "audio/wav"
-      : output.mime_type || "application/octet-stream";
+    const hasWaveHeader =
+      generatedAudio.byteLength >= 12 &&
+      generatedAudio.subarray(0, 4).toString("ascii") === "RIFF" &&
+      generatedAudio.subarray(8, 12).toString("ascii") === "WAVE";
+    const hasMp3Header =
+      generatedAudio.subarray(0, 3).toString("ascii") === "ID3" ||
+      (generatedAudio[0] === 0xff && (generatedAudio[1] & 0xe0) === 0xe0);
+    const audio =
+      hasWaveHeader || hasMp3Header
+        ? generatedAudio
+        : asWaveFile(
+            generatedAudio,
+            output.sample_rate || 24_000,
+            output.channels || 1
+          );
+    const contentType = hasMp3Header ? "audio/mpeg" : "audio/wav";
     const responseBody = Uint8Array.from(audio);
 
     return new NextResponse(responseBody, {
