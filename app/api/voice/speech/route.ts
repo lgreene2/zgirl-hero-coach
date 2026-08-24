@@ -245,6 +245,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const requestStartedAt = Date.now();
   try {
     const client = new GoogleGenAI({ apiKey });
     const generated = await generateVoiceAudio(
@@ -271,6 +272,12 @@ export async function POST(req: NextRequest) {
           );
     const contentType = hasMp3Header ? "audio/mpeg" : "audio/wav";
     const responseBody = Uint8Array.from(audio);
+    const durationMs = Date.now() - requestStartedAt;
+    console.info("Z-Girl voice generation completed", {
+      durationMs,
+      model: generated.model,
+      profile: PROFILE,
+    });
 
     return new NextResponse(responseBody, {
       status: 200,
@@ -281,6 +288,7 @@ export async function POST(req: NextRequest) {
         "X-ZGirl-Voice-Candidate": "false",
         "X-ZGirl-Voice-Release": "approved",
         "X-ZGirl-Voice-Model": generated.model,
+        "Server-Timing": `zgirl-tts;dur=${durationMs}`,
       }),
     });
   } catch (error) {
@@ -289,13 +297,17 @@ export async function POST(req: NextRequest) {
         ? Number((error as { status?: unknown }).status)
         : 0;
     console.error("Z-Girl voice generation failed", {
+      durationMs: Date.now() - requestStartedAt,
       status: Number.isFinite(status) ? status : 0,
       profile: PROFILE,
     });
 
     return NextResponse.json(
       { ok: false, code: "VOICE_GENERATION_FAILED" },
-      { status: status === 429 ? 429 : 502, headers: noStoreHeaders() }
+      {
+        status: status === 429 ? 429 : 502,
+        headers: noStoreHeaders(status === 429 ? { "Retry-After": "5" } : {}),
+      }
     );
   }
 }
