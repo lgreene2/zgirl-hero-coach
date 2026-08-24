@@ -179,6 +179,8 @@ requireText(liveVoiceRoute,[
  /providerStorageDisabled:\s*true/,
  /humanListeningApproved:\s*true/,
  /publicReleaseApproved:\s*true/,
+ /["']X-ZGirl-Voice-Candidate["']:\s*["']false["']/,
+ /["']X-ZGirl-Voice-Release["']:\s*["']approved["']/,
  /Cache-Control["']:\s*["']private, no-store/,
  /isSameOrigin/,
  /rateLimit/,
