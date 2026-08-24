@@ -33,7 +33,8 @@
     "components/institutions/GlsPilotCandidateQueue.tsx",
     "docs/ZGIRL_V3_13_GLS_QUALIFICATION_ACTIVATION_HANDOFF.md",
     "lib/release.ts",
-    "release/zgirl-v3.12-guided-coach.json"
+    "release/zgirl-v3.12-guided-coach.json",
+    "docs/ZGIRL_V3_13_PRODUCTION_ACTIVATION_RECEIPT.md"
   ],
   "releaseGates": [
     "package, lockfile, runtime and page identity are 3.13.0",
@@ -50,5 +51,24 @@
     "GitHub release and reviewer workflows pass",
     "exact-head Vercel preview is READY",
     "production remains human-gated"
-  ]
+  ],
+  "productionActivation": {
+    "verifiedAt": "2026-08-24",
+    "zGirlMainSha": "cec7b709f2dd059be611d3187c097ab99cdfaeb6",
+    "zGirlProductionDeployment": "dpl_6gvfEinBtgecV2Mb7VQ3APQyE79z",
+    "glsBridgeRepairPr": "lgreene2/lead-with-greene#55",
+    "glsBridgeRepairSha": "34f6b8e5421f8a047eae48a6c0bf877a598c1ee5",
+    "glsProductionDeployment": "dpl_GYbbeLnSLzkEJzAw3xfqmHosHboZ",
+    "productionSyncStatuses": [
+      200,
+      200
+    ],
+    "implementationRowCount": 1,
+    "pilotRowCount": 1,
+    "livePilotCount": 0,
+    "realLivePilotCount": 0,
+    "qaSessionsRemaining": 0,
+    "qaCredentialsRemaining": 0,
+    "receipt": "docs/ZGIRL_V3_13_PRODUCTION_ACTIVATION_RECEIPT.md"
+  }
 }
