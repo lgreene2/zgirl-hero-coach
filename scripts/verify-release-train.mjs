@@ -183,6 +183,8 @@ requireText(liveVoiceRoute,[
  /["']X-ZGirl-Voice-Release["']:\s*["']approved["']/,
  /Server-Timing/,
  /durationMs/,
+ /VOICE_GENERATION_RATE_LIMITED/,
+ /X-ZGirl-Voice-Retryable/,
  /Cache-Control["']:\s*["']private, no-store/,
  /isSameOrigin/,
  /rateLimit/,
@@ -203,6 +205,8 @@ requireText(publicCoachPath,[
  /generatedVoicePendingTextRef/,
  /primeAiAudioContext/,
  /Preparing…/,
+ /Retrying…/,
+ /AI_VOICE_RETRY_LIMIT\s*=\s*1/,
  /URL\.revokeObjectURL/,
  /speechLang === ["']en-US["']/,
 ]);
