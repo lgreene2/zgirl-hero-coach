@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
-import AudioReviewClient from "./AudioReviewClientV3";
+import AudioReviewClient from "./AudioReviewClientV4";
 
 export const metadata: Metadata = {
   title: "30-Day Hero Within Audio Review | Z-Girl",
-  description: "Private governed production review surface for Z-Girl 30-Day Hero Within English audio candidates.",
+  description: "Private production review surface for Z-Girl 30-Day Hero Within English audio candidates.",
   robots: {
     index: false,
     follow: false,
@@ -23,11 +23,12 @@ export default function AudioReviewPage() {
             30-Day Hero Within English Audio Review
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            Prepare one exact-script Z-Girl review candidate as a governed render job. When the provider succeeds, the candidate is kept in private Greene-controlled staging storage so listening and replay no longer depend on live TTS availability. Stored candidates are still review artifacts—not masters, releases, or approved commercial audio.
+            The representative listening gate now prepares Days 1, 8, 15, 22, and 30 sequentially through governed Greene staging. A successful render is stored once and replayed from private Greene storage; provider availability no longer controls every listening session.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[.12em] text-slate-300">
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">5-track gate factory</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Persistent private review audio</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Human listening required</span>
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Greene staging storage</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No autoplay</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No device voice fallback</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No production release</span>
