@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "release": "3.14.0",
+  "purpose": "Evidence-backed human readiness decisions and database-enforced live-pilot release authority.",
+  "productionBaseline": {
+    "mainSha": "148ad1362dc015606b2cd53fa1177a4142dedfbf",
+    "priorRelease": "3.13.0",
+    "customDomain": "https://zgirlinitiative.org",
+    "supabaseStagingProjectRef": "pysoqiubmmhsbfawrrrc"
+  },
+  "alignment": {
+    "contract": "greene.ecosystem-alignment-lock.v1",
+    "canonicalSource": "lgreene2/lead-with-greene/governance/ecosystem-alignment-lock-v1.json",
+    "systemRole": "specialized-the4lessons-leap-application-profile"
+  },
+  "operatingModel": {
+    "commercialSourceOfTruth": "Greene Leadership System",
+    "implementationSourceOfTruth": "Z-Girl",
+    "participantPrivateReflectionTransfer": false,
+    "participantPrivateReflectionOperatorAccess": false,
+    "institutionalReportingAggregateOnly": true,
+    "livePilotHumanReleaseRequired": true,
+    "humanDecisionAutoAdvancesStage": false,
+    "testPilotReleaseAuthorizationAllowed": false,
+    "testPilotLiveStageAllowed": false
+  },
+  "requiredMigrations": [
+    "supabase/migrations/20260824_zgirl_human_readiness_release_evidence_v3_14.sql",
+    "supabase/migrations/20260824_zgirl_human_readiness_release_evidence_v3_14_index_hardening.sql"
+  ],
+  "requiredFiles": [
+    ".greene/ecosystem-alignment.json",
+    "app/api/institutions/ops/pilots/action/route.ts",
+    "app/api/institutions/ops/pilots/dashboard/route.ts",
+    "app/institutions/ops/pilots/[id]/release-decision/page.tsx",
+    "components/institutions/PilotOperationsConsole.tsx",
+    "components/institutions/PilotReleaseGatePanel.tsx",
+    "components/institutions/PilotReleaseDecisionReceipt.tsx",
+    "docs/ZGIRL_V3_14_HUMAN_READINESS_RELEASE_EVIDENCE.md",
+    "lib/release.ts",
+    "release/zgirl-v3.13-gls-qualification-activation-handoff.json"
+  ],
+  "releaseEvidenceGates": [
+    "method_fidelity",
+    "safety_escalation",
+    "age_fit",
+    "participant_agency",
+    "privacy_data_boundary",
+    "accessibility",
+    "technical_reliability",
+    "family_notice_consent",
+    "staff_orientation",
+    "cohort_schedule_devices",
+    "aggregate_measurement_plan"
+  ],
+  "humanDecisions": [
+    "ready",
+    "ready_with_conditions",
+    "not_ready"
+  ],
+  "releaseGates": [
+    "all release evidence is reviewed by a named operator",
+    "assessed evidence includes a durable administrative reference",
+    "conditional and failed evidence includes reviewer notes",
+    "Ready requires every evidence and operational gate",
+    "Ready with conditions cannot authorize live release",
+    "Not ready cannot authorize live release",
+    "test records cannot authorize release or enter Live",
+    "decisions are append-only and snapshot their evidence basis",
+    "decision finalization never auto-advances lifecycle stage",
+    "Live requires the latest explicit human release authorization",
+    "current release evidence must still pass at Live transition",
+    "no participant private reflection or individual case data is stored",
+    "Supabase RLS, direct table revocation and RPC capability checks are verified",
+    "GitHub release workflows and exact-head Vercel Preview pass"
+  ]
+}

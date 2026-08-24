@@ -64,7 +64,7 @@ export function commandCenterMapLesson(): GuideLesson {
       {
         id: "map-pilots",
         title: "Pilot Command Center",
-        body: "Use the Pilot Command Center after a credible GLS opportunity exists. This is where a qualified institution becomes a governed implementation with onboarding, cohorts, facilitators, milestones, evidence, closeout, renewal, and expansion.",
+        body: "Use the Pilot Command Center after a credible GLS opportunity exists. This is where a qualified institution becomes a governed implementation with onboarding, cohorts, facilitators, release evidence, a named human readiness decision, delivery evidence, closeout, renewal, and expansion.",
         href: "/institutions/ops/pilots",
         actionLabel: "Open Pilot Command Center",
       },
@@ -130,7 +130,7 @@ export function fullOrientationLesson(roleLabel: string): GuideLesson {
       {
         id: "orientation-6",
         title: "Human gates remain human",
-        body: "The system can organize work, surface deadlines, prepare packets, and automate reminders. It does not autonomously attest evidence, execute agreements, approve authority, change access, or create a legal or regulatory compliance conclusion.",
+        body: "The system can organize work, surface deadlines, prepare packets, and calculate whether evidence is complete. It does not autonomously attest evidence, execute agreements, approve authority, release a live pilot, change access, or create a legal or regulatory compliance conclusion.",
       },
       {
         id: "orientation-7",
@@ -192,9 +192,25 @@ export function pageLesson(pathname: string, state: GuideState = {}): GuideLesso
       steps: [
         { id: "pilot-1", title: "GLS opportunity queue", body: opportunityCopy, target: "[data-guide-target='gls-queue']" },
         { id: "pilot-2", title: "NEW does not mean QUALIFIED", body: "A New opportunity is a credible prospect, not an approved pilot. Before advancing it, confirm a specific use case, participant group, sponsor or decision authority, facilitator or implementation access, privacy and accessibility fit, timeline, and contracting path.", target: "[data-guide-target='gls-opportunity-card']" },
-        { id: "pilot-3", title: "Create the pilot only after qualification", body: "Once qualification is supported by real institutional facts, create the institution record and governed pilot workspace. The pilot then carries intake, roles, cohorts, milestones, launch readiness, aggregate adoption, implementation evidence, closeout, renewal, and expansion.", target: "[data-guide-target='pilot-operations']" },
+        { id: "pilot-3", title: "Create the pilot only after qualification", body: "Once qualification is supported by real institutional facts, create the institution record and governed pilot workspace. The pilot then carries intake, roles, cohorts, milestones, release evidence, a human readiness decision, aggregate adoption, implementation evidence, closeout, renewal, and expansion.", target: "[data-guide-target='pilot-operations']" },
         { id: "pilot-4", title: "Evidence without surveillance", body: "Record aggregate adoption and clearly labeled evidence provenance. Facilitator observations, participant-reported outcomes, administrator feedback, and system analytics are different evidence types and should remain distinguishable.", safety: "Private reflection text and participant case data do not belong in the Pilot Command Center." },
         { id: "pilot-5", title: "Your next action", body: top?.nextAction || "Use the GLS next-action record to determine whether the institution needs outreach, fit review, proposal work, agreement preparation, onboarding, or implementation follow-up." },
+      ],
+    };
+  }
+
+  if (pathname.startsWith("/institutions/ops/pilots/")) {
+    return {
+      key: "pilot-human-release",
+      title: "Pilot Human Release Gate",
+      subtitle: "Evidence may inform the decision; it never replaces the decision.",
+      estimatedMinutes: 4,
+      steps: [
+        { id: "release-1", title: "Operational readiness comes first", body: "Complete the intake checks, named System Owner, implementation contact, facilitator, safety contact, accessibility contact, and a Ready aggregate cohort. A commercial agreement does not prove implementation readiness." },
+        { id: "release-2", title: "Review every release-evidence category", body: "Use the Release Gate tab to review method fidelity, safety, age fit, participant agency, privacy, accessibility, device reliability, notice or consent, staff orientation, cohort planning, and aggregate measurement. Every assessed item needs a durable administrative evidence reference." },
+        { id: "release-3", title: "Keep private reflection outside the receipt", body: "Release evidence and decision rationale are administrative records. Never paste participant reflections, journals, diagnoses, counseling notes, safeguarding narratives, or individual case records.", safety: "Use policy references, QA receipts, aggregate plans, and named adult review records only." },
+        { id: "release-4", title: "Finalize the human decision", body: "A named authorized operator chooses Ready, Ready with conditions, or Not ready. The immutable receipt snapshots the evidence basis. Ready with conditions and Not ready cannot authorize Live release." },
+        { id: "release-5", title: "Release and stage movement stay separate", body: "Even an authorized Ready decision does not automatically change the lifecycle stage. A separate authorized action must move the pilot to Live, and the database checks the latest human decision and current evidence again." },
       ],
     };
   }

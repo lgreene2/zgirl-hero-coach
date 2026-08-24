@@ -10,15 +10,24 @@ function requireFile(p){if(!fs.existsSync(path.join(root,p)))errors.push(`Missin
 function requireText(p,patterns){requireFile(p);if(!fs.existsSync(path.join(root,p)))return;const src=read(p);for(const re of patterns)if(!re.test(src))errors.push(`${p} missing required guard: ${re}`);}
 
 const pkg=json("package.json");
-if(pkg.version!=="3.13.0")errors.push(`package.json must be 3.13.0; found ${pkg.version}`);
+if(pkg.version!=="3.14.0")errors.push(`package.json must be 3.14.0; found ${pkg.version}`);
 
-const currentManifest=json("release/zgirl-v3.13-gls-qualification-activation-handoff.json");
-if(currentManifest.release!==pkg.version)errors.push(`v3.13 manifest ${currentManifest.release} does not match package ${pkg.version}`);
+const currentManifest=json("release/zgirl-v3.14-human-readiness-release-evidence.json");
+if(currentManifest.release!==pkg.version)errors.push(`v3.14 manifest ${currentManifest.release} does not match package ${pkg.version}`);
 for(const p of currentManifest.requiredFiles??[])requireFile(p);
 for(const p of currentManifest.requiredMigrations??[])requireFile(p);
-if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")errors.push("v3.13 must remain bound to Ecosystem Alignment Lock v1.");
-if(currentManifest.operatingModel?.livePilotHumanReleaseRequired!==true)errors.push("v3.13 must preserve the final human live-release gate.");
-if(currentManifest.operatingModel?.participantPrivateReflectionTransfer!==false)errors.push("v3.13 must prohibit participant private-reflection transfer.");
+if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")errors.push("v3.14 must remain bound to Ecosystem Alignment Lock v1.");
+if(currentManifest.operatingModel?.livePilotHumanReleaseRequired!==true)errors.push("v3.14 must preserve the final human live-release gate.");
+if(currentManifest.operatingModel?.participantPrivateReflectionTransfer!==false)errors.push("v3.14 must prohibit participant private-reflection transfer.");
+if(currentManifest.operatingModel?.humanDecisionAutoAdvancesStage!==false)errors.push("v3.14 human decisions must not auto-advance the pilot stage.");
+if(currentManifest.operatingModel?.testPilotReleaseAuthorizationAllowed!==false||currentManifest.operatingModel?.testPilotLiveStageAllowed!==false)errors.push("v3.14 must prohibit real release authorization and Live stage for test pilots.");
+if((currentManifest.releaseEvidenceGates??[]).length!==11)errors.push("v3.14 must define exactly 11 governed release-evidence gates.");
+if(JSON.stringify(currentManifest.humanDecisions)!==JSON.stringify(["ready","ready_with_conditions","not_ready"]))errors.push("v3.14 human decision vocabulary changed.");
+
+const handoffManifest=json("release/zgirl-v3.13-gls-qualification-activation-handoff.json");
+if(handoffManifest.release!=="3.13.0")errors.push(`GLS handoff baseline must remain 3.13.0; found ${handoffManifest.release}`);
+for(const p of handoffManifest.requiredFiles??[])requireFile(p);
+for(const p of handoffManifest.requiredMigrations??[])requireFile(p);
 
 const guidedManifest=json("release/zgirl-v3.12-guided-coach.json");
 if(guidedManifest.release!=="3.12.0")errors.push(`Guided Coach baseline must remain 3.12.0; found ${guidedManifest.release}`);
@@ -32,7 +41,7 @@ for(const p of prior.requiredFiles??[])requireFile(p);
 for(const p of prior.requiredMigrations??[])requireFile(p);
 requireFile("release/zgirl-v3.10-release-train.json");
 
-requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.13\.0["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.13-gls-qualification-activation-handoff["']/,/governed-gls-qualification-activation-handoff/]);
+requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.14\.0["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.14-human-readiness-release-evidence["']/,/evidence-backed-human-live-release/]);
 
 // Preserve the v3.11 tenant/privacy foundation.
 const directGrant=/grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
@@ -57,6 +66,43 @@ const handoffMigration="supabase/migrations/20260819_zgirl_gls_qualification_act
 requireText(handoffMigration,[/public\.zgirl_prepare_gls_pilot_workspace/,/private\.zgirl_operator_require_capability\(p_session_token,'pilot\.write'/,/safety_route_confirmed=false/,/revoke all on function public\.zgirl_prepare_gls_pilot_workspace\(text,uuid\) from public/,/grant execute on function public\.zgirl_prepare_gls_pilot_workspace\(text,uuid\) to anon, authenticated/]);
 const handoffSrc=read(handoffMigration);
 for(const forbidden of [/participant_name\s+text/i,/participant_email\s+text/i,/private_reflection\s+text/i,/reflection_text\s+text/i,/diagnosis\s+text/i,/clinical_note\s+text/i,/payment_card\s+text/i])if(forbidden.test(handoffSrc))errors.push(`v3.13 handoff contains prohibited participant/private field pattern: ${forbidden}`);
+
+const releaseMigration="supabase/migrations/20260824_zgirl_human_readiness_release_evidence_v3_14.sql";
+const releaseIndexMigration="supabase/migrations/20260824_zgirl_human_readiness_release_evidence_v3_14_index_hardening.sql";
+requireText(releaseMigration,[
+ /public\.zgirl_pilot_release_evidence/,
+ /public\.zgirl_pilot_readiness_decisions/,
+ /alter table public\.zgirl_pilot_release_evidence enable row level security/,
+ /alter table public\.zgirl_pilot_readiness_decisions enable row level security/,
+ /revoke all on public\.zgirl_pilot_release_evidence, public\.zgirl_pilot_readiness_decisions[\s\S]*from public, anon, authenticated/,
+ /private\.zgirl_pilot_release_gate_summary/,
+ /private\.zgirl_pilot_release_operational_summary/,
+ /public\.zgirl_pilot_save_release_evidence/,
+ /public\.zgirl_pilot_finalize_readiness_decision/,
+ /named_release_reviewer_required/,
+ /named_release_decision_maker_required/,
+ /human_release_acknowledgement_required/,
+ /test_pilot_release_prohibited/,
+ /test_pilot_live_release_prohibited/,
+ /human_live_release_required/,
+ /release_authorized/,
+ /decision in \('ready','ready_with_conditions','not_ready'\)/,
+ /grant execute on function public\.zgirl_pilot_save_release_evidence\(text,uuid,text,text,text,text\)[\s\S]*to anon, authenticated/,
+ /grant execute on function public\.zgirl_pilot_finalize_readiness_decision\(text,uuid,text,text,text,boolean,boolean\)[\s\S]*to anon, authenticated/
+]);
+requireText(releaseIndexMigration,[
+ /zgirl_pilot_release_evidence_reviewer_idx/,
+ /zgirl_pilot_readiness_decisions_actor_idx/,
+ /zgirl_pilot_readiness_decisions_supersedes_idx/
+]);
+const releaseMigrationSrc=read(releaseMigration);
+for(const forbidden of [/participant_name\s+text/i,/participant_email\s+text/i,/private_reflection\s+text/i,/reflection_text\s+text/i,/diagnosis\s+text/i,/clinical_note\s+text/i,/counseling_note\s+text/i,/safeguarding_narrative\s+text/i])if(forbidden.test(releaseMigrationSrc))errors.push(`v3.14 release workflow contains prohibited participant/private field pattern: ${forbidden}`);
+
+requireText("app/api/institutions/ops/pilots/action/route.ts",[/save_release_evidence/,/finalize_readiness_decision/,/humanAcknowledged/,/credentialRpc/]);
+requireText("components/institutions/PilotReleaseGatePanel.tsx",[/Evidence first\. Human decision last\./,/Ready with conditions/,/Authorize real live-pilot release/,/No private reflection content/,/Finalize immutable decision/]);
+requireText("components/institutions/PilotReleaseDecisionReceipt.tsx",[/Human Readiness & Release Decision/,/Print \/ Save PDF/,/Live release/,/Data boundary/]);
+requireText("app/institutions/ops/pilots/[id]/release-decision/page.tsx",[/Human release evidence · v3\.14/,/Readiness Decision Receipt/]);
+requireText("docs/ZGIRL_V3_14_HUMAN_READINESS_RELEASE_EVIDENCE.md",[/Ready with conditions/,/append-only/i,/cannot receive real release authorization/i,/No commercial event, automation, checklist total, or system recommendation can make a pilot live/i]);
 
 // Commerce remains separate from training and still seller-first.
 requireText("lib/commerce.ts",[/if\s*\(!getSellerName\(\)\)\s*return\s+null/,/ZGIRL_CHECKOUT_LINKS_JSON/,/url\.protocol\s*!==\s*["']https:["']/]);
@@ -108,7 +154,7 @@ requireText(lessonPath,[
 requireText("app/institutions/ops/guide/page.tsx",[/Command Center Guided Coach/,/Role-aware operator training/,/Voice never autoplays/,/Training completion does not grant a role/]);
 requireText("components/SiteHeader.tsx",[/InstitutionGuidedCoach/]);
 requireText("app/institutions/ops/portfolio/page.tsx",[/href="\/institutions\/ops\/pilots"/,/Pilot Command Center/,/href="\/institutions\/ops\/guide"/]);
-requireText("app/institutions/ops/pilots/page.tsx",[/v3\.13/,/Guided orientation/,/data-guide-target="pilot-operations"/]);
+requireText("app/institutions/ops/pilots/page.tsx",[/v3\.14/,/Guided orientation/,/data-guide-target="pilot-operations"/]);
 requireText("components/institutions/InstitutionOperatorAccess.tsx",[/data-guide-target="auth-mode"/]);
 requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/DISTRACTING_NARRATION_HINTS/,/isSuitableNarrationVoice/,/curateNarrationVoices/,/rankVoices/,/pickVoice/]);
 requireText("docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md",[/Listen → See → Do → Confirm/,/never autoplays audio/i,/Completion is a usability marker only/,/must never narrate or intentionally capture/i]);
@@ -127,8 +173,8 @@ if(!lockOk)errors.push(`package-lock is not reproducible for ${pkg.version}`);
 for(const wf of [".github/workflows/verify-release.yml",".github/workflows/reviewer-activation-ci.yml"])requireText(wf,[/npm ci --no-audit --no-fund/]);
 
 for(const warning of warnings)console.warn(`WARN: ${warning}`);
-if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.13 verification failed with ${errors.length} error(s).`);process.exit(1);}
-console.log(`Z-Girl v3.13 governed handoff release verification passed for ${pkg.version}.`);
+if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.14 verification failed with ${errors.length} error(s).`);process.exit(1);}
+console.log(`Z-Girl v3.14 human readiness and release-evidence verification passed for ${pkg.version}.`);
 console.log(`Initial guide coverage: ${(guidedManifest.initialCoverage??[]).length}`);
 console.log(`Required Guided Coach files: ${(guidedManifest.requiredFiles??[]).length}`);
 console.log(`Known warnings: ${warnings.length}`);
