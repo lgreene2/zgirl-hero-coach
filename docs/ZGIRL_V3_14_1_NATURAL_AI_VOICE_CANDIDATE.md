@@ -18,7 +18,9 @@ Before promotion, a product owner must use an iPhone and at least one desktop br
 4. sensitive replies sound calm rather than cheerful, clinical or alarmed;
 5. Stop Voice cancels generation or playback;
 6. a voice-service or playback failure does not silently substitute a robotic device voice;
-7. no greeting or reply autoplays unless the user explicitly enables auto-speak.
+7. no greeting or reply autoplays unless the user explicitly enables auto-speak;
+8. the Coach never plays a startup or voice-start chime;
+9. one Speak tap owns one generation request and visibly remains in Preparing state until playback begins.
 
 Lyndon Greene completed iPhone listening review and explicitly approved the voice on August 24, 2026. The governed release record now sets `humanListeningApproved` and `publicReleaseApproved` to true.
 
@@ -40,7 +42,7 @@ The approved AI voice is English (US) only. English (UK), Spanish, French, Portu
 
 ## Failure behavior
 
-If the approved natural voice is unavailable, rate-limited, blocked by the browser, or cannot play, the Coach displays the failure and does not silently substitute a robotic device voice. A prepared-voice second tap is available when iPhone requires a fresh playback gesture. Chat remains usable when speech output is unavailable.
+If the approved natural voice is unavailable, rate-limited, blocked by the browser, or cannot play, the Coach displays the failure and does not silently substitute a robotic device voice. Repeated taps cannot restart an in-flight request. iPhone playback is primed silently through Web Audio during the original Speak gesture, without a WAV unlock or chime. Chat remains usable when speech output is unavailable.
 
 ## Preserved boundaries
 
