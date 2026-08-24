@@ -208,7 +208,13 @@ type VoiceSettingsPersist = {
   preferredVoiceNames: Record<string, string>;
 };
 
-type VoicePlaybackState = "idle" | "generating" | "ai" | "device-fallback" | "error";
+type VoicePlaybackState =
+  | "idle"
+  | "generating"
+  | "ready"
+  | "ai"
+  | "device-fallback"
+  | "error";
 
 type RiskLevel = "low" | "medium" | "high";
 type CoachAudience = "youth" | "adult" | "supporter";
@@ -300,6 +306,7 @@ export default function Home() {
   const generatedVoiceRef = useRef<HTMLAudioElement | null>(null);
   const generatedVoiceAbortRef = useRef<AbortController | null>(null);
   const generatedVoiceUrlRef = useRef<string | null>(null);
+  const generatedVoiceTextRef = useRef<string | null>(null);
 
   // Load persisted voice settings before allowing the defaults to be saved.
   useEffect(() => {
@@ -510,6 +517,7 @@ export default function Home() {
     if (typeof window === "undefined") return;
     generatedVoiceAbortRef.current?.abort();
     generatedVoiceAbortRef.current = null;
+    generatedVoiceTextRef.current = null;
     if (generatedVoiceRef.current) {
       generatedVoiceRef.current.pause();
       generatedVoiceRef.current.removeAttribute("src");
@@ -587,6 +595,31 @@ export default function Home() {
       if (!voiceEnabled || typeof window === "undefined") return false;
 
       const useAiCandidate = speechLang === "en-US" && !selectedVoiceName;
+      const preparedPlayer = generatedVoiceRef.current;
+      if (
+        useAiCandidate &&
+        voicePlaybackState === "ready" &&
+        generatedVoiceTextRef.current === text &&
+        preparedPlayer?.src
+      ) {
+        try {
+          preparedPlayer.currentTime = 0;
+          await preparedPlayer.play();
+          if (liveRegionRef.current) {
+            liveRegionRef.current.textContent = "Playing Z-Girl's AI-generated voice.";
+          }
+          return true;
+        } catch {
+          stopSpeaking();
+          setVoicePlaybackState("error");
+          if (liveRegionRef.current) {
+            liveRegionRef.current.textContent =
+              "Z-Girl's natural voice could not play. No device voice was substituted.";
+          }
+          return false;
+        }
+      }
+
       stopSpeaking();
       if (!useAiCandidate) return speakWithDeviceVoice(text);
 
@@ -635,6 +668,7 @@ export default function Home() {
         if (!blob.size) throw new Error("voice_empty");
         const objectUrl = URL.createObjectURL(blob);
         generatedVoiceUrlRef.current = objectUrl;
+        generatedVoiceTextRef.current = text;
         const audio = generatedVoiceRef.current || new Audio();
         await unlockPlayback;
         audio.src = objectUrl;
@@ -662,20 +696,28 @@ export default function Home() {
         audio.onended = finish;
         audio.onerror = finish;
 
-        await audio.play();
-        if (liveRegionRef.current) {
-          liveRegionRef.current.textContent = "Playing Z-Girl's AI-generated voice.";
+        try {
+          await audio.play();
+          if (liveRegionRef.current) {
+            liveRegionRef.current.textContent = "Playing Z-Girl's AI-generated voice.";
+          }
+        } catch {
+          setVoicePlaybackState("ready");
+          if (liveRegionRef.current) {
+            liveRegionRef.current.textContent =
+              "Z-Girl's natural voice is ready. Tap Play natural voice.";
+          }
         }
         return true;
       } catch {
         if (controller.signal.aborted) return false;
         stopSpeaking();
-        setVoicePlaybackState("device-fallback");
+        setVoicePlaybackState("error");
         if (liveRegionRef.current) {
           liveRegionRef.current.textContent =
-            "The AI voice is unavailable, so Z-Girl is using this device's voice.";
+            "Z-Girl's natural voice is unavailable. No device voice was substituted.";
         }
-        return speakWithDeviceVoice(text, true);
+        return false;
       }
     },
     [
@@ -685,6 +727,7 @@ export default function Home() {
       soundsEnabled,
       speakWithDeviceVoice,
       stopSpeaking,
+      voicePlaybackState,
     ]
   );
 
@@ -1279,6 +1322,8 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       <div className="mt-1 text-[10px] leading-4 text-slate-400">
                         {voicePlaybackState === "generating"
                           ? "Preparing natural speech…"
+                          : voicePlaybackState === "ready"
+                            ? "Natural voice ready — tap Play"
                           : aiVoiceCandidateActive
                             ? "Sulafat · en-US · v3.14.1 review candidate"
                             : activeVoice
@@ -1293,9 +1338,17 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       onClick={playGreeting}
                       disabled={!canPreviewVoice || voicePlaybackState === "generating"}
                       className="inline-flex shrink-0 items-center justify-center rounded-full border border-teal-300/40 bg-teal-300/10 px-3 py-1.5 text-[11px] font-semibold text-teal-100 hover:bg-teal-300/20 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Preview Z-Girl's AI-generated voice candidate"
+                      aria-label={
+                        voicePlaybackState === "ready"
+                          ? "Play Z-Girl's prepared natural voice"
+                          : "Preview Z-Girl's AI-generated voice candidate"
+                      }
                     >
-                      {voicePlaybackState === "generating" ? "Preparing…" : "Preview voice"}
+                      {voicePlaybackState === "generating"
+                        ? "Preparing…"
+                        : voicePlaybackState === "ready"
+                          ? "Play natural voice"
+                          : "Preview voice"}
                     </button>
                   </div>
 
@@ -1308,6 +1361,18 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   {voicePlaybackState === "device-fallback" && (
                     <p className="mt-2 text-[10px] leading-4 text-amber-100" role="status">
                       The AI voice could not play, so this device’s voice is being used for this reply.
+                    </p>
+                  )}
+
+                  {voicePlaybackState === "ready" && (
+                    <p className="mt-2 text-[10px] leading-4 text-teal-100" role="status">
+                      Natural voice prepared. Tap Play natural voice once more so iPhone can start it from your touch.
+                    </p>
+                  )}
+
+                  {voicePlaybackState === "error" && aiVoiceCandidateActive && (
+                    <p className="mt-2 text-[10px] leading-4 text-amber-100" role="status">
+                      The natural voice could not play. No robotic device voice was substituted. Please retry the preview.
                     </p>
                   )}
 
