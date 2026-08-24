@@ -1,6 +1,17 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl Open v2.2.2 is a character-powered, safety-first reflection experience for youth, adults, families, and guided groups. The public experience remains private by default and requires no account. The native-language studio-review workflow is protected by unique language-scoped reviewer credentials and a separate server-only media gateway.
+Z-Girl is currently released as platform package v3.13.0. The public reflection experience remains Z-Girl Open v2.2.2: a character-powered, safety-first experience for youth, adults, families, and guided groups that is private by default and requires no account. Institutional operations are on v3.13.0 and add governed GLS qualification-to-pilot handoff without changing the public reflection privacy model. The native-language studio-review workflow remains protected by unique language-scoped reviewer credentials and a separate server-only media gateway.
+
+## Current version model
+
+- **Platform package:** v3.13.0
+- **Public reflection baseline:** Z-Girl Open v2.2.2
+- **Institutional operations:** v3.13.0
+- **Commercial source of truth:** Greene Leadership System
+- **Implementation source of truth:** Z-Girl
+- **Live activation:** always requires final human readiness and release approval
+
+The v2.x and v3.x labels describe different surfaces of one product; v2.x is not a pending development branch and should not be resumed as a separate rebuild.
 
 ## Public experiences
 
@@ -94,7 +105,11 @@ npm run build
 
 ## Release
 
-Current package version: `2.2.2`.
+Current platform package version: `3.13.0`.
+
+Public reflection baseline: `2.2.2`.
+
+Institutional operations release: `3.13.0`.
 
 The v2.0 release replaces seasonal framing, introduces the reusable Hero Within Method, clarifies AI data flow, prevents client-supplied safety prompt overrides, updates the PWA cache, and preserves older pilot files only as labeled archive materials.
 
@@ -109,3 +124,8 @@ The v2.2 EDU & Native-Language Review release adds the public Z-Girl EDU institu
 The v2.2.1 Reviewer Activation release replaces a shared access code with four hashed, language-scoped credentials, limits each signed session to its assigned locale, validates the 56-track candidate set, and keeps the portal fail-closed until protected deployment inputs are configured.
 
 The v2.2.2 Reviewer Asset Gateway release moves candidate delivery behind a separate server-only bearer-protected gateway, blocks predictable direct asset paths, supports authenticated byte-range playback, generates the shared gateway token with the confidential reviewer record, hardens the public audio proxy, and updates the PWA cache and visible application version.
+
+
+The v3.13 GLS Qualification & Governed Activation Handoff release accepts only qualified, agreement-backed GLS opportunities, prepares one idempotent Z-Girl implementation workspace, synchronizes aggregate institutional metadata back to GLS, and never transfers participant rosters or private reflection content. Workspace preparation cannot activate a live pilot; safety, team, cohort, and final human-release gates remain authoritative.
+
+Production verification and the cross-repository bridge repair are recorded in `docs/ZGIRL_V3_13_PRODUCTION_ACTIVATION_RECEIPT.md`.
