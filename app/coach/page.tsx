@@ -1316,7 +1316,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     <div>
                       <div className="text-[11px] font-semibold text-teal-100">
                         {aiVoiceCandidateActive
-                          ? "Z-Girl AI Voice · Listening candidate"
+                          ? "Z-Girl Natural AI Voice · Approved"
                           : "Device voice fallback"}
                       </div>
                       <div className="mt-1 text-[10px] leading-4 text-slate-400">
@@ -1325,7 +1325,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           : voicePlaybackState === "ready"
                             ? "Natural voice ready — tap Play"
                           : aiVoiceCandidateActive
-                            ? "Sulafat · en-US · v3.14.1 review candidate"
+                            ? "Sulafat · en-US · v3.14.1 approved profile"
                             : activeVoice
                               ? `Using device voice ${activeVoice.name} · ${activeVoice.lang}`
                               : voiceCatalogSettled
@@ -1341,7 +1341,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                       aria-label={
                         voicePlaybackState === "ready"
                           ? "Play Z-Girl's prepared natural voice"
-                          : "Preview Z-Girl's AI-generated voice candidate"
+                          : "Preview Z-Girl's approved AI-generated voice"
                       }
                     >
                       {voicePlaybackState === "generating"
@@ -1429,7 +1429,7 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                           ))}
                         </select>
                         <span className="mt-1 block text-[10px] leading-4 text-slate-500">
-                          Choosing a device voice overrides the AI candidate. Matching-language voices appear first and vary by browser and device.
+                          Choosing a device voice overrides the approved AI voice. Matching-language voices appear first and vary by browser and device.
                         </span>
                       </label>
 
