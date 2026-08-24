@@ -144,6 +144,12 @@ async function generateVoiceAudio(
       lastError = new Error("voice_audio_missing");
     } catch (err) {
       lastError = err;
+      // A provider 429 applies to the shared speech capacity/quota path. Trying
+      // the fallback model immediately only doubles the wait and consumes a
+      // second request before the provider has had time to recover. Return the
+      // retry signal to the browser so the original Speak tap can own one
+      // controlled, delayed retry instead.
+      if (voiceErrorStatus(err) === 429) throw err;
       if (!isTransientVoiceError(err)) throw err;
     }
   }
@@ -302,11 +308,22 @@ export async function POST(req: NextRequest) {
       profile: PROFILE,
     });
 
+    const providerRateLimited = status === 429;
     return NextResponse.json(
-      { ok: false, code: "VOICE_GENERATION_FAILED" },
       {
-        status: status === 429 ? 429 : 502,
-        headers: noStoreHeaders(status === 429 ? { "Retry-After": "5" } : {}),
+        ok: false,
+        code: providerRateLimited
+          ? "VOICE_GENERATION_RATE_LIMITED"
+          : "VOICE_GENERATION_FAILED",
+        ...(providerRateLimited ? { retryAfter: 5 } : {}),
+      },
+      {
+        status: providerRateLimited ? 429 : 502,
+        headers: noStoreHeaders(
+          providerRateLimited
+            ? { "Retry-After": "5", "X-ZGirl-Voice-Retryable": "true" }
+            : {}
+        ),
       }
     );
   }
