@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
-import AudioReviewClient from "./AudioReviewClient";
+import AudioReviewClient from "./AudioReviewClientV2";
 
 export const metadata: Metadata = {
   title: "30-Day Hero Within Audio Review | Z-Girl",
@@ -23,7 +23,7 @@ export default function AudioReviewPage() {
             30-Day Hero Within English Audio Review
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            Audition exact-script Z-Girl voice candidates one day at a time. These renders are temporary review candidates—not mastered, persisted, published, licensed, or approved audio assets.
+            Audition exact-script Z-Girl voice candidates one day at a time. A successful candidate can be replayed on the same page without creating another provider request. These renders are temporary review candidates—not mastered, published, licensed, or approved audio assets.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[.12em] text-slate-300">
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Human listening required</span>
