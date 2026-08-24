@@ -278,7 +278,8 @@ export async function POST(req: NextRequest) {
         "Content-Type": contentType,
         "Content-Length": String(audio.byteLength),
         "X-ZGirl-Voice-Profile": PROFILE,
-        "X-ZGirl-Voice-Candidate": "true",
+        "X-ZGirl-Voice-Candidate": "false",
+        "X-ZGirl-Voice-Release": "approved",
         "X-ZGirl-Voice-Model": generated.model,
       }),
     });
