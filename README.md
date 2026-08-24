@@ -1,10 +1,10 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl is currently packaged as v3.14.1, a listening-gated natural AI voice candidate for the live Coach. The public reflection baseline remains Z-Girl Open v2.2.2: a character-powered, safety-first experience for youth, adults, families, and guided groups that is private by default and requires no account. Institutional operations remain on v3.14.0 with evidence-backed human readiness decisions and an enforced live-release lock. The native-language studio-review workflow remains protected and separate.
+Z-Girl is currently packaged as v3.14.1 with the product-owner-approved natural AI voice for the live Coach. The public reflection baseline remains Z-Girl Open v2.2.2: a character-powered, safety-first experience for youth, adults, families, and guided groups that is private by default and requires no account. Institutional operations remain on v3.14.0 with evidence-backed human readiness decisions and an enforced live-release lock. The native-language studio-review workflow remains protected and separate.
 
 ## Current version model
 
-- **Platform package:** v3.14.1 voice candidate
+- **Platform package:** v3.14.1 approved natural AI voice
 - **Public reflection baseline:** Z-Girl Open v2.2.2
 - **Institutional operations:** v3.14.0
 - **Commercial source of truth:** Greene Leadership System
@@ -18,7 +18,7 @@ The v2.x and v3.x labels describe different surfaces of one product; v2.x is not
 - `/` — v2.2 public gateway
 - `/reflect` — private, no-login six-step reflection
 - `/journey` — interactive 7-Day Hero Within Journey in English, Spanish, French, Brazilian Portuguese, and German, with matching device voices and exact downloadable transcripts
-- `/coach` — optional AI-guided reflection with youth, adult, and supporter editions; English (US) includes a listening-gated AI-generated voice candidate with device fallback
+- `/coach` — optional AI-guided reflection with youth, adult, and supporter editions; English (US) includes the approved, user-initiated natural AI voice and does not silently substitute a robotic device voice
 - `/privacy` — plain-language data guide
 - `/accessibility` — accessibility commitments and known limitations
 - `/safety` — safety boundaries and crisis guidance
@@ -130,6 +130,6 @@ The v3.13 GLS Qualification & Governed Activation Handoff release accepts only q
 
 The v3.14 Human Readiness & Release Evidence release adds 11 required administrative evidence gates, named operator review, an append-only decision ledger with Ready / Ready with conditions / Not ready outcomes, a printable decision receipt, and a database-enforced rule that no pilot can move to Live without the latest explicit human release authorization. Governed test pilots cannot receive real release authorization or enter Live.
 
-The v3.14.1 Natural AI Voice Candidate replaces the misleading browser-only natural-voice label in the live Coach with a server-side, AI-generated English (US) voice candidate. It sends only the selected visible Z-Girl reply, disables provider-side Interaction storage, never autoplays, visibly discloses the AI voice data flow, and retains a clearly labeled device fallback. Production promotion remains blocked until product-owner listening approval on iPhone and desktop.
+The v3.14.1 Natural AI Voice release replaces the misleading browser-only natural-voice label in the live Coach with a server-side, AI-generated English (US) voice. It sends only the selected visible Z-Girl reply, disables provider-side Interaction storage, never autoplays, visibly discloses the AI voice data flow, and does not silently substitute a robotic device voice. Product-owner listening approval was recorded on August 24, 2026 after successful iPhone review.
 
 Production verification and the cross-repository bridge repair are recorded in `docs/ZGIRL_V3_13_PRODUCTION_ACTIVATION_RECEIPT.md`.
