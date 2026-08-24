@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import PilotReleaseGatePanel, { type ReleaseGateSummary, type ReleaseOperationalSummary } from "@/components/institutions/PilotReleaseGatePanel";
 
 type Json=Record<string,unknown>;
 type PilotListItem={id:string;pilotCode:string;institutionId:string;institutionName:string;title:string;institutionProfile:string;solutionProfiles:string[];stage:string;qualificationStatus:string;readinessStatus:string;commercialStatus:string;glsOpportunityId:string|null;glsEngagementId:string|null;contractingEntityName:string;engagementNature:string;participantCapacity:number;plannedStartDate:string|null;plannedEndDate:string|null;activationDate:string|null;completionDate:string|null;renewalDate:string|null;nextAction:string|null;nextActionDue:string|null;blockerSummary:string|null;completionStatus:string;renewalStatus:string;expansionStatus:string;isTest:boolean;readiness:{passed:number;total:number;missing:string[];ready:boolean}};
 type ListDashboard={activation:{namedSystemOwners:number;institutions:number;realPilots:number;testPilots:number;realActivationReady:boolean};pilots:PilotListItem[]};
-type DetailDashboard={pilot:Json;institution:Json;readiness:{passed:number;total:number;missing:string[];ready:boolean};intake:Json|null;team:Json[];cohorts:Json[];milestones:Json[];metrics:Json[];evidence:Json[];permissions:Json|null;competencySignals:Json[];closeout:Json|null;events:Json[]};
+type DetailDashboard={pilot:Json;institution:Json;readiness:{passed:number;total:number;missing:string[];ready:boolean};releaseGate:ReleaseGateSummary;releaseOperational:ReleaseOperationalSummary;readinessDecisions:Json[];intake:Json|null;team:Json[];cohorts:Json[];milestones:Json[];metrics:Json[];evidence:Json[];permissions:Json|null;competencySignals:Json[];closeout:Json|null;events:Json[]};
 type BridgeStatus={configured:boolean;urlConfigured:boolean;secretConfigured:boolean};
 type InstitutionOption={id:string;name:string;institutionCode?:string};
 type OperatorOption={id:string;displayName:string;email:string;roles?:Array<{roleKey:string;institutionId:string|null}>};
@@ -15,7 +16,6 @@ const PIPELINE=["opportunity","qualified","agreement_scope","institution_setup",
 const pretty=(value:string)=>value.replaceAll("_"," ").replace(/\b\w/g,m=>m.toUpperCase());
 const str=(row:Json|undefined|null,key:string)=>typeof row?.[key]==="string"?row[key] as string:"";
 const num=(row:Json|undefined|null,key:string)=>typeof row?.[key]==="number"?row[key] as number:0;
-const arr=(row:Json|undefined|null,key:string)=>Array.isArray(row?.[key])?row[key] as unknown[]:[];
 const today=()=>new Date().toISOString().slice(0,10);
 
 async function api<T>(url:string,init?:RequestInit):Promise<T>{
@@ -71,7 +71,7 @@ export default function PilotOperationsConsole({pilotId}:{pilotId?:string}){
 
 function ExecutiveDashboard({dashboard,institutions,systemOwners,bridge,busy,onAct}:{dashboard:ListDashboard;institutions:InstitutionOption[];systemOwners:OperatorOption[];bridge:BridgeStatus|null;busy:boolean;onAct:(p:Json,m:string)=>Promise<void>}){
  return <>
-  <Panel><div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"><div><p className="section-kicker">Operational activation · v3.11</p><h2 className="mt-2 font-display text-4xl font-black">Institutional Pilot Command Center</h2><p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">One governed path from GLS opportunity to configured pilot, implementation evidence, renewal and expansion. Z-Girl owns implementation; GLS remains the commercial opportunity source of truth.</p></div><div className="flex flex-wrap gap-2"><Link href="/institutions/ops/identity" className="button-secondary">1. Named System Owner</Link><Link href="/institutions/ops" className="button-secondary">2. Institution Record</Link><Link href="/institutions/ops/tenant" className="button-secondary">3. Tenant Roles</Link></div></div></Panel>
+  <Panel><div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"><div><p className="section-kicker">Governed pilot release · v3.14</p><h2 className="mt-2 font-display text-4xl font-black">Institutional Pilot Command Center</h2><p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">One governed path from GLS opportunity to configured pilot, release evidence, human readiness decision, implementation evidence, renewal and expansion. Z-Girl owns implementation; GLS remains the commercial opportunity source of truth.</p></div><div className="flex flex-wrap gap-2"><Link href="/institutions/ops/identity" className="button-secondary">1. Named System Owner</Link><Link href="/institutions/ops" className="button-secondary">2. Institution Record</Link><Link href="/institutions/ops/tenant" className="button-secondary">3. Tenant Roles</Link></div></div></Panel>
   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric label="Named System Owners" value={dashboard.activation.namedSystemOwners}/><Metric label="Institutions" value={dashboard.activation.institutions}/><Metric label="Real pilots" value={dashboard.activation.realPilots}/><Metric label="Governed test pilots" value={dashboard.activation.testPilots}/><Metric label="GLS bridge" value={bridge?.configured?"Ready":"Not configured"}/></div>
   <Panel><p className="section-kicker">Institutional lifecycle</p><div className="mt-5 grid gap-2 md:grid-cols-6 xl:grid-cols-11">{PIPELINE.map((s,i)=><div key={s} className="rounded-xl border border-white/10 bg-[#04111b] p-3"><div className="text-[10px] font-black text-[#76ead6]">{String(i+1).padStart(2,"0")}</div><div className="mt-1 text-xs font-black">{pretty(s)}</div></div>)}</div><p className="mt-4 text-xs leading-6 text-slate-500">Blockers, next actions, responsible parties and evidence stay attached to the pilot record. Stage movement cannot manufacture agreement execution, payment, credential authority or outcome claims.</p></Panel>
   <ActivationGate activation={dashboard.activation} bridge={bridge}/>
@@ -116,14 +116,15 @@ function PilotWorkspace({dashboard,bridge,busy,onAct,onSync}:{dashboard:DetailDa
  const p=dashboard.pilot; const pilotId=str(p,"id"); const stage=str(p,"stage"); const[tab,setTab]=useState("overview");
  const latestMetric=dashboard.metrics[0];
  return <>
-  <Panel><div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"><div><div className="flex flex-wrap gap-2"><Badge>{pretty(stage)}</Badge>{p.is_test===true&&<Badge>TEST RECORD</Badge>}<Badge>{pretty(str(p,"readiness_status"))}</Badge></div><h2 className="mt-3 font-display text-4xl font-black">{str(dashboard.institution,"name")} · {str(p,"title")}</h2><p className="mt-3 text-sm leading-7 text-slate-400">{str(p,"pilot_code")} · {pretty(str(p,"institution_profile"))} · capacity {num(p,"participant_capacity")} · {str(p,"contracting_entity_name")}</p></div><div className="flex flex-wrap gap-2"><Link href="/institutions/ops/pilots" className="button-secondary">All pilots</Link><button disabled={busy||!bridge?.configured||!str(p,"gls_opportunity_id")} onClick={()=>void onSync()} className="button-secondary">Sync GLS</button></div></div></Panel>
+  <Panel><div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"><div><div className="flex flex-wrap gap-2"><Badge>{pretty(stage)}</Badge>{p.is_test===true&&<Badge>TEST RECORD</Badge>}<Badge>{pretty(str(p,"readiness_status"))}</Badge></div><h2 className="mt-3 font-display text-4xl font-black">{str(dashboard.institution,"name")} · {str(p,"title")}</h2><p className="mt-3 text-sm leading-7 text-slate-400">{str(p,"pilot_code")} · {pretty(str(p,"institution_profile"))} · capacity {num(p,"participant_capacity")} · {str(p,"contracting_entity_name")}</p></div><div className="flex flex-wrap gap-2"><Link href={`/institutions/ops/pilots/${pilotId}/release-decision`} className="button-secondary">Release Decision Receipt</Link><Link href="/institutions/ops/pilots" className="button-secondary">All pilots</Link><button disabled={busy||!bridge?.configured||!str(p,"gls_opportunity_id")} onClick={()=>void onSync()} className="button-secondary">Sync GLS</button></div></div></Panel>
   <StageRail current={stage}/>
-  <div className="flex flex-wrap gap-2">{["overview","intake","team","cohorts","milestones","evidence","learning","closeout"].map(v=><button key={v} onClick={()=>setTab(v)} className={tab===v?"button-primary":"button-secondary"}>{pretty(v)}</button>)}</div>
+  <div className="flex flex-wrap gap-2">{["overview","intake","team","cohorts","milestones","release_gate","evidence","learning","closeout"].map(v=><button key={v} onClick={()=>setTab(v)} className={tab===v?"button-primary":"button-secondary"}>{pretty(v)}</button>)}</div>
   {tab==="overview"&&<Overview dashboard={dashboard} latestMetric={latestMetric}/>} 
   {tab==="intake"&&<IntakeForm pilotId={pilotId} intake={dashboard.intake} readiness={dashboard.readiness} busy={busy} onAct={onAct}/>} 
   {tab==="team"&&<TeamPanel pilotId={pilotId} team={dashboard.team} busy={busy} onAct={onAct}/>} 
   {tab==="cohorts"&&<CohortPanel pilotId={pilotId} cohorts={dashboard.cohorts} busy={busy} onAct={onAct}/>} 
   {tab==="milestones"&&<MilestonePanel pilotId={pilotId} milestones={dashboard.milestones} busy={busy} onAct={onAct}/>} 
+  {tab==="release_gate"&&<PilotReleaseGatePanel pilotId={pilotId} isTest={p.is_test===true} releaseGate={dashboard.releaseGate} operational={dashboard.releaseOperational} decisions={dashboard.readinessDecisions} busy={busy} onAct={onAct}/>}
   {tab==="evidence"&&<EvidencePanel pilotId={pilotId} cohorts={dashboard.cohorts} metrics={dashboard.metrics} evidence={dashboard.evidence} permissions={dashboard.permissions} busy={busy} onAct={onAct}/>} 
   {tab==="learning"&&<LearningPanel pilotId={pilotId} signals={dashboard.competencySignals} busy={busy} onAct={onAct}/>} 
   {tab==="closeout"&&<CloseoutPanel pilotId={pilotId} pilot={p} closeout={dashboard.closeout} busy={busy} onAct={onAct}/>} 

@@ -26,6 +26,9 @@ const FUNDER_STATUS=new Set([...REQUEST_STATUS,"not_applicable"]);
 const COMPETENCY_DOMAINS=new Set(["safeguarding","escalation","platform_administration","reflection_facilitation","accessibility_adaptation","institutional_communication","evidence_reporting","fidelity","implementation_planning","other"]);
 const SIGNAL_TYPES=new Set(["knowledge_need","common_mistake","training_need","workflow_gap","observed_strength","required_competency"]);
 const PRIORITIES=new Set(["low","normal","high","critical"]);
+const RELEASE_GATES=new Set(["method_fidelity","safety_escalation","age_fit","participant_agency","privacy_data_boundary","accessibility","technical_reliability","family_notice_consent","staff_orientation","cohort_schedule_devices","aggregate_measurement_plan"]);
+const RELEASE_GATE_STATUSES=new Set(["not_assessed","pass","conditional","fail"]);
+const READINESS_DECISIONS=new Set(["ready","ready_with_conditions","not_ready"]);
 
 function bad(error:string){return Response.json({ok:false,error},{status:400});}
 function text(body:Record<string,unknown>,key:string,max=5000){const value=typeof body[key]==="string"?(body[key] as string).trim():"";return value.slice(0,max);}
@@ -117,6 +120,31 @@ export async function POST(request:Request){
     if(summary.length<3||!COMPETENCY_DOMAINS.has(domain)||!SIGNAL_TYPES.has(signalType)||!PRIORITIES.has(priority))return bad("invalid_competency_signal");
     const signalId=await credentialRpc<string>("zgirl_pilot_add_competency_signal",{p_session_token:token,p_pilot_id:pilotId,p_evidence_id:nullableUuid(body.evidenceId),p_domain:domain,p_signal_type:signalType,p_priority:priority,p_summary:summary,p_source_role:text(body,"sourceRole",120)});
     return Response.json({ok:true,signalId});
+  }
+
+  if(action==="save_release_evidence"){
+    const gateKey=text(body,"gateKey",80),status=text(body,"status",40);
+    const evidenceReference=text(body,"evidenceReference",1000),reviewerNotes=text(body,"reviewerNotes",4000);
+    if(!RELEASE_GATES.has(gateKey)||!RELEASE_GATE_STATUSES.has(status))return bad("invalid_release_gate");
+    if(status!=="not_assessed"&&!evidenceReference)return bad("release_evidence_reference_required");
+    if(["conditional","fail"].includes(status)&&!reviewerNotes)return bad("release_reviewer_notes_required");
+    const releaseGate=await credentialRpc<Record<string,unknown>>("zgirl_pilot_save_release_evidence",{
+      p_session_token:token,p_pilot_id:pilotId,p_gate_key:gateKey,p_status:status,
+      p_evidence_reference:evidenceReference,p_reviewer_notes:reviewerNotes,
+    });
+    return Response.json({ok:true,releaseGate});
+  }
+
+  if(action==="finalize_readiness_decision"){
+    const decision=text(body,"decision",40),rationale=text(body,"rationale",5000),conditions=text(body,"conditions",5000);
+    if(!READINESS_DECISIONS.has(decision)||rationale.length<3)return bad("invalid_readiness_decision");
+    if(decision==="ready_with_conditions"&&!conditions)return bad("readiness_conditions_required");
+    if(body.humanAcknowledged!==true)return bad("human_release_acknowledgement_required");
+    const readinessDecision=await credentialRpc<Record<string,unknown>>("zgirl_pilot_finalize_readiness_decision",{
+      p_session_token:token,p_pilot_id:pilotId,p_decision:decision,p_rationale:rationale,p_conditions:conditions,
+      p_release_authorized:bool(body.releaseAuthorized),p_human_acknowledged:true,
+    });
+    return Response.json({ok:true,readinessDecision});
   }
 
   if(action==="advance_stage"){

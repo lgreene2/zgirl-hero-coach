@@ -17,6 +17,9 @@ export async function GET() {
       environment,
       commerceGateSeparate: true,
       participantPrivateReflectionAdminAccess: false,
+      livePilotHumanDecisionRequired: true,
+      humanDecisionAutoAdvancesStage: false,
+      testPilotLiveReleaseAllowed: false,
     },
     {
       headers: {

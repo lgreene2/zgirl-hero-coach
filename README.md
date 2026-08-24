@@ -1,12 +1,12 @@
 # Z-Girl: The Hero Within Reflection System
 
-Z-Girl is currently released as platform package v3.13.0. The public reflection experience remains Z-Girl Open v2.2.2: a character-powered, safety-first experience for youth, adults, families, and guided groups that is private by default and requires no account. Institutional operations are on v3.13.0 and add governed GLS qualification-to-pilot handoff without changing the public reflection privacy model. The native-language studio-review workflow remains protected by unique language-scoped reviewer credentials and a separate server-only media gateway.
+Z-Girl is currently released as platform package v3.14.0. The public reflection experience remains Z-Girl Open v2.2.2: a character-powered, safety-first experience for youth, adults, families, and guided groups that is private by default and requires no account. Institutional operations are on v3.14.0 and add evidence-backed human readiness decisions and an enforced live-release lock without changing the public reflection privacy model. The native-language studio-review workflow remains protected by unique language-scoped reviewer credentials and a separate server-only media gateway.
 
 ## Current version model
 
-- **Platform package:** v3.13.0
+- **Platform package:** v3.14.0
 - **Public reflection baseline:** Z-Girl Open v2.2.2
-- **Institutional operations:** v3.13.0
+- **Institutional operations:** v3.14.0
 - **Commercial source of truth:** Greene Leadership System
 - **Implementation source of truth:** Z-Girl
 - **Live activation:** always requires final human readiness and release approval
@@ -105,11 +105,11 @@ npm run build
 
 ## Release
 
-Current platform package version: `3.13.0`.
+Current platform package version: `3.14.0`.
 
 Public reflection baseline: `2.2.2`.
 
-Institutional operations release: `3.13.0`.
+Institutional operations release: `3.14.0`.
 
 The v2.0 release replaces seasonal framing, introduces the reusable Hero Within Method, clarifies AI data flow, prevents client-supplied safety prompt overrides, updates the PWA cache, and preserves older pilot files only as labeled archive materials.
 
@@ -127,5 +127,7 @@ The v2.2.2 Reviewer Asset Gateway release moves candidate delivery behind a sepa
 
 
 The v3.13 GLS Qualification & Governed Activation Handoff release accepts only qualified, agreement-backed GLS opportunities, prepares one idempotent Z-Girl implementation workspace, synchronizes aggregate institutional metadata back to GLS, and never transfers participant rosters or private reflection content. Workspace preparation cannot activate a live pilot; safety, team, cohort, and final human-release gates remain authoritative.
+
+The v3.14 Human Readiness & Release Evidence release adds 11 required administrative evidence gates, named operator review, an append-only decision ledger with Ready / Ready with conditions / Not ready outcomes, a printable decision receipt, and a database-enforced rule that no pilot can move to Live without the latest explicit human release authorization. Governed test pilots cannot receive real release authorization or enter Live.
 
 Production verification and the cross-repository bridge repair are recorded in `docs/ZGIRL_V3_13_PRODUCTION_ACTIVATION_RECEIPT.md`.
