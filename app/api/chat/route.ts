@@ -1,7 +1,10 @@
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { assessRisk, crisisReply, mediumRiskPrefix } from "../../lib/safety";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const systemSafety = `
 You are Z-Girl, a warm, upbeat Black teen superhero and digital "hero coach" from The 4 Lessons universe.
@@ -23,13 +26,8 @@ If the user is struggling but not in crisis:
 `.trim();
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-
-let model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
-
-if (apiKey) {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-}
+const CHAT_MODEL_PRIMARY = "gemini-3.5-flash-lite";
+const CHAT_MODEL_FALLBACK = "gemini-2.5-flash-lite";
 
 function isRateLimitError(err: any): { retryAfterSec: number; message: string } | null {
   const msg = String(err?.message || err || "");
@@ -55,6 +53,58 @@ function isRateLimitError(err: any): { retryAfterSec: number; message: string } 
     retryAfterSec,
     message: "I’m getting a lot of hero-signals at once right now. Please wait a moment and try again. 💙",
   };
+}
+
+function errorStatus(err: unknown): number {
+  if (!err || typeof err !== "object" || !("status" in err)) return 0;
+  const status = Number((err as { status?: unknown }).status);
+  return Number.isFinite(status) ? status : 0;
+}
+
+function isTransientModelError(err: unknown): boolean {
+  const status = errorStatus(err);
+  const message = String(
+    err && typeof err === "object" && "message" in err
+      ? (err as { message?: unknown }).message
+      : err || ""
+  );
+  return (
+    status === 408 ||
+    status === 429 ||
+    status >= 500 ||
+    /high demand|temporar|overload|unavailable|timeout|rate limit|quota/i.test(message)
+  );
+}
+
+async function generateCoachReply(prompt: string): Promise<string> {
+  const client = new GoogleGenAI({ apiKey });
+  const attempts = [
+    { model: CHAT_MODEL_PRIMARY, delayMs: 0 },
+    { model: CHAT_MODEL_PRIMARY, delayMs: 350 },
+    { model: CHAT_MODEL_FALLBACK, delayMs: 0 },
+  ];
+  let lastError: unknown = new Error("coach_generation_failed");
+
+  for (const attempt of attempts) {
+    if (attempt.delayMs) {
+      await new Promise((resolve) => setTimeout(resolve, attempt.delayMs));
+    }
+    try {
+      const interaction = await client.interactions.create({
+        model: attempt.model,
+        input: prompt,
+        store: false,
+      });
+      const reply = interaction.output_text?.trim();
+      if (reply) return reply;
+      lastError = new Error("coach_reply_empty");
+    } catch (err) {
+      lastError = err;
+      if (!isTransientModelError(err)) throw err;
+    }
+  }
+
+  throw lastError;
 }
 
 type FrontendMessage = {
@@ -115,8 +165,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!apiKey || !model) {
-      console.error("GEMINI_API_KEY missing or model not initialized");
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY missing");
       return NextResponse.json(
         {
           reply: "The AI Coach is temporarily unavailable. You can still use Private Reflection and the 7-Day Journey.",
@@ -159,14 +209,29 @@ ${userLast}
 Z-Girl:
     `.trim();
 
-    const result = await model.generateContent(finalPrompt);
-
-    const rawText =
-      result.response.text().trim() ||
-      "I’m here with you. Let’s try that again in a moment. 💙";
+    let serviceDegraded = false;
+    let rawText: string;
+    try {
+      rawText = await generateCoachReply(finalPrompt);
+    } catch (err) {
+      if (!isTransientModelError(err)) throw err;
+      serviceDegraded = true;
+      console.warn("Z-Girl chat models temporarily unavailable", {
+        status: errorStatus(err),
+      });
+      rawText =
+        risk.level === "medium"
+          ? `${mediumRiskPrefix(risk.tags)} Your one hero move right now is to move toward a calm, trusted person and tell them plainly that you need support.`
+          : "That sounds difficult, and I’m glad you paused to name it. Your one hero move is to move to the calmest safe place available and take three slow breaths before deciding what to do next. If anyone may be unsafe, reach out to a trusted person or emergency help right away.";
+    }
 
     return NextResponse.json(
-      { reply: rawText, riskLevel: risk.level, safetyTags: risk.tags },
+      {
+        reply: rawText,
+        riskLevel: risk.level,
+        safetyTags: risk.tags,
+        serviceDegraded,
+      },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (err: any) {
