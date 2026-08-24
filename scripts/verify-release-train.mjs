@@ -19,7 +19,7 @@ if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")er
 if(currentManifest.alignment?.cedarIdentityReused!==false||currentManifest.alignment?.nativeLanguageReviewAssetsReused!==false)errors.push("v3.14.1 must not reuse Cedar or protected native-language review identities.");
 if(currentManifest.voiceCandidate?.providerStorageDisabled!==true)errors.push("v3.14.1 must disable provider-side Interaction storage.");
 if(currentManifest.voiceCandidate?.autoplayEnabled!==false)errors.push("v3.14.1 voice must remain user initiated.");
-if(currentManifest.voiceCandidate?.humanListeningRequired!==true||currentManifest.voiceCandidate?.publicReleaseApproved!==false)errors.push("v3.14.1 must remain listening-gated until explicit product-owner approval.");
+if(currentManifest.voiceCandidate?.humanListeningRequired!==true||currentManifest.voiceCandidate?.humanListeningApproved!==true||currentManifest.voiceCandidate?.publicReleaseApproved!==true||typeof currentManifest.voiceCandidate?.approvedBy!=="string")errors.push("v3.14.1 must retain explicit product-owner listening approval evidence.");
 if(currentManifest.privacy?.sendsMicrophoneAudio!==false||currentManifest.privacy?.sendsConversationHistory!==false||currentManifest.privacy?.storesGeneratedAudio!==false||currentManifest.privacy?.logsSpokenTranscript!==false)errors.push("v3.14.1 voice privacy boundary changed.");
 
 const humanManifest=json("release/zgirl-v3.14-human-readiness-release-evidence.json");
@@ -50,7 +50,7 @@ for(const p of prior.requiredFiles??[])requireFile(p);
 for(const p of prior.requiredMigrations??[])requireFile(p);
 requireFile("release/zgirl-v3.10-release-train.json");
 
-requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.14\.1["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.14\.1-natural-ai-voice-candidate["']/,/listening-gated-ai-voice-device-fallback/]);
+requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.14\.1["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.14\.1-natural-ai-voice["']/,/approved-ai-voice-user-initiated/]);
 
 // Preserve the v3.11 tenant/privacy foundation.
 const directGrant=/grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
@@ -168,16 +168,17 @@ requireText("components/institutions/InstitutionOperatorAccess.tsx",[/data-guide
 requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/DISTRACTING_NARRATION_HINTS/,/isSuitableNarrationVoice/,/curateNarrationVoices/,/rankVoices/,/pickVoice/]);
 requireText("docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md",[/Listen → See → Do → Confirm/,/never autoplays audio/i,/Completion is a usability marker only/,/must never narrate or intentionally capture/i]);
 
-// v3.14.1 live Coach voice is server-generated, disclosed, stateless and listening-gated.
+// v3.14.1 live Coach voice is server-generated, disclosed, stateless and product-owner approved.
 const liveVoiceRoute="app/api/voice/speech/route.ts";
 requireText(liveVoiceRoute,[
  /gemini-3\.1-flash-tts-preview/,
- /zgirl-live-coach-en-us-candidate-v1/,
+ /zgirl-live-coach-en-us-v1/,
  /const VOICE = ["']Sulafat["']/,
  /GEMINI_API_KEY/,
  /store:\s*false/,
  /providerStorageDisabled:\s*true/,
- /publicReleaseApproved:\s*false/,
+ /humanListeningApproved:\s*true/,
+ /publicReleaseApproved:\s*true/,
  /Cache-Control["']:\s*["']private, no-store/,
  /isSameOrigin/,
  /rateLimit/,
@@ -188,12 +189,11 @@ for(const forbidden of [/console\.(?:log|info|warn)\([^)]*(?:rawText|transcript)
 
 const publicCoachPath="app/coach/page.tsx";
 requireText(publicCoachPath,[
- /Z-Girl AI Voice · Listening candidate/,
+ /Z-Girl Natural AI Voice · Approved/,
  /AI-generated voice/,
  /Provider interaction storage is turned off/,
  /Playback never starts on its own/,
- /Device voice fallback/,
- /device’s voice is being used/,
+ /No robotic device voice was substituted/,
  /\/api\/voice\/speech/,
  /generatedVoiceAbortRef/,
  /URL\.revokeObjectURL/,
@@ -201,7 +201,7 @@ requireText(publicCoachPath,[
 ]);
 const publicCoachSrc=read(publicCoachPath);
 for(const forbidden of [/zgirlGreetingPlayed/,/Z-Girl Natural Voice · Recommended/,/autoPlay/i])if(forbidden.test(publicCoachSrc))errors.push(`Public Coach regressed its honest, user-initiated voice boundary: ${forbidden}`);
-requireText("docs/ZGIRL_V3_14_1_NATURAL_AI_VOICE_CANDIDATE.md",[/listening candidate/i,/store: false/,/iPhone/,/does not publish, replace or bypass/i,/v3\.14 human release gates remain authoritative/i]);
+requireText("docs/ZGIRL_V3_14_1_NATURAL_AI_VOICE_CANDIDATE.md",[/product-owner listening approval/i,/store: false/,/iPhone/,/does not publish, replace or bypass/i,/v3\.14 human release gates remain authoritative/i]);
 
 if(guidedManifest.guidedCoach?.voiceUserInitiatedOnly!==true)errors.push("Guided Coach manifest must require user-initiated voice.");
 if(guidedManifest.guidedCoach?.readsAuthenticationSecrets!==false)errors.push("Guided Coach manifest must exclude authentication secrets.");
@@ -218,7 +218,7 @@ for(const wf of [".github/workflows/verify-release.yml",".github/workflows/revie
 
 for(const warning of warnings)console.warn(`WARN: ${warning}`);
 if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.14.1 verification failed with ${errors.length} error(s).`);process.exit(1);}
-console.log(`Z-Girl v3.14.1 natural AI voice candidate verification passed for ${pkg.version}.`);
+console.log(`Z-Girl v3.14.1 approved natural AI voice verification passed for ${pkg.version}.`);
 console.log(`Initial guide coverage: ${(guidedManifest.initialCoverage??[]).length}`);
 console.log(`Required Guided Coach files: ${(guidedManifest.requiredFiles??[]).length}`);
 console.log(`Known warnings: ${warnings.length}`);
