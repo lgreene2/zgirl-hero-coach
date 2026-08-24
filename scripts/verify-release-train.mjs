@@ -181,6 +181,10 @@ requireText(liveVoiceRoute,[
  /publicReleaseApproved:\s*true/,
  /["']X-ZGirl-Voice-Candidate["']:\s*["']false["']/,
  /["']X-ZGirl-Voice-Release["']:\s*["']approved["']/,
+ /Server-Timing/,
+ /durationMs/,
+ /VOICE_GENERATION_RATE_LIMITED/,
+ /X-ZGirl-Voice-Retryable/,
  /Cache-Control["']:\s*["']private, no-store/,
  /isSameOrigin/,
  /rateLimit/,
@@ -198,11 +202,17 @@ requireText(publicCoachPath,[
  /No robotic device voice was substituted/,
  /\/api\/voice\/speech/,
  /generatedVoiceAbortRef/,
+ /generatedVoicePendingTextRef/,
+ /primeAiAudioContext/,
+ /Preparing…/,
+ /Retrying…/,
+ /AI_VOICE_RETRY_LIMIT\s*=\s*1/,
  /URL\.revokeObjectURL/,
  /speechLang === ["']en-US["']/,
 ]);
 const publicCoachSrc=read(publicCoachPath);
-for(const forbidden of [/zgirlGreetingPlayed/,/Z-Girl Natural Voice · Recommended/,/autoPlay/i])if(forbidden.test(publicCoachSrc))errors.push(`Public Coach regressed its honest, user-initiated voice boundary: ${forbidden}`);
+for(const forbidden of [/zgirlGreetingPlayed/,/Z-Girl Natural Voice · Recommended/,/autoPlay/i,/zgirl-startup\.wav/,/soundsEnabled/,/createSilentWavUrl/])if(forbidden.test(publicCoachSrc))errors.push(`Public Coach regressed its honest, user-initiated, chime-free voice boundary: ${forbidden}`);
+for(const retiredPath of ["app/coach/coach_page.tsx","app/coach/coach_page_fixed.tsx","public/sounds/zgirl-startup.wav"])if(fs.existsSync(path.join(root,retiredPath)))errors.push(`Retired Coach chime artifact returned: ${retiredPath}`);
 requireText("docs/ZGIRL_V3_14_1_NATURAL_AI_VOICE_CANDIDATE.md",[/product-owner listening approval/i,/store: false/,/iPhone/,/does not publish, replace or bypass/i,/v3\.14 human release gates remain authoritative/i]);
 
 if(guidedManifest.guidedCoach?.voiceUserInitiatedOnly!==true)errors.push("Guided Coach manifest must require user-initiated voice.");

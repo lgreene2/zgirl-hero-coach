@@ -144,6 +144,12 @@ async function generateVoiceAudio(
       lastError = new Error("voice_audio_missing");
     } catch (err) {
       lastError = err;
+      // A provider 429 applies to the shared speech capacity/quota path. Trying
+      // the fallback model immediately only doubles the wait and consumes a
+      // second request before the provider has had time to recover. Return the
+      // retry signal to the browser so the original Speak tap can own one
+      // controlled, delayed retry instead.
+      if (voiceErrorStatus(err) === 429) throw err;
       if (!isTransientVoiceError(err)) throw err;
     }
   }
@@ -245,6 +251,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const requestStartedAt = Date.now();
   try {
     const client = new GoogleGenAI({ apiKey });
     const generated = await generateVoiceAudio(
@@ -271,6 +278,12 @@ export async function POST(req: NextRequest) {
           );
     const contentType = hasMp3Header ? "audio/mpeg" : "audio/wav";
     const responseBody = Uint8Array.from(audio);
+    const durationMs = Date.now() - requestStartedAt;
+    console.info("Z-Girl voice generation completed", {
+      durationMs,
+      model: generated.model,
+      profile: PROFILE,
+    });
 
     return new NextResponse(responseBody, {
       status: 200,
@@ -281,6 +294,7 @@ export async function POST(req: NextRequest) {
         "X-ZGirl-Voice-Candidate": "false",
         "X-ZGirl-Voice-Release": "approved",
         "X-ZGirl-Voice-Model": generated.model,
+        "Server-Timing": `zgirl-tts;dur=${durationMs}`,
       }),
     });
   } catch (error) {
@@ -289,13 +303,28 @@ export async function POST(req: NextRequest) {
         ? Number((error as { status?: unknown }).status)
         : 0;
     console.error("Z-Girl voice generation failed", {
+      durationMs: Date.now() - requestStartedAt,
       status: Number.isFinite(status) ? status : 0,
       profile: PROFILE,
     });
 
+    const providerRateLimited = status === 429;
     return NextResponse.json(
-      { ok: false, code: "VOICE_GENERATION_FAILED" },
-      { status: status === 429 ? 429 : 502, headers: noStoreHeaders() }
+      {
+        ok: false,
+        code: providerRateLimited
+          ? "VOICE_GENERATION_RATE_LIMITED"
+          : "VOICE_GENERATION_FAILED",
+        ...(providerRateLimited ? { retryAfter: 5 } : {}),
+      },
+      {
+        status: providerRateLimited ? 429 : 502,
+        headers: noStoreHeaders(
+          providerRateLimited
+            ? { "Retry-After": "5", "X-ZGirl-Voice-Retryable": "true" }
+            : {}
+        ),
+      }
     );
   }
 }
