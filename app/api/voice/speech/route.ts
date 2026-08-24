@@ -8,7 +8,7 @@ export const maxDuration = 60;
 const MODEL = "gemini-3.1-flash-tts-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash-preview-tts";
 const VOICE = "Sulafat";
-const PROFILE = "zgirl-live-coach-en-us-candidate-v1";
+const PROFILE = "zgirl-live-coach-en-us-v1";
 const MAX_TEXT_LENGTH = 1_200;
 const WINDOW_MS = 60_000;
 const REQUESTS_PER_WINDOW = 10;
@@ -182,15 +182,16 @@ export async function GET() {
   return NextResponse.json(
     {
       configured: Boolean(process.env.GEMINI_API_KEY?.trim()),
-      candidate: true,
+      candidate: false,
       language: "en-US",
       model: MODEL,
       fallbackModel: FALLBACK_MODEL,
       profile: PROFILE,
       voice: VOICE,
       providerStorageDisabled: true,
-      deviceFallback: true,
-      publicReleaseApproved: false,
+      deviceFallback: false,
+      humanListeningApproved: true,
+      publicReleaseApproved: true,
     },
     { headers: noStoreHeaders() }
   );
