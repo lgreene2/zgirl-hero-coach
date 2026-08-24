@@ -9,218 +9,194 @@ import {
   HERO_WITHIN_30_DAY_VERSION,
 } from "@/app/lib/hero-within-30-day";
 
-type PlaybackState =
-  | "idle"
-  | "preparing"
-  | "waiting"
-  | "ready"
-  | "playing"
-  | "paused"
-  | "busy"
-  | "error";
+type ReviewState = "checking" | "idle" | "queueing" | "rendering" | "ready" | "playing" | "failed" | "error";
 
 type CandidateStatus = {
-  configured?: boolean;
-  enabled?: boolean;
+  ok?: boolean;
+  day?: number;
+  ready?: boolean;
+  persistentReviewCandidate?: boolean;
   profile?: string;
-  voice?: string;
-  model?: string;
-  trackCount?: number;
-  ephemeralReplayCache?: boolean;
+  contentVersion?: string;
+  releaseApproved?: boolean;
+  asset?: {
+    asset_id?: string;
+    title?: string;
+    state?: string;
+    storage_bucket?: string;
+    storage_path?: string;
+    mime_type?: string;
+    checksum_sha256?: string;
+    version?: string;
+    rights_status?: string;
+    updated_at?: string;
+  } | null;
+  job?: {
+    job_id?: string;
+    status?: string;
+    selected_provider_id?: string;
+    selected_model?: string;
+    updated_at?: string;
+  } | null;
 };
+
+const API = "/api/library/30-day/audio-candidate-v3";
+const REVIEW_SET = new Set([1, 8, 15, 22, 30]);
+const POLL_MS = 5_000;
+const NOTES_KEY = "zgirl-30-day-audio-review-notes-v3";
 
 export default function AudioReviewClientV3() {
   const [active, setActive] = useState(0);
-  const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
+  const [reviewState, setReviewState] = useState<ReviewState>("checking");
   const [status, setStatus] = useState<CandidateStatus | null>(null);
-  const [statusError, setStatusError] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioDay, setAudioDay] = useState<number | null>(null);
-  const [lastModel, setLastModel] = useState<string | null>(null);
-  const [lastTranscriptSha, setLastTranscriptSha] = useState<string | null>(null);
-  const [lastCache, setLastCache] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [listenedDays, setListenedDays] = useState<number[]>([]);
   const [notes, setNotes] = useState<Record<number, string>>({});
-
-  const abortRef = useRef<AbortController | null>(null);
-  const waitingTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const liveRegionRef = useRef<HTMLDivElement | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   const item = HERO_WITHIN_30_DAY[active];
   const transcript = useMemo(() => getHeroWithin30DayTranscript(item), [item]);
-  const candidateReady = Boolean(audioUrl && audioDay === item.day);
+  const audioUrl = `${API}?day=${item.day}&audio=1`;
 
   useEffect(() => {
-    let mounted = true;
-    fetch("/api/library/30-day/audio-candidate-v2", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`candidate_status_${response.status}`);
-        return (await response.json()) as CandidateStatus;
-      })
-      .then((payload) => mounted && setStatus(payload))
-      .catch(() => mounted && setStatusError(true));
-    return () => {
-      mounted = false;
-    };
+    try {
+      const raw = window.localStorage.getItem(NOTES_KEY);
+      if (raw) setNotes(JSON.parse(raw) as Record<number, string>);
+    } catch {}
   }, []);
 
-  const releaseLocalCandidate = useCallback(() => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-    waitingTimerRef.current = null;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setAudioUrl((current) => {
-      if (current) URL.revokeObjectURL(current);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    } catch {}
+  }, [notes]);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) window.clearInterval(pollRef.current);
+    pollRef.current = null;
+  }, []);
+
+  const readStatus = useCallback(async (day: number, quiet = false) => {
+    if (!quiet) setReviewState("checking");
+    try {
+      const response = await fetch(`${API}?day=${day}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`status_${response.status}`);
+      const payload = (await response.json()) as CandidateStatus;
+      setStatus(payload);
+
+      if (payload.ready) {
+        stopPolling();
+        setReviewState("ready");
+        setStatusMessage("A persistent review candidate is ready in Greene-controlled staging storage. Press Play when you are ready to listen.");
+        return payload;
+      }
+
+      const jobStatus = payload.job?.status;
+      if (["QUEUED", "ROUTING", "RENDERING", "RETRYING", "FALLBACK", "QA"].includes(jobStatus || "")) {
+        setReviewState("rendering");
+        setStatusMessage("The render is running independently of this page. You may keep this page open or return later; do not create duplicate requests while the job is rendering.");
+      } else if (["FAILED", "REJECTED"].includes(jobStatus || "")) {
+        stopPolling();
+        setReviewState("failed");
+        setStatusMessage("The provider did not complete this candidate. Nothing was promoted to a master. You can prepare the same day again without losing the governed job history.");
+      } else {
+        setReviewState("idle");
+        setStatusMessage("No stored review candidate exists for this day yet. Preparing creates one governed render job instead of making you wait on a live playback request.");
+      }
+      return payload;
+    } catch {
+      stopPolling();
+      setReviewState("error");
+      setStatusMessage("The review system could not read the stored candidate status. No device voice was substituted.");
       return null;
-    });
-    setAudioDay(null);
-    setPlaybackState("idle");
-  }, []);
+    }
+  }, [stopPolling]);
+
+  const beginPolling = useCallback((day: number) => {
+    stopPolling();
+    pollRef.current = window.setInterval(() => {
+      void readStatus(day, true);
+    }, POLL_MS);
+  }, [readStatus, stopPolling]);
 
   useEffect(() => {
-    releaseLocalCandidate();
-  }, [active, releaseLocalCandidate]);
-
-  useEffect(() => () => releaseLocalCandidate(), [releaseLocalCandidate]);
+    stopPolling();
+    audioRef.current?.pause();
+    setStatus(null);
+    setStatusMessage(null);
+    void readStatus(item.day).then((payload) => {
+      const jobStatus = payload?.job?.status;
+      if (!payload?.ready && ["QUEUED", "ROUTING", "RENDERING", "RETRYING", "FALLBACK", "QA"].includes(jobStatus || "")) {
+        beginPolling(item.day);
+      }
+    });
+    return stopPolling;
+  }, [active, beginPolling, item.day, readStatus, stopPolling]);
 
   const prepareCandidate = useCallback(async () => {
-    if (abortRef.current || !status?.enabled || !status?.configured) return;
-    if (candidateReady) {
-      setPlaybackState("ready");
-      return;
-    }
-
-    releaseLocalCandidate();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setPlaybackState("preparing");
-    setLastModel(null);
-    setLastTranscriptSha(null);
-    setLastCache(null);
-    if (liveRegionRef.current) {
-      liveRegionRef.current.textContent = `Preparing Day ${item.day}. Playback will wait for a separate tap after the candidate is ready.`;
-    }
-
-    waitingTimerRef.current = window.setTimeout(() => {
-      if (!controller.signal.aborted) {
-        setPlaybackState("waiting");
-        if (liveRegionRef.current) {
-          liveRegionRef.current.textContent = "The provider is taking longer than usual. Keep this page open; no second request is being sent.";
-        }
-      }
-    }, 10_000);
-
+    if (reviewState === "queueing" || reviewState === "rendering") return;
+    setReviewState("queueing");
+    setStatusMessage("Creating a governed render job…");
     try {
-      const response = await fetch("/api/library/30-day/audio-candidate-v2", {
+      const response = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ day: item.day }),
         cache: "no-store",
-        signal: controller.signal,
       });
-
-      if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-      waitingTimerRef.current = null;
-
-      if (!response.ok) {
-        if (response.status === 429) throw new Error("candidate_busy");
-        throw new Error(`candidate_${response.status}`);
+      const payload = (await response.json().catch(() => null)) as { alreadyReady?: boolean; queued?: boolean; code?: string } | null;
+      if (!response.ok) throw new Error(payload?.code || `prepare_${response.status}`);
+      if (payload?.alreadyReady) {
+        await readStatus(item.day, true);
+        return;
       }
-
-      const blob = await response.blob();
-      if (!blob.size) throw new Error("candidate_empty");
-
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
-      setAudioDay(item.day);
-      setLastModel(response.headers.get("X-ZGirl-Audio-Model"));
-      setLastTranscriptSha(response.headers.get("X-ZGirl-Audio-Transcript-SHA256"));
-      setLastCache(response.headers.get("X-ZGirl-Audio-Replay-Cache"));
-      abortRef.current = null;
-      setPlaybackState("ready");
-      if (liveRegionRef.current) {
-        liveRegionRef.current.textContent = `Day ${item.day} is ready. Tap Play candidate to hear it.`;
-      }
-    } catch (error) {
-      if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-      waitingTimerRef.current = null;
-      if (controller.signal.aborted) return;
-      abortRef.current = null;
-      const busy = error instanceof Error && error.message === "candidate_busy";
-      setPlaybackState(busy ? "busy" : "error");
-      if (liveRegionRef.current) {
-        liveRegionRef.current.textContent = busy
-          ? "The provider stayed busy. Wait briefly, then prepare this candidate again."
-          : "The candidate could not be prepared.";
-      }
-    }
-  }, [candidateReady, item.day, releaseLocalCandidate, status?.configured, status?.enabled]);
-
-  const playReadyCandidate = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || !candidateReady) return;
-
-    try {
-      if (audio.ended || audio.currentTime >= audio.duration) audio.currentTime = 0;
-      await audio.play();
-      setPlaybackState("playing");
+      setReviewState("rendering");
+      setStatusMessage("Render queued in Greene-controlled staging. The provider can recover and finish without holding this iPhone request open. This page will check the governed job status automatically.");
+      beginPolling(item.day);
+      await readStatus(item.day, true);
     } catch {
-      setPlaybackState("error");
-      if (liveRegionRef.current) {
-        liveRegionRef.current.textContent = "iPhone blocked playback. Use the native audio Play control shown below.";
-      }
+      setReviewState("error");
+      setStatusMessage("The render job could not be queued. No candidate was approved or substituted.");
     }
-  }, [candidateReady]);
+  }, [beginPolling, item.day, readStatus, reviewState]);
 
-  const pauseCandidate = useCallback(() => {
-    audioRef.current?.pause();
-    setPlaybackState(candidateReady ? "paused" : "idle");
-  }, [candidateReady]);
-
-  const mainAction = useCallback(() => {
-    if (playbackState === "playing") {
-      pauseCandidate();
+  const playStoredCandidate = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || !status?.ready) return;
+    if (!audio.paused) {
+      audio.pause();
+      setReviewState("ready");
       return;
     }
-    if (candidateReady) {
-      void playReadyCandidate();
-      return;
+    try {
+      if (audio.ended) audio.currentTime = 0;
+      await audio.play();
+      setReviewState("playing");
+      setListenedDays((days) => days.includes(item.day) ? days : [...days, item.day].sort((a, b) => a - b));
+      setStatusMessage("Playing the stored review candidate. Replay uses Greene storage and does not call the voice provider again.");
+    } catch {
+      setReviewState("ready");
+      setStatusMessage("The stored candidate is ready. If iPhone blocks the large Play button, use the native audio Play control directly below it.");
     }
-    void prepareCandidate();
-  }, [candidateReady, pauseCandidate, playReadyCandidate, playbackState, prepareCandidate]);
+  }, [item.day, status?.ready]);
 
-  const actionLabel =
-    playbackState === "preparing"
-      ? "Preparing…"
-      : playbackState === "waiting"
-        ? "Still preparing…"
-        : playbackState === "playing"
+  const buttonLabel = reviewState === "checking"
+    ? "Checking stored candidate…"
+    : reviewState === "queueing"
+      ? "Queuing render…"
+      : reviewState === "rendering"
+        ? "Rendering in Greene storage…"
+        : reviewState === "playing"
           ? "Pause candidate"
-          : candidateReady
-            ? playbackState === "paused"
-              ? "Resume candidate"
-              : "Play candidate"
-            : playbackState === "busy"
+          : reviewState === "ready"
+            ? "Play stored candidate"
+            : reviewState === "failed"
               ? "Prepare candidate again"
               : "Prepare candidate";
 
-  const statusMessage =
-    playbackState === "waiting"
-      ? "The provider is slow right now. Keep this page open. When generation finishes, the button will change to Play candidate."
-      : candidateReady && playbackState !== "playing"
-        ? "Candidate ready. Playback is intentionally a separate tap so iPhone treats Play as a fresh user action. No new provider request will be made."
-        : playbackState === "playing"
-          ? "Playing the generated candidate from this page."
-          : playbackState === "busy"
-            ? "The provider stayed busy after its controlled retry. Nothing was approved or persisted; wait about 30 seconds before preparing again."
-            : playbackState === "error"
-              ? "Playback did not start. Use the native iPhone audio control below; the candidate will not be regenerated."
-              : null;
+  const buttonDisabled = reviewState === "checking" || reviewState === "queueing" || reviewState === "rendering";
+  const buttonAction = status?.ready ? playStoredCandidate : prepareCandidate;
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12">
@@ -228,9 +204,7 @@ export default function AudioReviewClientV3() {
         <aside className="space-y-5">
           <div className="rounded-3xl border border-white/10 bg-white/[.025] p-5">
             <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">Listening set</p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Step 1 prepares one candidate. Step 2 plays it with a fresh iPhone tap. No autoplay and no regeneration on Play.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Days 1, 8, 15, 22, and 30 are the first representative listening gate. All 30 days remain available for later QA.</p>
             <div className="mt-4 grid grid-cols-6 gap-2">
               {HERO_WITHIN_30_DAY.map((day, index) => (
                 <button
@@ -238,34 +212,33 @@ export default function AudioReviewClientV3() {
                   key={day.day}
                   onClick={() => setActive(index)}
                   aria-current={active === index ? "step" : undefined}
-                  className={`grid aspect-square place-items-center rounded-xl border text-xs font-black ${
+                  aria-label={`Open Day ${day.day}: ${day.title}${REVIEW_SET.has(day.day) ? ", recommended review day" : ""}`}
+                  className={`relative grid aspect-square place-items-center rounded-xl border text-xs font-black transition ${
                     active === index
                       ? "border-[#49d8c2] bg-[#49d8c2] text-[#04151c]"
                       : listenedDays.includes(day.day)
                         ? "border-[#49d8c2]/45 bg-[#49d8c2]/10 text-[#9cf2e3]"
-                        : "border-white/10 bg-white/[.025] text-slate-300"
+                        : REVIEW_SET.has(day.day)
+                          ? "border-amber-200/35 bg-amber-200/[.06] text-amber-100"
+                          : "border-white/10 bg-white/[.025] text-slate-300"
                   }`}
                 >
                   {listenedDays.includes(day.day) ? "✓" : day.day}
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-[11px] leading-5 text-slate-500">Gold outline = representative listening gate · ✓ = listened on this device</p>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[.025] p-5 text-sm leading-6 text-slate-300">
-            <p className="font-black text-white">Candidate status</p>
-            {statusError ? (
-              <p className="mt-2 text-rose-200">Could not read candidate status.</p>
-            ) : !status ? (
-              <p className="mt-2">Checking preview configuration…</p>
-            ) : (
-              <dl className="mt-3 space-y-2 text-xs">
-                <div className="flex justify-between gap-3"><dt>Preview enabled</dt><dd className="font-black">{status.enabled ? "Yes" : "No"}</dd></div>
-                <div className="flex justify-between gap-3"><dt>Voice configured</dt><dd className="font-black">{status.configured ? "Yes" : "No"}</dd></div>
-                <div className="flex justify-between gap-3"><dt>Master approved</dt><dd className="font-black">No</dd></div>
-                <div className="flex justify-between gap-3"><dt>Playback</dt><dd className="font-black">Explicit tap</dd></div>
-              </dl>
-            )}
+            <p className="font-black text-white">Governed candidate status</p>
+            <dl className="mt-3 space-y-2 text-xs">
+              <div className="flex justify-between gap-3"><dt>Storage</dt><dd className="text-right font-black">Greene staging</dd></div>
+              <div className="flex justify-between gap-3"><dt>Job</dt><dd className="text-right font-black">{status?.job?.status || "—"}</dd></div>
+              <div className="flex justify-between gap-3"><dt>Asset</dt><dd className="text-right font-black">{status?.asset?.state || "—"}</dd></div>
+              <div className="flex justify-between gap-3"><dt>Rights</dt><dd className="text-right font-black">{status?.asset?.rights_status || "Pending review"}</dd></div>
+              <div className="flex justify-between gap-3"><dt>Master approved</dt><dd className="text-right font-black">No</dd></div>
+            </dl>
           </div>
 
           <Link href="/library/30-day" className="button-secondary block text-center">Back to learner preview</Link>
@@ -282,79 +255,81 @@ export default function AudioReviewClientV3() {
           <div className="mt-6 rounded-3xl border border-[#49d8c2]/25 bg-[#49d8c2]/[.05] p-5 sm:p-6">
             <button
               type="button"
-              onClick={mainAction}
-              disabled={!status?.enabled || !status?.configured || playbackState === "preparing" || playbackState === "waiting"}
-              className="button-primary disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => void buttonAction()}
+              disabled={buttonDisabled}
+              className="button-primary disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {actionLabel}
+              {buttonLabel}
             </button>
-            <p className="mt-4 text-sm font-bold text-slate-400">No autoplay · no device voice fallback · no chime</p>
+            <p className="mt-4 text-sm font-bold text-slate-400">No autoplay · no device voice fallback · no chime · no regeneration on replay</p>
             {statusMessage && (
-              <p className={`mt-4 text-base font-black leading-7 ${playbackState === "busy" || playbackState === "error" ? "text-amber-200" : "text-[#9cf2e3]"}`}>
-                {statusMessage}
-              </p>
+              <p className={`mt-4 text-base font-black leading-7 ${reviewState === "failed" || reviewState === "error" ? "text-amber-200" : "text-[#9cf2e3]"}`}>{statusMessage}</p>
             )}
 
-            {candidateReady && audioUrl && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-[#061521] p-4">
-                <p className="mb-3 text-xs font-black uppercase tracking-[.15em] text-slate-300">iPhone-native playback fallback</p>
+            {status?.ready && (
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <p className="mb-3 text-sm font-black text-white">iPhone playback control</p>
                 <audio
                   ref={audioRef}
                   src={audioUrl}
                   controls
-                  playsInline
                   preload="metadata"
                   className="w-full"
                   onPlay={() => {
-                    setPlaybackState("playing");
+                    setReviewState("playing");
                     setListenedDays((days) => days.includes(item.day) ? days : [...days, item.day].sort((a, b) => a - b));
                   }}
-                  onPause={() => setPlaybackState((current) => current === "playing" ? "paused" : current)}
-                  onEnded={() => setPlaybackState("ready")}
-                  onError={() => setPlaybackState("error")}
+                  onPause={() => setReviewState("ready")}
+                  onEnded={() => setReviewState("ready")}
+                  onError={() => {
+                    setReviewState("error");
+                    setStatusMessage("The stored candidate could not be read from Greene staging. No device voice was substituted.");
+                  }}
                 >
-                  Your browser does not support audio playback.
+                  Your browser does not support the audio element.
                 </audio>
-                <p className="mt-3 text-xs leading-5 text-slate-400">If the large Play candidate button does not start sound, press Play in this native control. This uses the same already-generated candidate.</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">This player reads the same persisted review candidate. Pressing Play here never creates another TTS request.</p>
               </div>
             )}
           </div>
 
-          <div className="mt-7 grid gap-5 lg:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-3xl border border-white/10 bg-white/[.025] p-5">
-              <p className="text-xs font-black uppercase tracking-[.16em] text-slate-400">Generation evidence</p>
-              <dl className="mt-4 space-y-3 text-sm text-slate-300">
-                <div><dt className="font-black text-white">Model</dt><dd className="mt-1 break-words">{lastModel || "Not generated yet"}</dd></div>
-                <div><dt className="font-black text-white">Replay cache</dt><dd className="mt-1">{lastCache || "—"}</dd></div>
-                <div><dt className="font-black text-white">Transcript SHA-256</dt><dd className="mt-1 break-all font-mono text-xs">{lastTranscriptSha || "—"}</dd></div>
+              <p className="text-xs font-black uppercase tracking-[.18em] text-slate-400">Generation evidence</p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div><dt className="font-black text-white">Model</dt><dd className="mt-1 break-words text-slate-400">{status?.job?.selected_model || "Not generated yet"}</dd></div>
+                <div><dt className="font-black text-white">Stored audio SHA-256</dt><dd className="mt-1 break-all text-xs text-slate-500">{status?.asset?.checksum_sha256 || "—"}</dd></div>
+                <div><dt className="font-black text-white">Asset ID</dt><dd className="mt-1 break-all text-xs text-slate-500">{status?.asset?.asset_id || "—"}</dd></div>
+                <div><dt className="font-black text-white">Content version</dt><dd className="mt-1 text-slate-400">{status?.contentVersion || HERO_WITHIN_30_DAY_VERSION}</dd></div>
               </dl>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/[.025] p-5">
-              <label htmlFor="audio-notes-v3" className="text-xs font-black uppercase tracking-[.16em] text-slate-400">Human listening notes</label>
+              <label htmlFor="listening-notes" className="text-xs font-black uppercase tracking-[.18em] text-slate-400">Human listening notes</label>
               <textarea
-                id="audio-notes-v3"
+                id="listening-notes"
                 value={notes[item.day] || ""}
                 onChange={(event) => setNotes((current) => ({ ...current, [item.day]: event.target.value }))}
-                className="mt-4 min-h-36 w-full rounded-2xl border border-white/10 bg-[#061521] p-4 text-sm leading-6 text-white outline-none focus:border-[#49d8c2]"
                 placeholder="Voice quality, pacing, warmth, pronunciation, pauses, anything to change…"
+                className="mt-4 min-h-[170px] w-full rounded-2xl border border-white/10 bg-[#04151c] p-4 text-sm leading-6 text-white outline-none focus:border-[#49d8c2] focus:ring-4 focus:ring-[#49d8c2]/10"
               />
-              <p className="mt-2 text-xs leading-5 text-slate-500">Notes stay in this page state only and are not an approval record.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Notes stay in this browser during preview. They are not an approval until you explicitly approve the candidate.</p>
             </div>
           </div>
 
-          <details className="mt-7 rounded-3xl border border-white/10 bg-white/[.025] p-5">
-            <summary className="cursor-pointer font-black text-sky-200">View exact transcript</summary>
-            <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-300">{transcript}</div>
+          <details className="mt-6 rounded-3xl border border-white/10 bg-white/[.02] p-5">
+            <summary className="cursor-pointer text-sm font-black text-sky-200">Exact record-ready transcript</summary>
+            <div className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#04151c]/70 p-4 text-sm leading-7 text-slate-200">{transcript}</div>
           </details>
 
-          <div className="mt-7 border-t border-white/10 pt-5 text-xs leading-6 text-slate-500">
-            {HERO_WITHIN_30_DAY_VERSION} · {HERO_WITHIN_30_DAY_AUDIO_STATUS} · candidate playback v3
+          <div className="mt-6 rounded-3xl border border-amber-300/15 bg-amber-300/[.035] p-5 text-sm leading-6 text-slate-300">
+            <p className="font-black text-amber-100">Release boundary</p>
+            <p className="mt-2">A stored candidate is still only a review artifact. Human listening, transcript match, voice rights, accessibility/mastering QA, and explicit release approval remain required before any candidate becomes a master.</p>
           </div>
+
+          <p className="mt-6 text-xs text-slate-600">{HERO_WITHIN_30_DAY_VERSION} · {HERO_WITHIN_30_DAY_AUDIO_STATUS} · persistent-review-v3</p>
         </section>
       </div>
-
-      <div ref={liveRegionRef} className="sr-only" aria-live="polite" />
     </div>
   );
 }
