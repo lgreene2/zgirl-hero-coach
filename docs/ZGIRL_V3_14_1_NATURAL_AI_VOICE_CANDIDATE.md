@@ -1,26 +1,26 @@
-# Z-Girl v3.14.1 — Natural AI Voice Candidate
+# Z-Girl v3.14.1 — Natural AI Voice Release
 
 ## Objective
 
-v3.14.1 replaces the iPhone/browser voice presented as “Z-Girl Natural Voice” with a real server-generated speech candidate for the live AI Coach.
+v3.14.1 replaces the iPhone/browser voice presented as “Z-Girl Natural Voice” with the approved server-generated speech voice for the live AI Coach.
 
-The English (US) candidate uses the dedicated `zgirl-live-coach-en-us-candidate-v1` performance profile with the Sulafat base voice. Direction is warm, grounded, compassionate, confident and conversational. “Z-Girl” is directed as “Zee Girl.” The profile is not Cedar, Bighawk, a 4 Lessons game narrator, or one of the protected native-language studio-review candidates.
+The approved English (US) voice uses the dedicated `zgirl-live-coach-en-us-v1` performance profile with the Sulafat base voice. Direction is warm, grounded, compassionate, confident and conversational. “Z-Girl” is directed as “Zee Girl.” The profile is not Cedar, Bighawk, a 4 Lessons game narrator, or one of the protected native-language studio-review candidates.
 
 ## Listening gate
 
-This release is a listening candidate, not an automatic production approval.
+This release required product-owner listening approval before production promotion.
 
 Before promotion, a product owner must use an iPhone and at least one desktop browser to confirm:
 
-1. Preview Voice plays the AI candidate rather than a named iPhone device voice;
+1. Preview Voice plays the approved AI voice rather than a named iPhone device voice;
 2. Z-Girl is pronounced “Zee Girl”;
 3. cadence is natural, warm and unhurried;
 4. sensitive replies sound calm rather than cheerful, clinical or alarmed;
 5. Stop Voice cancels generation or playback;
-6. a voice-service failure falls back to the device voice and is visibly labeled;
+6. a voice-service or playback failure does not silently substitute a robotic device voice;
 7. no greeting or reply autoplays unless the user explicitly enables auto-speak.
 
-Until that listening approval is recorded, `publicReleaseApproved` remains false.
+Lyndon Greene completed iPhone listening review and explicitly approved the voice on August 24, 2026. The governed release record now sets `humanListeningApproved` and `publicReleaseApproved` to true.
 
 ## Privacy and data flow
 
@@ -36,11 +36,11 @@ The Coach visibly identifies the voice as AI-generated and explains the provider
 
 ## Language boundary
 
-The AI voice candidate is English (US) only. English (UK), Spanish, French, Portuguese and German continue to use an honestly labeled matching device voice. This does not publish, replace or bypass the protected native-language review workflow.
+The approved AI voice is English (US) only. English (UK), Spanish, French, Portuguese and German continue to use an honestly labeled matching device voice. This does not publish, replace or bypass the protected native-language review workflow.
 
 ## Failure behavior
 
-If the candidate is unavailable, rate-limited, blocked by the browser, or cannot play, the Coach attempts the selected matching device voice and displays that fallback state. Chat remains usable when all speech output is unavailable.
+If the approved natural voice is unavailable, rate-limited, blocked by the browser, or cannot play, the Coach displays the failure and does not silently substitute a robotic device voice. A prepared-voice second tap is available when iPhone requires a fresh playback gesture. Chat remains usable when speech output is unavailable.
 
 ## Preserved boundaries
 
