@@ -56,6 +56,8 @@
     "AI-generated disclosure and provider data-flow copy remain visible",
     "English US is the only AI voice language until separate language review",
     "natural AI voice failures never silently substitute a robotic device voice; noncandidate languages retain intentional device voices",
+    "the live Coach contains no startup chime, voice-start cue, or silent-WAV unlock",
+    "one Speak tap owns one in-flight generation request and exposes a visible Preparing state",
     "no voice playback begins without an explicit user action",
     "production promotion requires explicit product-owner listening approval"
   ]
