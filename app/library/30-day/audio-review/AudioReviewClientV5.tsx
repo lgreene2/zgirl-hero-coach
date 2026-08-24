@@ -9,6 +9,14 @@ import {
   HERO_WITHIN_30_DAY_VERSION,
 } from "@/app/lib/hero-within-30-day";
 
+type AttemptStatus = {
+  attemptNumber?: number | null;
+  attemptStatus?: string | null;
+  errorCode?: string | null;
+  failureClass?: "QUOTA_EXHAUSTED" | "PROVIDER_BUSY" | "GENERATION_FAILED" | null;
+  completedAt?: string | null;
+};
+
 type CandidateStatus = {
   day?: number;
   ready?: boolean;
@@ -27,6 +35,7 @@ type CandidateStatus = {
     selected_model?: string;
     updated_at?: string;
   } | null;
+  attempt?: AttemptStatus | null;
 };
 
 type GateSummary = {
@@ -34,6 +43,8 @@ type GateSummary = {
   reviewDays?: number[];
   readyCount?: number;
   activeDay?: number | null;
+  quotaBlockedDay?: number | null;
+  failedDay?: number | null;
   statuses?: Record<string, CandidateStatus>;
   code?: string;
 };
@@ -48,6 +59,7 @@ function label(status?: CandidateStatus) {
   if (!status) return "CHECKING";
   if (status.ready) return "READY";
   if (status.statusError) return "STATUS ERROR";
+  if (status.attempt?.failureClass === "QUOTA_EXHAUSTED") return "QUOTA BLOCKED";
   const job = status.job?.status || "";
   if (["QUEUED", "ROUTING", "RENDERING", "RETRYING", "FALLBACK", "QA"].includes(job)) return "RENDERING";
   if (["FAILED", "REJECTED"].includes(job)) return "FAILED";
@@ -71,6 +83,7 @@ export default function AudioReviewClientV5() {
   const activeReady = Boolean(activeStatus?.ready);
   const readyCount = summary?.readyCount ?? 0;
   const activeRenderDay = summary?.activeDay ?? null;
+  const quotaBlockedDay = summary?.quotaBlockedDay ?? null;
   const audioUrl = `${AUDIO_API}?day=${activeDay}&audio=1`;
 
   useEffect(() => {
@@ -103,6 +116,9 @@ export default function AudioReviewClientV5() {
         setMessage("All five representative candidates are stored. Listen to each before any master or release decision.");
       } else if (payload.activeDay) {
         setMessage(`Day ${payload.activeDay} is rendering independently in Greene staging. You can leave this page and return later.`);
+      } else if (payload.quotaBlockedDay) {
+        stopPolling();
+        setMessage(`${count} of 5 candidates are safely stored. Day ${payload.quotaBlockedDay} is paused because Google Gemini reported that the current project quota is exhausted. Automatic retries are stopped so we do not waste requests.`);
       } else if (count > 0) {
         setMessage(`${count} of 5 representative candidates are stored. Prepare the next track when ready.`);
       } else {
@@ -136,19 +152,26 @@ export default function AudioReviewClientV5() {
     if (audioRef.current) audioRef.current.currentTime = 0;
   }, [activeDay]);
 
-  const prepareNext = useCallback(async () => {
+  const queue = useCallback(async (action: "prepare-next" | "retry-blocked") => {
     if (queueing || activeRenderDay || readyCount === REVIEW_DAYS.length) return;
     setQueueing(true);
-    setMessage("Creating one governed render job…");
+    setMessage(action === "retry-blocked" ? `Retrying Day ${quotaBlockedDay} once…` : "Creating one governed render job…");
     try {
       const response = await fetch(GATE_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "prepare-next" }),
+        body: JSON.stringify({ action }),
         cache: "no-store",
       });
       const payload = (await response.json().catch(() => null)) as { ok?: boolean; day?: number; code?: string; alreadyRendering?: boolean; complete?: boolean } | null;
-      if (!response.ok || !payload?.ok) throw new Error(payload?.code || `queue_${response.status}`);
+      if (!response.ok || !payload?.ok) {
+        if (payload?.code === "PROVIDER_QUOTA_EXHAUSTED") {
+          setMessage(`Google Gemini quota is still exhausted. Stored Days 1 and 8 remain safe and playable; no new provider request was started.`);
+          await refresh(true);
+          return;
+        }
+        throw new Error(payload?.code || `queue_${response.status}`);
+      }
 
       if (payload.complete) setMessage("The representative set is already complete.");
       else if (payload.alreadyRendering && payload.day) setMessage(`Day ${payload.day} is already rendering. No duplicate request was created.`);
@@ -160,7 +183,14 @@ export default function AudioReviewClientV5() {
     } finally {
       setQueueing(false);
     }
-  }, [activeRenderDay, queueing, readyCount, refresh]);
+  }, [activeRenderDay, queueing, quotaBlockedDay, readyCount, refresh]);
+
+  const retryBlocked = useCallback(async () => {
+    if (!quotaBlockedDay) return;
+    const confirmed = window.confirm(`Day ${quotaBlockedDay} was blocked by Google Gemini quota. Retry only after the provider quota or billing limit has been restored. Try one new render attempt now?`);
+    if (!confirmed) return;
+    await queue("retry-blocked");
+  }, [quotaBlockedDay, queue]);
 
   const play = useCallback(async () => {
     if (!activeReady || !audioRef.current) return;
@@ -178,11 +208,13 @@ export default function AudioReviewClientV5() {
     ? "5-track set stored"
     : activeRenderDay
       ? `Rendering Day ${activeRenderDay}…`
-      : queueing
-        ? "Queuing…"
-        : readyCount > 0
-          ? "Prepare next review track"
-          : "Prepare first review track";
+      : quotaBlockedDay
+        ? `Quota blocked at Day ${quotaBlockedDay}`
+        : queueing
+          ? "Queuing…"
+          : readyCount > 0
+            ? "Prepare next review track"
+            : "Prepare first review track";
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12">
@@ -191,7 +223,7 @@ export default function AudioReviewClientV5() {
         <div className="mt-3 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <h2 className="font-display text-2xl font-black sm:text-3xl">One governed render at a time. Stored once. Replayed without regeneration.</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">The previous browser-side five-track loop has been removed. The server now determines the next unfinished track and will not queue another while one is rendering.</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">The server now distinguishes a provider quota limit from an audio defect. When quota is exhausted, generation pauses instead of repeatedly retrying. Stored candidates remain immediately available for listening.</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-[#061521]/75 p-5 lg:min-w-[220px]">
             <p className="text-4xl font-black">{readyCount} / 5</p>
@@ -212,17 +244,18 @@ export default function AudioReviewClientV5() {
                 className={`rounded-2xl border px-4 py-3 text-left transition ${selected ? "border-[#49d8c2] bg-[#49d8c2]/10" : "border-white/10 bg-[#061521]/45"}`}
               >
                 <span className="block text-sm font-black text-white">Day {day}{listened.includes(day) ? " ✓" : ""}</span>
-                <span className={`mt-1 block text-[11px] font-black uppercase tracking-[.08em] ${state === "READY" ? "text-[#9cf2e3]" : state === "FAILED" || state === "STATUS ERROR" ? "text-amber-200" : state === "RENDERING" ? "text-sky-200" : "text-slate-500"}`}>{state}</span>
+                <span className={`mt-1 block text-[11px] font-black uppercase tracking-[.08em] ${state === "READY" ? "text-[#9cf2e3]" : state === "QUOTA BLOCKED" || state === "FAILED" || state === "STATUS ERROR" ? "text-amber-200" : state === "RENDERING" ? "text-sky-200" : "text-slate-500"}`}>{state}</span>
               </button>
             );
           })}
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <button type="button" onClick={() => void prepareNext()} disabled={loading || queueing || Boolean(activeRenderDay) || readyCount === REVIEW_DAYS.length} className="button-primary disabled:cursor-not-allowed disabled:opacity-45">{nextButton}</button>
+          <button type="button" onClick={() => void queue("prepare-next")} disabled={loading || queueing || Boolean(activeRenderDay) || Boolean(quotaBlockedDay) || readyCount === REVIEW_DAYS.length} className="button-primary disabled:cursor-not-allowed disabled:opacity-45">{nextButton}</button>
           <button type="button" onClick={() => void refresh()} className="button-secondary">Refresh status</button>
+          {quotaBlockedDay ? <button type="button" onClick={() => void retryBlocked()} disabled={queueing || Boolean(activeRenderDay)} className="button-secondary disabled:cursor-not-allowed disabled:opacity-45">Retry Day {quotaBlockedDay} after quota restored</button> : null}
         </div>
-        <p className={`mt-5 text-base font-black leading-7 ${message.includes("failed") || message.includes("Could not") ? "text-amber-200" : "text-[#9cf2e3]"}`}>{message}</p>
+        <p className={`mt-5 text-base font-black leading-7 ${message.includes("quota") || message.includes("Could not") || message.includes("blocked") ? "text-amber-200" : "text-[#9cf2e3]"}`}>{message}</p>
       </section>
 
       <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_1fr]">
@@ -247,6 +280,12 @@ export default function AudioReviewClientV5() {
                   <audio ref={audioRef} key={audioUrl} src={audioUrl} controls playsInline preload="metadata" className="w-full" onPlay={() => setListened((days) => days.includes(activeDay) ? days : [...days, activeDay])} />
                 </div>
               </>
+            ) : activeStatus?.attempt?.failureClass === "QUOTA_EXHAUSTED" ? (
+              <div className="mt-5 rounded-2xl border border-amber-200/20 bg-amber-200/[.04] p-4 text-sm leading-6 text-amber-100">
+                <p className="font-black">Google Gemini quota blocked this render.</p>
+                <p className="mt-2 text-slate-300">This does not indicate a bad script or broken audio file. No Day {activeDay} candidate was stored. Retry only after the provider quota or billing limit has been restored.</p>
+                <p className="mt-2 text-xs text-slate-500">Recorded attempt: {activeStatus.attempt.attemptNumber ?? "—"} · {activeStatus.attempt.errorCode || "quota limit"}</p>
+              </div>
             ) : (
               <p className="mt-5 text-sm leading-6 text-slate-400">No playable stored candidate is available for this day yet. Use the single queue button above; do not repeatedly tap individual generation controls.</p>
             )}
@@ -284,7 +323,7 @@ export default function AudioReviewClientV5() {
         <span>{HERO_WITHIN_30_DAY_VERSION}</span>
         <span>·</span>
         <span>{HERO_WITHIN_30_DAY_AUDIO_STATUS}</span>
-        <span>· resilient-review-v5</span>
+        <span>· quota-aware-review-v6</span>
       </div>
     </div>
   );
