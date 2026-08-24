@@ -108,36 +108,6 @@ function makeId(suffix = ""): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}${suffix}`;
 }
 
-function createSilentWavUrl(): string {
-  const sampleRate = 8_000;
-  const sampleCount = 800;
-  const bytesPerSample = 2;
-  const dataSize = sampleCount * bytesPerSample;
-  const buffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buffer);
-  const writeAscii = (offset: number, value: string) => {
-    for (let index = 0; index < value.length; index += 1) {
-      view.setUint8(offset + index, value.charCodeAt(index));
-    }
-  };
-
-  writeAscii(0, "RIFF");
-  view.setUint32(4, 36 + dataSize, true);
-  writeAscii(8, "WAVE");
-  writeAscii(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * bytesPerSample, true);
-  view.setUint16(32, bytesPerSample, true);
-  view.setUint16(34, 16, true);
-  writeAscii(36, "data");
-  view.setUint32(40, dataSize, true);
-
-  return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
-}
-
 type LangOption = {
   code: string;
   label: string;
@@ -200,7 +170,6 @@ function isSpeechRecognitionSupported(): boolean {
 type VoiceSettingsPersist = {
   voiceEnabled: boolean;
   autoSpeakReplies: boolean;
-  soundsEnabled: boolean;
   speechRate: number;
   speechPitch: number;
   speechLang: LangOption["code"];
@@ -269,7 +238,6 @@ export default function Home() {
   // Voice controls (persisted)
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [autoSpeakReplies, setAutoSpeakReplies] = useState(false); // safer default
-  const [soundsEnabled, setSoundsEnabled] = useState(false);
   const [speechRate, setSpeechRate] = useState(0.94);
   const [speechPitch, setSpeechPitch] = useState(1.03);
   const [speechLang, setSpeechLang] = useState<LangOption["code"]>("en-US");
@@ -301,12 +269,14 @@ export default function Home() {
   const liveRegionRef = useRef<HTMLDivElement | null>(null);
   const handleSendRef = useRef<() => void>(() => {});
 
-  // Optional, low-volume cue played only when spoken output begins.
-  const voiceCueRef = useRef<HTMLAudioElement | null>(null);
   const generatedVoiceRef = useRef<HTMLAudioElement | null>(null);
   const generatedVoiceAbortRef = useRef<AbortController | null>(null);
   const generatedVoiceUrlRef = useRef<string | null>(null);
   const generatedVoiceTextRef = useRef<string | null>(null);
+  const generatedVoicePendingTextRef = useRef<string | null>(null);
+  const generatedVoiceBufferRef = useRef<AudioBuffer | null>(null);
+  const generatedVoiceAudioContextRef = useRef<AudioContext | null>(null);
+  const generatedVoiceSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   // Load persisted voice settings before allowing the defaults to be saved.
   useEffect(() => {
@@ -321,10 +291,6 @@ export default function Home() {
         const parsed = JSON.parse(raw) as Partial<VoiceSettingsPersist>;
         if (typeof parsed.voiceEnabled === "boolean") setVoiceEnabled(parsed.voiceEnabled);
         if (typeof parsed.autoSpeakReplies === "boolean") setAutoSpeakReplies(parsed.autoSpeakReplies);
-        // v2.0.2 intentionally resets legacy sound preferences to the new quieter default.
-        if (currentRaw && typeof parsed.soundsEnabled === "boolean") {
-          setSoundsEnabled(parsed.soundsEnabled);
-        }
         if (typeof parsed.speechRate === "number") {
           setSpeechRate(parsed.speechRate === 1 ? 0.94 : parsed.speechRate);
         }
@@ -364,7 +330,6 @@ export default function Home() {
     const payload: VoiceSettingsPersist = {
       voiceEnabled,
       autoSpeakReplies,
-      soundsEnabled,
       speechRate,
       speechPitch,
       speechLang,
@@ -374,7 +339,7 @@ export default function Home() {
     try {
       window.localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(payload));
     } catch {}
-  }, [voiceEnabled, autoSpeakReplies, soundsEnabled, speechRate, speechPitch, speechLang, selectedVoiceName, preferredVoiceNames, voiceSettingsLoaded]);
+  }, [voiceEnabled, autoSpeakReplies, speechRate, speechPitch, speechLang, selectedVoiceName, preferredVoiceNames, voiceSettingsLoaded]);
 
   // Persist muted map
   useEffect(() => {
@@ -508,16 +473,20 @@ export default function Home() {
     recognitionRef.current = rec;
   }, [speechLang, autoSendVoice, loading]);
 
-  // Keep the optional voice-start cue subtle.
-  useEffect(() => {
-    if (voiceCueRef.current) voiceCueRef.current.volume = 0.12;
-  }, []);
-
   const stopSpeaking = useCallback(() => {
     if (typeof window === "undefined") return;
     generatedVoiceAbortRef.current?.abort();
     generatedVoiceAbortRef.current = null;
+    generatedVoicePendingTextRef.current = null;
+    generatedVoiceBufferRef.current = null;
     generatedVoiceTextRef.current = null;
+    if (generatedVoiceSourceRef.current) {
+      try {
+        generatedVoiceSourceRef.current.stop();
+      } catch {}
+      generatedVoiceSourceRef.current.disconnect();
+      generatedVoiceSourceRef.current = null;
+    }
     if (generatedVoiceRef.current) {
       generatedVoiceRef.current.pause();
       generatedVoiceRef.current.removeAttribute("src");
@@ -571,10 +540,6 @@ export default function Home() {
       utterance.onstart = () => {
         setIsSpeaking(true);
         setVoicePlaybackState(isFallback ? "device-fallback" : "idle");
-        if (soundsEnabled && voiceCueRef.current) {
-          voiceCueRef.current.currentTime = 0;
-          voiceCueRef.current.play().catch(() => {});
-        }
       };
       const done = () => {
         setIsSpeaking(false);
@@ -587,7 +552,51 @@ export default function Home() {
       synth.speak(utterance);
       return true;
     },
-    [voiceEnabled, soundsEnabled, speechRate, speechPitch, speechLang, resolveVoice]
+    [voiceEnabled, speechRate, speechPitch, speechLang, resolveVoice]
+  );
+
+  const primeAiAudioContext = useCallback(async (): Promise<AudioContext | null> => {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return null;
+
+    let context = generatedVoiceAudioContextRef.current;
+    if (!context || context.state === "closed") {
+      context = new AudioContextClass();
+      generatedVoiceAudioContextRef.current = context;
+    }
+    if (context.state === "suspended") await context.resume();
+    return context.state === "running" ? context : null;
+  }, []);
+
+  const startAiBufferPlayback = useCallback(
+    (context: AudioContext, buffer: AudioBuffer) => {
+      if (generatedVoiceSourceRef.current) {
+        try {
+          generatedVoiceSourceRef.current.stop();
+        } catch {}
+        generatedVoiceSourceRef.current.disconnect();
+      }
+
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      generatedVoiceSourceRef.current = source;
+      source.onended = () => {
+        if (generatedVoiceSourceRef.current === source) {
+          generatedVoiceSourceRef.current = null;
+          setIsSpeaking(false);
+          setVoicePlaybackState("idle");
+        }
+        source.disconnect();
+      };
+      setIsSpeaking(true);
+      setVoicePlaybackState("ai");
+      source.start(0);
+    },
+    []
   );
 
   const speakText = useCallback(
@@ -595,10 +604,40 @@ export default function Home() {
       if (!voiceEnabled || typeof window === "undefined") return false;
 
       const useAiCandidate = speechLang === "en-US" && !selectedVoiceName;
+      if (
+        useAiCandidate &&
+        generatedVoicePendingTextRef.current === text &&
+        generatedVoiceAbortRef.current
+      ) {
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent =
+            "Z-Girl's natural voice is still preparing. No additional request was sent.";
+        }
+        return true;
+      }
+
+      const preparedBuffer = generatedVoiceBufferRef.current;
+      if (
+        useAiCandidate &&
+        generatedVoiceTextRef.current === text &&
+        preparedBuffer
+      ) {
+        try {
+          const context = await primeAiAudioContext();
+          if (context) {
+            startAiBufferPlayback(context, preparedBuffer);
+            if (liveRegionRef.current) {
+              liveRegionRef.current.textContent =
+                "Playing Z-Girl's AI-generated voice.";
+            }
+            return true;
+          }
+        } catch {}
+      }
+
       const preparedPlayer = generatedVoiceRef.current;
       if (
         useAiCandidate &&
-        voicePlaybackState === "ready" &&
         generatedVoiceTextRef.current === text &&
         preparedPlayer?.src
       ) {
@@ -623,32 +662,14 @@ export default function Home() {
       stopSpeaking();
       if (!useAiCandidate) return speakWithDeviceVoice(text);
 
-      // Prime one persistent media element during a user gesture. This keeps
-      // Preview/Speak reliable in iOS in-app browsers after the network roundtrip.
-      const player = generatedVoiceRef.current;
-      const unlockPlayback = player
-        ? (() => {
-            let silentUnlockUrl: string | null = null;
-            try {
-              silentUnlockUrl = createSilentWavUrl();
-              player.src = silentUnlockUrl;
-              player.currentTime = 0;
-              return player
-                .play()
-                .then(() => player.pause())
-                .catch(() => {})
-                .finally(() => {
-                  if (silentUnlockUrl) URL.revokeObjectURL(silentUnlockUrl);
-                });
-            } catch {
-              if (silentUnlockUrl) URL.revokeObjectURL(silentUnlockUrl);
-              return Promise.resolve();
-            }
-          })()
-        : Promise.resolve();
+      // Resume Web Audio inside the original tap. Unlike the old silent-WAV
+      // unlock, this produces no cue and lets iPhone start decoded speech when
+      // the network response arrives without requiring another press.
+      const primedContext = primeAiAudioContext().catch(() => null);
 
       const controller = new AbortController();
       generatedVoiceAbortRef.current = controller;
+      generatedVoicePendingTextRef.current = text;
       setVoicePlaybackState("generating");
       if (liveRegionRef.current) {
         liveRegionRef.current.textContent = "Preparing Z-Girl's AI-generated voice.";
@@ -666,35 +687,55 @@ export default function Home() {
 
         const blob = await response.blob();
         if (!blob.size) throw new Error("voice_empty");
+        const encodedAudio = await blob.arrayBuffer();
+        const context = await primedContext;
+        if (context) {
+          try {
+            const decodedAudio = await context.decodeAudioData(encodedAudio.slice(0));
+            if (controller.signal.aborted) return false;
+            generatedVoiceBufferRef.current = decodedAudio;
+            generatedVoiceTextRef.current = text;
+            generatedVoicePendingTextRef.current = null;
+            generatedVoiceAbortRef.current = null;
+            startAiBufferPlayback(context, decodedAudio);
+            if (liveRegionRef.current) {
+              liveRegionRef.current.textContent =
+                "Playing Z-Girl's AI-generated voice.";
+            }
+            return true;
+          } catch {
+            // Fall back to the persistent media element if decoding is unavailable.
+          }
+        }
+
         const objectUrl = URL.createObjectURL(blob);
         generatedVoiceUrlRef.current = objectUrl;
         generatedVoiceTextRef.current = text;
         const audio = generatedVoiceRef.current || new Audio();
-        await unlockPlayback;
         audio.src = objectUrl;
         audio.volume = 1;
         audio.preload = "auto";
+        generatedVoicePendingTextRef.current = null;
         generatedVoiceAbortRef.current = null;
 
         audio.onplay = () => {
           setIsSpeaking(true);
           setVoicePlaybackState("ai");
-          if (soundsEnabled && voiceCueRef.current) {
-            voiceCueRef.current.currentTime = 0;
-            voiceCueRef.current.play().catch(() => {});
-          }
         };
         const finish = () => {
           setIsSpeaking(false);
           setVoicePlaybackState("idle");
           generatedVoiceAbortRef.current = null;
+        };
+        audio.onended = finish;
+        audio.onerror = () => {
+          finish();
           if (generatedVoiceUrlRef.current === objectUrl) {
             URL.revokeObjectURL(objectUrl);
             generatedVoiceUrlRef.current = null;
           }
+          setVoicePlaybackState("error");
         };
-        audio.onended = finish;
-        audio.onerror = finish;
 
         try {
           await audio.play();
@@ -724,14 +765,22 @@ export default function Home() {
       voiceEnabled,
       speechLang,
       selectedVoiceName,
-      soundsEnabled,
+      primeAiAudioContext,
       speakWithDeviceVoice,
+      startAiBufferPlayback,
       stopSpeaking,
-      voicePlaybackState,
     ]
   );
 
-  useEffect(() => () => stopSpeaking(), [stopSpeaking]);
+  useEffect(
+    () => () => {
+      stopSpeaking();
+      const context = generatedVoiceAudioContextRef.current;
+      generatedVoiceAudioContextRef.current = null;
+      if (context && context.state !== "closed") void context.close();
+    },
+    [stopSpeaking]
+  );
 
   const speakMessage = useCallback(
     (m: ChatMessage) => {
@@ -1278,16 +1327,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                   <span>Auto-speak replies</span>
                 </label>
 
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={soundsEnabled}
-                    onChange={() => setSoundsEnabled((v) => !v)}
-                    aria-label="Enable optional sound cue when voice playback begins"
-                  />
-                  <span>Sound cues <span className="text-slate-400">(off by default)</span></span>
-                </label>
-
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -1685,6 +1724,14 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                     const isMuted =
                       m.role === "assistant" ? Boolean(mutedMessageIds[m.id]) : false;
                     const isLastAssistant = m.role === "assistant" && lastAssistantId === m.id;
+                    const isPreparingThisReply =
+                      m.role === "assistant" &&
+                      voicePlaybackState === "generating" &&
+                      generatedVoicePendingTextRef.current === m.text;
+                    const isPlayingThisReply =
+                      m.role === "assistant" &&
+                      voicePlaybackState === "ai" &&
+                      generatedVoiceTextRef.current === m.text;
 
                     return (
                       <div
@@ -1709,12 +1756,32 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
                                 <button
                                   type="button"
                                   onClick={() => speakMessage(m)}
-                                  disabled={!voiceOutputOk || !voiceEnabled || isMuted}
+                                  disabled={
+                                    !voiceOutputOk ||
+                                    !voiceEnabled ||
+                                    isMuted ||
+                                    voicePlaybackState === "generating" ||
+                                    voicePlaybackState === "ai"
+                                  }
                                   className="text-sky-200 hover:text-sky-100 disabled:opacity-50 disabled:cursor-not-allowed underline underline-offset-2"
                                   aria-label={isLastAssistant ? "Speak last reply" : "Speak reply"}
-                                  title={isMuted ? "This message is muted" : "Speak this reply"}
+                                  title={
+                                    isPreparingThisReply
+                                      ? "Natural voice is preparing"
+                                      : isPlayingThisReply
+                                        ? "Natural voice is playing"
+                                      : isMuted
+                                        ? "This message is muted"
+                                        : "Speak this reply"
+                                  }
                                 >
-                                  {isLastAssistant ? "🔊 Speak last" : "🔊 Speak"}
+                                  {isPreparingThisReply
+                                    ? "⏳ Preparing…"
+                                    : isPlayingThisReply
+                                      ? "🔊 Playing…"
+                                    : isLastAssistant
+                                      ? "🔊 Speak last"
+                                      : "🔊 Speak"}
                                 </button>
 
                                 <button
@@ -2139,8 +2206,6 @@ Stage Direction: End on Z-Girl smiling with a gentle glow and the words:
         </div>
       )}
 
-      {/* Optional voice-start cue; independent from spoken output. */}
-      <audio ref={voiceCueRef} src="/sounds/zgirl-startup.wav" preload="auto" />
       {/* Persistent player keeps user-initiated AI voice reliable on iPhone. */}
       <audio ref={generatedVoiceRef} preload="none" playsInline />
     </div>
