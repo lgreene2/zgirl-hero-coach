@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "release": "3.14.1",
+  "purpose": "Release the product-owner-approved, server-generated Z-Girl Natural AI Voice with explicit playback controls and no silent robotic fallback for English (US).",
+  "productionBaseline": {
+    "mainSha": "0013e140a3b0a12719cd653f3d0e98303ccbf3d7",
+    "priorRelease": "3.14.0",
+    "customDomain": "https://zgirlinitiative.org"
+  },
+  "alignment": {
+    "contract": "greene.ecosystem-alignment-lock.v1",
+    "canonicalSource": "lgreene2/lead-with-greene/governance/ecosystem-alignment-lock-v1.json",
+    "systemRole": "specialized-the4lessons-leap-application-profile",
+    "cedarIdentityReused": false,
+    "nativeLanguageReviewAssetsReused": false
+  },
+  "voiceCandidate": {
+    "provider": "Gemini API",
+    "model": "gemini-3.1-flash-tts-preview",
+    "voice": "Sulafat",
+    "profile": "zgirl-live-coach-en-us-v1",
+    "language": "en-US",
+    "aiGeneratedDisclosureVisible": true,
+    "providerStorageDisabled": true,
+    "serverCredentialOnly": true,
+    "deviceFallbackEnabled": false,
+    "nonCandidateLanguagesUseDeviceVoices": true,
+    "autoplayEnabled": false,
+    "humanListeningRequired": true,
+    "humanListeningApproved": true,
+    "publicReleaseApproved": true,
+    "approvedAt": "2026-08-24T13:40:26Z",
+    "approvedBy": "Lyndon Greene, product owner",
+    "approvalEvidence": "Product owner confirmed 'Approve voice' after successful iPhone listening review."
+  },
+  "privacy": {
+    "sendsAssistantReplyTextOnly": true,
+    "sendsMicrophoneAudio": false,
+    "sendsConversationHistory": false,
+    "storesGeneratedAudio": false,
+    "storesSpokenTranscript": false,
+    "logsSpokenTranscript": false
+  },
+  "requiredFiles": [
+    "app/api/voice/speech/route.ts",
+    "app/coach/page.tsx",
+    "docs/ZGIRL_V3_14_1_NATURAL_AI_VOICE_CANDIDATE.md",
+    "lib/release.ts",
+    "release/zgirl-v3.14-human-readiness-release-evidence.json"
+  ],
+  "releaseGates": [
+    "deterministic build and release verification pass",
+    "preview route reports the expected non-storing voice profile",
+    "iPhone Preview Voice plays the approved AI voice without device fallback",
+    "Z-Girl pronunciation, warmth, pace and sensitive-content tone pass human listening review",
+    "AI-generated disclosure and provider data-flow copy remain visible",
+    "English US is the only AI voice language until separate language review",
+    "natural AI voice failures never silently substitute a robotic device voice; noncandidate languages retain intentional device voices",
+    "no voice playback begins without an explicit user action",
+    "production promotion requires explicit product-owner listening approval"
+  ]
+}
