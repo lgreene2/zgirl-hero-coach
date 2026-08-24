@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "release": "3.14.1",
-  "purpose": "Replace the misleading browser-only natural-voice label with a governed, server-side Z-Girl AI voice candidate and an honest device fallback.",
+  "purpose": "Release the product-owner-approved, server-generated Z-Girl Natural AI Voice with explicit playback controls and no silent robotic fallback for English (US).",
   "productionBaseline": {
     "mainSha": "0013e140a3b0a12719cd653f3d0e98303ccbf3d7",
     "priorRelease": "3.14.0",
@@ -18,15 +18,20 @@
     "provider": "Gemini API",
     "model": "gemini-3.1-flash-tts-preview",
     "voice": "Sulafat",
-    "profile": "zgirl-live-coach-en-us-candidate-v1",
+    "profile": "zgirl-live-coach-en-us-v1",
     "language": "en-US",
     "aiGeneratedDisclosureVisible": true,
     "providerStorageDisabled": true,
     "serverCredentialOnly": true,
-    "deviceFallbackEnabled": true,
+    "deviceFallbackEnabled": false,
+    "nonCandidateLanguagesUseDeviceVoices": true,
     "autoplayEnabled": false,
     "humanListeningRequired": true,
-    "publicReleaseApproved": false
+    "humanListeningApproved": true,
+    "publicReleaseApproved": true,
+    "approvedAt": "2026-08-24T13:40:26Z",
+    "approvedBy": "Lyndon Greene, product owner",
+    "approvalEvidence": "Product owner confirmed 'Approve voice' after successful iPhone listening review."
   },
   "privacy": {
     "sendsAssistantReplyTextOnly": true,
@@ -46,11 +51,11 @@
   "releaseGates": [
     "deterministic build and release verification pass",
     "preview route reports the expected non-storing voice profile",
-    "iPhone Preview Voice plays the AI candidate without device fallback",
+    "iPhone Preview Voice plays the approved AI voice without device fallback",
     "Z-Girl pronunciation, warmth, pace and sensitive-content tone pass human listening review",
     "AI-generated disclosure and provider data-flow copy remain visible",
     "English US is the only AI voice language until separate language review",
-    "device fallback remains available and honestly labeled",
+    "natural AI voice failures never silently substitute a robotic device voice; noncandidate languages retain intentional device voices",
     "no voice playback begins without an explicit user action",
     "production promotion requires explicit product-owner listening approval"
   ]
