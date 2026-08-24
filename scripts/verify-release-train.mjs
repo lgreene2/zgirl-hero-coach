@@ -10,10 +10,18 @@ function requireFile(p){if(!fs.existsSync(path.join(root,p)))errors.push(`Missin
 function requireText(p,patterns){requireFile(p);if(!fs.existsSync(path.join(root,p)))return;const src=read(p);for(const re of patterns)if(!re.test(src))errors.push(`${p} missing required guard: ${re}`);}
 
 const pkg=json("package.json");
-if(pkg.version!=="3.12.0")errors.push(`package.json must be 3.12.0; found ${pkg.version}`);
+if(pkg.version!=="3.13.0")errors.push(`package.json must be 3.13.0; found ${pkg.version}`);
+
+const currentManifest=json("release/zgirl-v3.13-gls-qualification-activation-handoff.json");
+if(currentManifest.release!==pkg.version)errors.push(`v3.13 manifest ${currentManifest.release} does not match package ${pkg.version}`);
+for(const p of currentManifest.requiredFiles??[])requireFile(p);
+for(const p of currentManifest.requiredMigrations??[])requireFile(p);
+if(currentManifest.alignment?.contract!=="greene.ecosystem-alignment-lock.v1")errors.push("v3.13 must remain bound to Ecosystem Alignment Lock v1.");
+if(currentManifest.operatingModel?.livePilotHumanReleaseRequired!==true)errors.push("v3.13 must preserve the final human live-release gate.");
+if(currentManifest.operatingModel?.participantPrivateReflectionTransfer!==false)errors.push("v3.13 must prohibit participant private-reflection transfer.");
 
 const guidedManifest=json("release/zgirl-v3.12-guided-coach.json");
-if(guidedManifest.release!==pkg.version)errors.push(`Guided Coach manifest ${guidedManifest.release} does not match package ${pkg.version}`);
+if(guidedManifest.release!=="3.12.0")errors.push(`Guided Coach baseline must remain 3.12.0; found ${guidedManifest.release}`);
 if(guidedManifest.productionBaseline?.mainSha!=="695fe870fa14797154de790500fd2d95a9b936fc")errors.push("v3.12 production baseline changed; reconcile current main before release.");
 for(const p of guidedManifest.requiredFiles??[])requireFile(p);
 
@@ -24,7 +32,7 @@ for(const p of prior.requiredFiles??[])requireFile(p);
 for(const p of prior.requiredMigrations??[])requireFile(p);
 requireFile("release/zgirl-v3.10-release-train.json");
 
-requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.12\.0["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.12-command-center-guided-coach["']/,/governed-institutional-guided-operations/]);
+requireText("lib/release.ts",[/ZGIRL_RELEASE_VERSION\s*=\s*["']3\.13\.0["']/,/ZGIRL_RELEASE_TRAIN\s*=\s*["']v3\.13-gls-qualification-activation-handoff["']/,/governed-gls-qualification-activation-handoff/]);
 
 // Preserve the v3.11 tenant/privacy foundation.
 const directGrant=/grant\s+(?:select|insert|update|delete|truncate|references|trigger|all(?:\s+privileges)?)\b[\s\S]{0,240}?\bon\s+(?:table\s+)?(?:public\.)?zgirl_[a-z0-9_]+[\s\S]{0,160}?\bto\s+(?:anon|authenticated)\b/i;
@@ -42,7 +50,13 @@ requireText(hotfix,[/private\.zgirl_bootstrap_first_system_owner/,/'operator_cre
 if(/first_system_owner_bootstrap_prepared/.test(read(hotfix)))errors.push("Bootstrap hotfix regressed to an invalid audit event type.");
 
 for(const route of ["app/api/institutions/ops/pilots/dashboard/route.ts","app/api/institutions/ops/pilots/action/route.ts","app/api/institutions/ops/pilots/gls-candidates/route.ts"])requireText(route,[/credentialSessionToken|requireOperatorCapability/,/credentialErrorResponse|unauthorized/]);
-requireText("components/institutions/GlsPilotCandidateQueue.tsx",[/GLS source-of-truth queue/,/does not carry participant reflection text/i,/data-guide-target="gls-queue"/,/data-guide-target=\{index === 0 \? "gls-opportunity-card"/]);
+requireText("components/institutions/GlsPilotCandidateQueue.tsx",[/GLS source-of-truth queue/,/does not carry participant reflection text/i,/Prepare governed Z-Girl workspace/,/Workspace gate locked/,/Preparing a workspace does not activate a live pilot/,/data-guide-target="gls-queue"/,/data-guide-target=\{index === 0 \? "gls-opportunity-card"/]);
+requireText("app/api/institutions/ops/pilots/gls-prepare/route.ts",[/credentialSessionToken/,/zgirl_prepare_gls_pilot_workspace/,/pushGlsPilotImplementation/,/liveActivated:\s*false/,/retrySafe:\s*workspacePrepared/]);
+
+const handoffMigration="supabase/migrations/20260819_zgirl_gls_qualification_activation_handoff_v3_13.sql";
+requireText(handoffMigration,[/public\.zgirl_prepare_gls_pilot_workspace/,/private\.zgirl_operator_require_capability\(p_session_token,'pilot\.write'/,/safety_route_confirmed=false/,/revoke all on function public\.zgirl_prepare_gls_pilot_workspace\(text,uuid\) from public/,/grant execute on function public\.zgirl_prepare_gls_pilot_workspace\(text,uuid\) to anon, authenticated/]);
+const handoffSrc=read(handoffMigration);
+for(const forbidden of [/participant_name\s+text/i,/participant_email\s+text/i,/private_reflection\s+text/i,/reflection_text\s+text/i,/diagnosis\s+text/i,/clinical_note\s+text/i,/payment_card\s+text/i])if(forbidden.test(handoffSrc))errors.push(`v3.13 handoff contains prohibited participant/private field pattern: ${forbidden}`);
 
 // Commerce remains separate from training and still seller-first.
 requireText("lib/commerce.ts",[/if\s*\(!getSellerName\(\)\)\s*return\s+null/,/ZGIRL_CHECKOUT_LINKS_JSON/,/url\.protocol\s*!==\s*["']https:["']/]);
@@ -94,7 +108,7 @@ requireText(lessonPath,[
 requireText("app/institutions/ops/guide/page.tsx",[/Command Center Guided Coach/,/Role-aware operator training/,/Voice never autoplays/,/Training completion does not grant a role/]);
 requireText("components/SiteHeader.tsx",[/InstitutionGuidedCoach/]);
 requireText("app/institutions/ops/portfolio/page.tsx",[/href="\/institutions\/ops\/pilots"/,/Pilot Command Center/,/href="\/institutions\/ops\/guide"/]);
-requireText("app/institutions/ops/pilots/page.tsx",[/v3\.12/,/Guided orientation/,/data-guide-target="pilot-operations"/]);
+requireText("app/institutions/ops/pilots/page.tsx",[/v3\.13/,/Guided orientation/,/data-guide-target="pilot-operations"/]);
 requireText("components/institutions/InstitutionOperatorAccess.tsx",[/data-guide-target="auth-mode"/]);
 requireText("app/lib/voice.ts",[/NATURAL_HINTS/,/FEMININE_HINTS/,/DISTRACTING_NARRATION_HINTS/,/isSuitableNarrationVoice/,/curateNarrationVoices/,/rankVoices/,/pickVoice/]);
 requireText("docs/ZGIRL_V3_12_COMMAND_CENTER_GUIDED_COACH.md",[/Listen → See → Do → Confirm/,/never autoplays audio/i,/Completion is a usability marker only/,/must never narrate or intentionally capture/i]);
@@ -113,8 +127,8 @@ if(!lockOk)errors.push(`package-lock is not reproducible for ${pkg.version}`);
 for(const wf of [".github/workflows/verify-release.yml",".github/workflows/reviewer-activation-ci.yml"])requireText(wf,[/npm ci --no-audit --no-fund/]);
 
 for(const warning of warnings)console.warn(`WARN: ${warning}`);
-if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.12 verification failed with ${errors.length} error(s).`);process.exit(1);}
-console.log(`Z-Girl Guided Coach release verification passed for ${pkg.version}.`);
+if(errors.length){for(const error of errors)console.error(`ERROR: ${error}`);console.error(`v3.13 verification failed with ${errors.length} error(s).`);process.exit(1);}
+console.log(`Z-Girl v3.13 governed handoff release verification passed for ${pkg.version}.`);
 console.log(`Initial guide coverage: ${(guidedManifest.initialCoverage??[]).length}`);
 console.log(`Required Guided Coach files: ${(guidedManifest.requiredFiles??[]).length}`);
 console.log(`Known warnings: ${warnings.length}`);
