@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "release": "3.13.0",
+  "purpose": "Governed GLS qualification to Z-Girl institutional pilot workspace preparation without live-pilot auto-activation.",
+  "productionBaseline": {
+    "mainSha": "e53ca5cc71cf506f67a58dee867d3bb5ebdfd57a",
+    "priorRelease": "3.12.0",
+    "customDomain": "https://zgirlinitiative.org",
+    "supabaseStagingProjectRef": "pysoqiubmmhsbfawrrrc"
+  },
+  "alignment": {
+    "contract": "greene.ecosystem-alignment-lock.v1",
+    "canonicalSource": "lgreene2/lead-with-greene/governance/ecosystem-alignment-lock-v1.json",
+    "systemRole": "specialized-the4lessons-leap-application-profile"
+  },
+  "operatingModel": {
+    "commercialSourceOfTruth": "Greene Leadership System",
+    "implementationSourceOfTruth": "Z-Girl",
+    "duplicateCrmCreated": false,
+    "participantRosterTransfer": false,
+    "participantPrivateReflectionTransfer": false,
+    "livePilotHumanReleaseRequired": true,
+    "workspacePreparationActivatesLivePilot": false,
+    "publicPaidLaunchActivated": false
+  },
+  "requiredMigrations": [
+    "supabase/migrations/20260819_zgirl_gls_qualification_activation_handoff_v3_13.sql"
+  ],
+  "requiredFiles": [
+    ".greene/ecosystem-alignment.json",
+    "app/api/institutions/ops/pilots/gls-prepare/route.ts",
+    "app/institutions/ops/pilots/page.tsx",
+    "components/institutions/GlsPilotCandidateQueue.tsx",
+    "docs/ZGIRL_V3_13_GLS_QUALIFICATION_ACTIVATION_HANDOFF.md",
+    "lib/release.ts",
+    "release/zgirl-v3.12-guided-coach.json"
+  ],
+  "releaseGates": [
+    "package, lockfile, runtime and page identity are 3.13.0",
+    "Ecosystem Alignment Lock v1 is present",
+    "v3.12 Guided Coach remains the preserved component baseline",
+    "GLS remains authoritative for qualification, agreement and engagement",
+    "workspace preparation requires pilot.write and an application session token",
+    "PUBLIC function execution is revoked and intended API-role execution is explicit",
+    "no participant roster or private reflection content crosses the handoff",
+    "workspace preparation is idempotent",
+    "workspace preparation does not activate a live pilot",
+    "safety, team, cohort and final human-release gates remain incomplete after preparation",
+    "Supabase staging migration and security posture are verified",
+    "GitHub release and reviewer workflows pass",
+    "exact-head Vercel preview is READY",
+    "production remains human-gated"
+  ]
+}

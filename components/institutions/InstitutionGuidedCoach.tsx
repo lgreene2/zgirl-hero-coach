@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { isSpeechSupported, pickVoice, rankVoices } from "@/app/lib/voice";
+import { curateNarrationVoices, isSpeechSupported, pickVoice } from "@/app/lib/voice";
 import {
   commandCenterMapLesson,
   fullOrientationLesson,
@@ -15,6 +15,14 @@ import {
 
 type Mode = "page" | "map" | "orientation";
 type VoiceStatus = "idle" | "speaking" | "paused" | "unsupported";
+type TargetNotice = { title: string; body: string };
+type HighlightSnapshot = {
+  element: HTMLElement;
+  outline: string;
+  outlineOffset: string;
+  boxShadow: string;
+  transition: string;
+};
 
 type CandidateQueueResponse = {
   ok?: boolean;
@@ -86,7 +94,9 @@ export default function InstitutionGuidedCoach() {
   const [rate, setRate] = useState(0.95);
   const [captions, setCaptions] = useState(true);
   const [completed, setCompleted] = useState<string[]>([]);
-  const highlightedRef = useRef<HTMLElement | null>(null);
+  const [targetNotice, setTargetNotice] = useState<TargetNotice | null>(null);
+  const [showFeedback, setShowFeedback] = useState("");
+  const highlightRef = useRef<HighlightSnapshot | null>(null);
 
   const roleLabel = primaryRoleLabel(guideState.roleKeys || []);
   const lesson: GuideLesson = useMemo(() => {
@@ -174,11 +184,17 @@ export default function InstitutionGuidedCoach() {
     const synth = window.speechSynthesis;
     const load = () => {
       const list = synth.getVoices();
-      const ranked = rankVoices(list.filter((voice) => voice.lang?.toLowerCase().startsWith("en")), "en-US");
-      setVoices(ranked);
+      const curated = curateNarrationVoices(list, "en-US", 6);
+      setVoices(curated);
       const stored = safeLocalGet(VOICE_KEY);
-      const preferred = pickVoice(list, { lang: "en-US", preferredName: stored || undefined, preferFemale: true });
-      if (preferred) setVoiceName(preferred.name);
+      const storedAllowed = stored && curated.some((voice) => voice.name === stored) ? stored : undefined;
+      const preferred = pickVoice(curated, { lang: "en-US", preferredName: storedAllowed, preferFemale: true });
+      if (preferred) {
+        setVoiceName(preferred.name);
+        if (stored !== preferred.name) safeLocalSet(VOICE_KEY, preferred.name);
+      } else {
+        setVoiceName("");
+      }
     };
     load();
     synth.addEventListener?.("voiceschanged", load);
@@ -190,12 +206,28 @@ export default function InstitutionGuidedCoach() {
     setVoiceStatus(isSpeechSupported() ? "idle" : "unsupported");
   }, []);
 
+  function restoreHighlight() {
+    const snapshot = highlightRef.current;
+    if (!snapshot) return;
+    snapshot.element.style.outline = snapshot.outline;
+    snapshot.element.style.outlineOffset = snapshot.outlineOffset;
+    snapshot.element.style.boxShadow = snapshot.boxShadow;
+    snapshot.element.style.transition = snapshot.transition;
+    highlightRef.current = null;
+  }
+
   useEffect(() => {
     stopSpeech();
     setStepIndex(0);
+    restoreHighlight();
+    setTargetNotice(null);
+    setShowFeedback("");
   }, [mode, pathname, stopSpeech]);
 
-  useEffect(() => () => stopSpeech(), [stopSpeech]);
+  useEffect(() => () => {
+    stopSpeech();
+    restoreHighlight();
+  }, [stopSpeech]);
 
   const speak = useCallback(() => {
     if (!step || !isSpeechSupported()) {
@@ -209,7 +241,7 @@ export default function InstitutionGuidedCoach() {
     utterance.rate = rate;
     utterance.pitch = 1;
     utterance.volume = 1;
-    const selected = voices.find((voice) => voice.name === voiceName) || pickVoice(synth.getVoices(), { lang: "en-US", preferredName: voiceName || undefined, preferFemale: true });
+    const selected = voices.find((voice) => voice.name === voiceName) || pickVoice(voices, { lang: "en-US", preferredName: voiceName || undefined, preferFemale: true });
     if (selected) utterance.voice = selected;
     utterance.onstart = () => setVoiceStatus("speaking");
     utterance.onpause = () => setVoiceStatus("paused");
@@ -232,24 +264,60 @@ export default function InstitutionGuidedCoach() {
   }
 
   function showTarget() {
+    setShowFeedback("");
     if (!step?.target) return;
-    if (highlightedRef.current) {
-      highlightedRef.current.style.outline = "";
-      highlightedRef.current.style.outlineOffset = "";
-    }
+    restoreHighlight();
     const element = document.querySelector(step.target) as HTMLElement | null;
-    if (!element) return;
-    highlightedRef.current = element;
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
-    element.style.outline = "4px solid #76ead6";
-    element.style.outlineOffset = "6px";
+    if (!element) {
+      setShowFeedback("I couldn't locate that item on the current page. Nothing was changed.");
+      return;
+    }
+
+    stopSpeech();
+    highlightRef.current = {
+      element,
+      outline: element.style.outline,
+      outlineOffset: element.style.outlineOffset,
+      boxShadow: element.style.boxShadow,
+      transition: element.style.transition,
+    };
+
+    setTargetNotice({
+      title: step.title,
+      body: "The bright teal outline marks the exact item this step refers to. The Guide panel is hidden temporarily so the page is easy to see.",
+    });
+    setOpen(false);
+
     window.setTimeout(() => {
-      if (highlightedRef.current === element) {
-        element.style.outline = "";
-        element.style.outlineOffset = "";
-        highlightedRef.current = null;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.style.transition = "outline-color 160ms ease, box-shadow 160ms ease";
+      element.style.outline = "6px solid #76ead6";
+      element.style.outlineOffset = "8px";
+      element.style.boxShadow = "0 0 0 12px rgba(118,234,214,.18), 0 0 44px rgba(73,216,194,.42)";
+      try {
+        element.animate(
+          [
+            { opacity: 1 },
+            { opacity: 0.72 },
+            { opacity: 1 },
+          ],
+          { duration: 750, iterations: 2 }
+        );
+      } catch {
+        // The persistent teal outline remains sufficient if Web Animations is unavailable.
       }
-    }, 4200);
+    }, 120);
+  }
+
+  function returnToGuide() {
+    restoreHighlight();
+    setTargetNotice(null);
+    setOpen(true);
+  }
+
+  function dismissTarget() {
+    restoreHighlight();
+    setTargetNotice(null);
   }
 
   function markComplete() {
@@ -283,8 +351,25 @@ export default function InstitutionGuidedCoach() {
         </div>
       )}
 
+      {targetNotice && (
+        <div className="fixed left-3 right-3 top-3 z-[92] mx-auto max-w-lg rounded-[1.4rem] border border-[#76ead6]/40 bg-[#04111b] p-4 shadow-2xl shadow-black/50" role="status" aria-live="polite">
+          <div className="flex items-start gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#49d8c2] text-lg" aria-hidden="true">👀</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-black uppercase tracking-[.14em] text-[#76ead6]">Showing on page</div>
+              <div className="mt-1 text-sm font-black text-white">{targetNotice.title}</div>
+              <p className="mt-1 text-xs leading-5 text-slate-300">{targetNotice.body}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button onClick={returnToGuide} className="button-primary">Return to Guide</button>
+                <button onClick={dismissTarget} className="button-secondary">Close highlight</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
-        onClick={() => { safeLocalSet(SEEN_KEY, "seen"); setOpen(true); }}
+        onClick={() => { safeLocalSet(SEEN_KEY, "seen"); restoreHighlight(); setTargetNotice(null); setOpen(true); }}
         className="fixed bottom-5 right-4 z-[78] inline-flex items-center gap-2 rounded-full border border-[#76ead6]/30 bg-[#49d8c2] px-4 py-3 text-sm font-black text-[#04151c] shadow-xl shadow-black/30 transition hover:bg-[#76ead6] sm:right-6"
         aria-label="Open Z-Girl Guided Coach"
       >
@@ -297,7 +382,7 @@ export default function InstitutionGuidedCoach() {
             <header className="border-b border-white/10 bg-[#04111b] px-5 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[.16em] text-[#76ead6]">Z-Girl Command Center Guided Coach · v1</div>
+                  <div className="text-[10px] font-black uppercase tracking-[.16em] text-[#76ead6]">Z-Girl Command Center Guided Coach · v1.1</div>
                   <h2 className="mt-1 font-display text-2xl font-black text-white">{lesson.title}</h2>
                   <p className="mt-1 text-xs leading-5 text-slate-400">{lesson.subtitle} · About {lesson.estimatedMinutes} min</p>
                 </div>
@@ -326,9 +411,11 @@ export default function InstitutionGuidedCoach() {
                     <button onClick={speak} disabled={voiceStatus === "unsupported"} className="button-primary disabled:opacity-40">{voiceStatus === "speaking" ? "Replay voice" : "▶ Play voice"}</button>
                     {(voiceStatus === "speaking" || voiceStatus === "paused") && <button onClick={pauseResume} className="button-secondary">{voiceStatus === "paused" ? "Resume" : "Pause"}</button>}
                     {voiceStatus !== "idle" && voiceStatus !== "unsupported" && <button onClick={stopSpeech} className="button-secondary">Stop</button>}
-                    {step.target && <button onClick={showTarget} className="button-secondary">Show me</button>}
+                    {step.target && <button onClick={showTarget} className="button-secondary">👀 Show on page</button>}
                     {step.href && <Link href={step.href} onClick={stopSpeech} className="button-secondary">{step.actionLabel || "Go there"}</Link>}
                   </div>
+                  {step.target && <p className="mt-3 text-xs leading-5 text-slate-500">“Show on page” temporarily hides this Guide, scrolls to the exact item, and marks it with a bright teal outline. Tap “Return to Guide” when you are ready to continue.</p>}
+                  {showFeedback && <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/[.05] p-3 text-xs leading-5 text-amber-100" role="status">{showFeedback}</p>}
                   {voiceStatus === "unsupported" && <p className="mt-3 text-xs leading-5 text-slate-500">Voice playback is not available in this browser. The complete caption/transcript remains available.</p>}
                 </article>
               )}
@@ -336,10 +423,10 @@ export default function InstitutionGuidedCoach() {
               <details className="mt-4 rounded-2xl border border-white/10 bg-[#04111b] p-4">
                 <summary className="cursor-pointer text-xs font-black uppercase tracking-[.12em] text-slate-300">Voice & accessibility controls</summary>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <label className="text-xs font-bold text-slate-400">Voice
+                  <label className="text-xs font-bold text-slate-400">Recommended voice
                     <select value={voiceName} onChange={(event) => { setVoiceName(event.target.value); safeLocalSet(VOICE_KEY, event.target.value); stopSpeech(); }} className="mt-2 w-full rounded-xl border border-white/10 bg-[#061521] p-3 text-sm text-white">
                       {voices.length === 0 && <option value="">Device default</option>}
-                      {voices.slice(0, 12).map((voice) => <option key={`${voice.name}-${voice.lang}`} value={voice.name}>{voice.name} · {voice.lang}</option>)}
+                      {voices.map((voice) => <option key={`${voice.name}-${voice.lang}`} value={voice.name}>{voice.name} · {voice.lang}</option>)}
                     </select>
                   </label>
                   <label className="text-xs font-bold text-slate-400">Speaking speed
@@ -353,13 +440,13 @@ export default function InstitutionGuidedCoach() {
                   </label>
                 </div>
                 <label className="mt-4 flex items-center gap-3 text-sm text-slate-300"><input type="checkbox" checked={captions} onChange={(event) => { setCaptions(event.target.checked); safeLocalSet(CAPTIONS_KEY, event.target.checked ? "on" : "off"); }} /> Show captions/transcript</label>
-                <p className="mt-3 text-xs leading-5 text-slate-500">Voice uses the browser/device speech engine and prefers natural English voices when available. Audio never starts automatically.</p>
+                <p className="mt-3 text-xs leading-5 text-slate-500">Only curated professional English narration voices are shown when the device provides them. Known novelty, character, compact, and distracting voices are filtered out. Audio never starts automatically.</p>
               </details>
 
               <div className="mt-5 flex items-center justify-between gap-3">
-                <button onClick={() => { stopSpeech(); setStepIndex((index) => Math.max(0, index - 1)); }} disabled={stepIndex === 0} className="button-secondary disabled:opacity-30">← Previous</button>
+                <button onClick={() => { stopSpeech(); setShowFeedback(""); setStepIndex((index) => Math.max(0, index - 1)); }} disabled={stepIndex === 0} className="button-secondary disabled:opacity-30">← Previous</button>
                 {stepIndex < lesson.steps.length - 1 ? (
-                  <button onClick={() => { stopSpeech(); setStepIndex((index) => Math.min(lesson.steps.length - 1, index + 1)); }} className="button-primary">Next →</button>
+                  <button onClick={() => { stopSpeech(); setShowFeedback(""); setStepIndex((index) => Math.min(lesson.steps.length - 1, index + 1)); }} className="button-primary">Next →</button>
                 ) : (
                   <button onClick={markComplete} className="button-primary">{lessonComplete ? "Completed ✓" : "Mark complete ✓"}</button>
                 )}
