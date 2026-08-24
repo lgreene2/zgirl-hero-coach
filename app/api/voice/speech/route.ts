@@ -93,6 +93,33 @@ ${transcript}
   `.trim();
 }
 
+function asWaveFile(
+  pcm: Buffer,
+  sampleRate = 24_000,
+  channels = 1,
+  bitsPerSample = 16
+): Buffer {
+  const header = Buffer.alloc(44);
+  const blockAlign = (channels * bitsPerSample) / 8;
+  const byteRate = sampleRate * blockAlign;
+
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcm.byteLength, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(pcm.byteLength, 40);
+
+  return Buffer.concat([header, pcm]);
+}
+
 export async function GET() {
   return NextResponse.json(
     {
@@ -163,14 +190,9 @@ export async function POST(req: NextRequest) {
     const interaction = await client.interactions.create({
       model: MODEL,
       input: buildPerformancePrompt(transcript),
-      response_format: {
-        type: "audio",
-        mime_type: "audio/mp3",
-        bit_rate: 128_000,
-        delivery: "inline",
-      },
+      response_format: { type: "audio" },
       generation_config: {
-        speech_config: [{ voice: VOICE, language }],
+        speech_config: [{ voice: VOICE }],
       },
       store: false,
     });
@@ -178,10 +200,21 @@ export async function POST(req: NextRequest) {
     const output = interaction.output_audio;
     if (!output?.data) throw new Error("voice_audio_missing");
 
-    const audio = Buffer.from(output.data, "base64");
-    const contentType = output.mime_type || "audio/mpeg";
+    const generatedAudio = Buffer.from(output.data, "base64");
+    const isRawPcm = !output.mime_type || output.mime_type === "audio/l16";
+    const audio = isRawPcm
+      ? asWaveFile(
+          generatedAudio,
+          output.sample_rate || 24_000,
+          output.channels || 1
+        )
+      : generatedAudio;
+    const contentType = isRawPcm
+      ? "audio/wav"
+      : output.mime_type || "application/octet-stream";
+    const responseBody = Uint8Array.from(audio);
 
-    return new NextResponse(audio, {
+    return new NextResponse(responseBody, {
       status: 200,
       headers: noStoreHeaders({
         "Content-Type": contentType,
