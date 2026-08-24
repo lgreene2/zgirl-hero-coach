@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = "gemini-3.1-flash-tts-preview";
+const FALLBACK_MODEL = "gemini-2.5-flash-preview-tts";
 const VOICE = "Sulafat";
 const PROFILE = "zgirl-live-coach-en-us-candidate-v1";
 const MAX_TEXT_LENGTH = 1_200;
@@ -93,6 +94,63 @@ ${transcript}
   `.trim();
 }
 
+function voiceErrorStatus(err: unknown): number {
+  if (!err || typeof err !== "object" || !("status" in err)) return 0;
+  const status = Number((err as { status?: unknown }).status);
+  return Number.isFinite(status) ? status : 0;
+}
+
+function isTransientVoiceError(err: unknown): boolean {
+  const status = voiceErrorStatus(err);
+  const message = String(
+    err && typeof err === "object" && "message" in err
+      ? (err as { message?: unknown }).message
+      : err || ""
+  );
+  return (
+    status === 408 ||
+    status === 429 ||
+    status >= 500 ||
+    /high demand|temporar|overload|unavailable|timeout|rate limit|quota/i.test(message)
+  );
+}
+
+type GeneratedVoiceAudio = {
+  channels?: number;
+  data: string;
+  mime_type?: string;
+  sample_rate?: number;
+};
+
+async function generateVoiceAudio(
+  client: GoogleGenAI,
+  input: string
+): Promise<{ model: string; output: GeneratedVoiceAudio }> {
+  let lastError: unknown = new Error("voice_generation_unavailable");
+
+  for (const model of [MODEL, FALLBACK_MODEL]) {
+    try {
+      const interaction = await client.interactions.create({
+        model,
+        input,
+        response_format: { type: "audio" },
+        generation_config: {
+          speech_config: [{ voice: VOICE }],
+        },
+        store: false,
+      });
+      const output = interaction.output_audio;
+      if (output?.data) return { model, output: { ...output, data: output.data } };
+      lastError = new Error("voice_audio_missing");
+    } catch (err) {
+      lastError = err;
+      if (!isTransientVoiceError(err)) throw err;
+    }
+  }
+
+  throw lastError;
+}
+
 function asWaveFile(
   pcm: Buffer,
   sampleRate = 24_000,
@@ -127,6 +185,7 @@ export async function GET() {
       candidate: true,
       language: "en-US",
       model: MODEL,
+      fallbackModel: FALLBACK_MODEL,
       profile: PROFILE,
       voice: VOICE,
       providerStorageDisabled: true,
@@ -187,18 +246,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = new GoogleGenAI({ apiKey });
-    const interaction = await client.interactions.create({
-      model: MODEL,
-      input: buildPerformancePrompt(transcript),
-      response_format: { type: "audio" },
-      generation_config: {
-        speech_config: [{ voice: VOICE }],
-      },
-      store: false,
-    });
-
-    const output = interaction.output_audio;
-    if (!output?.data) throw new Error("voice_audio_missing");
+    const generated = await generateVoiceAudio(
+      client,
+      buildPerformancePrompt(transcript)
+    );
+    const output = generated.output;
 
     const generatedAudio = Buffer.from(output.data, "base64");
     const hasWaveHeader =
@@ -226,6 +278,7 @@ export async function POST(req: NextRequest) {
         "Content-Length": String(audio.byteLength),
         "X-ZGirl-Voice-Profile": PROFILE,
         "X-ZGirl-Voice-Candidate": "true",
+        "X-ZGirl-Voice-Model": generated.model,
       }),
     });
   } catch (error) {
