@@ -43,6 +43,15 @@ async function workerFetch(path: string, init: RequestInit = {}) {
   });
 }
 
+async function parsePayload(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return { ok: false, code: "WORKER_INVALID_JSON" };
+  }
+}
+
 export async function GET(req: NextRequest) {
   if (!enabled()) return NextResponse.json({ ok: false, code: "AUDIO_EXPANSION_NOT_AVAILABLE_IN_PRODUCTION" }, { status: 404, headers: headers() });
 
@@ -67,9 +76,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const text = await response.text();
-  let payload: unknown = null;
-  try { payload = JSON.parse(text); } catch { payload = { ok: false, code: "WORKER_INVALID_JSON" }; }
+  const payload = await parsePayload(response);
   return NextResponse.json(payload, { status: response.status, headers: headers() });
 }
 
@@ -86,14 +93,36 @@ export async function POST(req: NextRequest) {
   if (Number.isInteger(day) && day >= 1 && day <= 30) requestBody.day = day;
   if (body?.forceRetry === true) requestBody.forceRetry = true;
 
-  const response = await workerFetch("", {
+  let response = await workerFetch("", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody),
   });
+  let payload = await parsePayload(response);
 
-  const text = await response.text();
-  let payload: unknown = null;
-  try { payload = JSON.parse(text); } catch { payload = { ok: false, code: "WORKER_INVALID_JSON" }; }
+  // Gemini 3.1 TTS preview can occasionally surface HTTP 400 "invalid argument"
+  // even when the same request schema and locked transcript are valid. If the
+  // worker explicitly reports that exact provider error on the unfinished day,
+  // make one same-model/same-voice retry. Do not broaden this to other failures.
+  if (
+    response.status === 409 &&
+    payload.code === "TRACK_REQUIRES_EXPLICIT_RETRY" &&
+    body?.forceRetry !== true
+  ) {
+    const failedDay = Number(payload.day);
+    const summary = payload.summary as { statuses?: Record<string, { errorCode?: string | null }> } | undefined;
+    const errorCode = summary?.statuses?.[String(failedDay)]?.errorCode;
+
+    if (Number.isInteger(failedDay) && failedDay >= 1 && failedDay <= 30 && errorCode === "PROVIDER_INVALID_ARGUMENT") {
+      response = await workerFetch("", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerApiKey: apiKey, day: failedDay, forceRetry: true }),
+      });
+      payload = await parsePayload(response);
+      if (response.ok) payload = { ...payload, transientProviderRetry: true };
+    }
+  }
+
   return NextResponse.json(payload, { status: response.status, headers: headers() });
 }
