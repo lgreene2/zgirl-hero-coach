@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import AudioExpansionClient from "./AudioExpansionClient";
+import AudioExpansionClient from "./AudioExpansionClientV2";
 
 export const metadata: Metadata = {
   title: "30-Day Audio Expansion Factory | Z-Girl",
@@ -20,15 +20,15 @@ export default function AudioExpansionPage() {
             Z-Girl 30-Day Audio Expansion Factory
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            The five-track representative listening gate is approved. This factory now produces the remaining 25 English review candidates with the exact approved voice recipe while preserving checksum, provenance, privacy, quota, and release controls.
+            The five-track representative listening gate is approved. This factory produces the remaining 25 English review candidates with the approved voice recipe and now handles temporary Gemini request-window limits with a controlled cooldown instead of changing voices or requiring repeated manual retries.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[.12em] text-slate-300">
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">5/5 representative approved</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Gemini 3.1 + Sulafat</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Fallback disabled</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Quota-aware cooldown</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">30 locked canonical scripts</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Private Greene storage</span>
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No autoplay</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No automatic master release</span>
           </div>
           <div className="mt-7">
