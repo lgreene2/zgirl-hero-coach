@@ -14,9 +14,10 @@ const REVIEW_DAYS = [1, 8, 15, 22, 30] as const;
 const ACTIVE_STATES = new Set(["QUEUED", "ROUTING", "RENDERING", "RETRYING", "FALLBACK", "QA"]);
 const STAGING_SUPABASE_URL = "https://pysoqiubmmhsbfawrrrc.supabase.co";
 const STAGING_ANON_JWT =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5c29xaXVibW1oc2JmYXdycnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMDQ5MjUsImV4cCI6MjEwMTY4MDkyNX0.HxOADq3ImuKsfxpbdbb9O_Ujlf1ENig98pTdYWHoAAE";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InB5c29xaXVibW1oc2JmYXdycnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMDQ5MjUsImV4cCI6MjEwMTY4MDkyNX0.HxOADq3ImuKsfxpbdbb9O_Ujlf1ENig98pTdYWHoAAE";
 const WORKER_URL = `${STAGING_SUPABASE_URL}/functions/v1/zgirl-audio-candidate-worker`;
 const ATTEMPT_STATUS_URL = `${STAGING_SUPABASE_URL}/rest/v1/rpc/zgirl_audio_review_attempt_status`;
+const HUMAN_GATE_URL = `${STAGING_SUPABASE_URL}/rest/v1/rpc/zgirl_audio_human_review_gate_status`;
 
 type AttemptStatus = {
   day?: number;
@@ -28,6 +29,25 @@ type AttemptStatus = {
   failureClass?: "QUOTA_EXHAUSTED" | "PROVIDER_BUSY" | "GENERATION_FAILED" | null;
   completedAt?: string | null;
   jobUpdatedAt?: string | null;
+};
+
+type HumanReviewDay = {
+  day?: number;
+  assetId?: string;
+  ready?: boolean;
+  approved?: boolean;
+  decision?: string;
+  reviewStatus?: string;
+  reviewedAt?: string | null;
+};
+
+type HumanGate = {
+  reviewDays?: HumanReviewDay[];
+  readyCount?: number;
+  approvedCount?: number;
+  allReady?: boolean;
+  allApproved?: boolean;
+  expansionUnlocked?: boolean;
 };
 
 type WorkerStatus = {
@@ -111,6 +131,22 @@ async function attemptSummary(): Promise<Record<string, AttemptStatus>> {
   }
 }
 
+async function humanGateSummary(): Promise<HumanGate> {
+  try {
+    const response = await fetch(HUMAN_GATE_URL, {
+      method: "POST",
+      cache: "no-store",
+      headers: stagingHeaders({ "Content-Type": "application/json" }),
+      body: "{}",
+    });
+    if (!response.ok) return {};
+    const payload = (await response.json().catch(() => null)) as HumanGate | null;
+    return payload && typeof payload === "object" ? payload : {};
+  } catch {
+    return {};
+  }
+}
+
 async function statusFor(day: number, attempts: Record<string, AttemptStatus>): Promise<WorkerStatus & { statusError?: string }> {
   try {
     const response = await workerFetch(`?day=${day}`);
@@ -127,7 +163,7 @@ async function statusFor(day: number, attempts: Record<string, AttemptStatus>): 
 }
 
 async function summary() {
-  const attempts = await attemptSummary();
+  const [attempts, humanGate] = await Promise.all([attemptSummary(), humanGateSummary()]);
   const statuses: Record<string, WorkerStatus & { statusError?: string }> = {};
   for (const day of REVIEW_DAYS) statuses[String(day)] = await statusFor(day, attempts);
 
@@ -144,6 +180,7 @@ async function summary() {
     quotaBlockedDay,
     failedDay,
     statuses,
+    humanGate,
   };
 }
 
