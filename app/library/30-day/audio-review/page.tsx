@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
-import AudioReviewClient from "./AudioReviewClientV6";
+import AudioReviewClient from "./AudioReviewClientV7";
 
 export const metadata: Metadata = {
   title: "30-Day Hero Within Audio Review | Z-Girl",
@@ -23,15 +23,15 @@ export default function AudioReviewPage() {
             30-Day Hero Within English Audio Review
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            The review gate uses Greene-controlled staging, persistent private candidates, and quota-aware cross-model routing. Stored tracks replay without regeneration; new tracks remain human-review-only.
+            Day 1 and Day 8 are now the approved Z-Girl voice baseline. New review candidates use the locked Gemini 3.1 / Sulafat route only; cross-model fallback is disabled so quota pressure cannot silently change the character voice.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[.12em] text-slate-300">
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Server-controlled queue</span>
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">3.1 → 2.5 controlled fallback</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Day 1 + 8 voice baseline</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Gemini 3.1 only</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">2.5 fallback disabled</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Persistent private review audio</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Human listening required</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No autoplay</span>
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No device voice fallback</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No production release</span>
           </div>
         </div>
