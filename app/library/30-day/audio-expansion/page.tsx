@@ -15,23 +15,27 @@ export default function AudioExpansionPage() {
       <SiteHeader />
       <section className="border-b border-white/10 bg-[radial-gradient(circle_at_80%_15%,rgba(73,216,194,.16),transparent_34%)]">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-12">
-          <p className="section-kicker">Production factory · preview only</p>
+          <p className="section-kicker">Production factory · preview only · paid API tier active</p>
           <h1 className="mt-2 max-w-5xl font-display text-4xl font-black leading-tight tracking-tight sm:text-6xl">
             Z-Girl 30-Day Audio Expansion Factory
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            The five-track representative listening gate is approved. This factory produces the remaining 25 English review candidates with the approved voice recipe, spaces successful provider requests, and handles temporary Gemini quota windows without switching voices.
+            The five-track representative listening gate is approved and the Gemini API project is now on the paid tier. The factory continues the remaining English review candidates with the exact approved Z-Girl voice recipe while retaining conservative pacing, checksum/provenance evidence, and fail-closed voice continuity controls.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[.12em] text-slate-300">
+            <span className="rounded-full border border-[#49d8c2]/35 bg-[#49d8c2]/10 px-3 py-2 text-[#9cf2e3]">Gemini API paid tier active</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">5/5 representative approved</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Gemini 3.1 + Sulafat</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Fallback disabled</span>
-            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">75s provider pacing</span>
+            <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">75s conservative pacing</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Quota-aware cooldown</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">30 locked canonical scripts</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">Private Greene storage</span>
             <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-2">No automatic master release</span>
           </div>
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-400">
+            Paid tier removes the free-tier bottleneck, but this preview intentionally keeps the proven pacing and retry safeguards until the full 30-track candidate library completes cleanly. Provider billing never changes the approved voice or release gate.
+          </p>
           <div className="mt-7">
             <Link href="/library/30-day/audio-review" className="button-secondary">Back to representative listening gate</Link>
           </div>
