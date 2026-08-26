@@ -100,6 +100,30 @@ export async function POST(req: NextRequest) {
   });
   let payload = await parsePayload(response);
 
+  // A FREE_TIER_ROUTE status is historical evidence from the last provider
+  // attempt, not proof that the credential on this new deployment is still
+  // free-tier. After billing/key alignment, the first explicit user queue
+  // action gets exactly one same-day retest with forceRetry=true. This sends
+  // the current runtime key to the worker without changing model, voice, or
+  // fallback policy. If Google still reports free-tier routing, the worker
+  // records that new evidence and the factory remains fail-closed.
+  if (
+    response.status === 409 &&
+    payload.code === "RUNTIME_KEY_STILL_FREE_TIER" &&
+    body?.forceRetry !== true
+  ) {
+    const failedDay = Number(payload.day);
+    if (Number.isInteger(failedDay) && failedDay >= 1 && failedDay <= 30) {
+      response = await workerFetch("", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerApiKey: apiKey, day: failedDay, forceRetry: true }),
+      });
+      payload = await parsePayload(response);
+      if (response.ok) payload = { ...payload, paidTierRouteRetest: true };
+    }
+  }
+
   // Gemini 3.1 TTS preview can occasionally surface HTTP 400 "invalid argument"
   // even when the same request schema and locked transcript are valid. If the
   // worker explicitly reports that exact provider error on the unfinished day,
