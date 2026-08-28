@@ -1,0 +1,56 @@
+name: 4L Premium + AI Impact Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'governance/premium-ai-impact/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  premium-ai-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout product repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require current receipt update for production changes
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='${{ github.event.pull_request.base.sha }}'
+          HEAD='${{ github.event.pull_request.head.sha }}'
+          changed="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "$changed"
+          production_changed=false
+          if echo "$changed" | grep -Eq '^(app/|src/|lib/|public/|scripts/)'; then production_changed=true; fi
+          if [[ "$production_changed" == "true" ]] && ! echo "$changed" | grep -Fxq 'governance/premium-ai-impact/receipts/current.json'; then
+            echo 'Production-path changes require an updated governed premium/AI current receipt.' >&2
+            exit 1
+          fi
+
+      - name: Apply central 4L Premium + AI Impact gate
+        id: premium_gate
+        uses: lgreene2/the4lessons-orchestrator-template/.github/actions/premium-ai-impact@56d5b0f83bcd8840b283e627b8bc78dd9f9f7664
+        with:
+          receipt: governance/premium-ai-impact/receipts/current.json
+          mode: candidate
+
+      - name: Confirm release authority remains locked
+        if: always()
+        shell: bash
+        run: |
+          echo "release-authority=${{ steps.premium_gate.outputs.release-authority }}"
+          test "${{ steps.premium_gate.outputs.release-authority }}" = 'false'

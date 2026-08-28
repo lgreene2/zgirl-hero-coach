@@ -1,0 +1,17 @@
+{
+  "artifact": {"name": "Z-Girl Hero Coach — Premium AI Gate Adoption", "version": "1.0.0", "surface": "automation"},
+  "review": {"evaluator": "4L governed production review", "reviewed_at": "2026-08-28T01:00:00Z", "notes": "Validates the adoption mechanism. Future Z-Girl production changes must update this receipt with artifact-specific evidence."},
+  "ai_uses": [{"purpose": "Central premium/AI governance for Z-Girl conversational, voice, reflection, reviewer, and release workflows", "user_or_production_value": "Automates quality evidence, accessibility/privacy discipline, provenance, and exception surfacing while requiring meaningful positive user impact", "human_oversight": "Character voice/canon, sensitive youth/privacy decisions, faith/values profile boundaries, reviewer activation, and public release remain human-governed", "provenance": "Central standard: lgreene2/the4lessons-orchestrator@staging; repository: lgreene2/zgirl-hero-coach"}],
+  "automation": {"assessed": true, "automated_stages": ["CI contract validation", "production-change receipt enforcement", "quality rubric validation", "approval-boundary self-test", "exception surfacing"], "retained_human_controls": ["character voice/canon acceptance", "sensitive youth/privacy exceptions", "faith/values policy boundaries", "reviewer activation", "public release approval"], "no_additional_automation_rationale": "Routine QA, evidence, provenance, and deployment checks should be automated; character integrity, sensitive-user safeguards, values boundaries, reviewer activation, and public release remain human-controlled."},
+  "dimensions": {
+    "premium_experience": {"score": 95, "evidence": ["Adoption mechanism adds no user-facing friction and supports premium conversational/voice quality enforcement"]},
+    "ai_value": {"score": 99, "evidence": ["Directly governs AI conversational and voice value, provenance, automation, and human oversight"]},
+    "positive_impact": {"score": 98, "evidence": ["Requires explicit beneficial user outcomes and negative-impact review for future Z-Girl changes"]},
+    "technical_readiness": {"score": 96, "evidence": ["Central composite action, read-only permissions, deterministic receipt contract"]},
+    "accessibility_inclusion": {"score": 98, "evidence": ["Makes accessibility evidence a standing requirement for future conversational, audio, and reviewer changes"]},
+    "canon_ip_brand": {"score": 99, "evidence": ["Does not alter character canon and requires future source/brand evidence"]},
+    "governance_safety_privacy": {"score": 99, "evidence": ["Sensitive-user/privacy and public activation decisions remain human-governed; release authority remains false"]}
+  },
+  "gates": {"canon_source_verified": true, "rights_verified": true, "no_unresolved_p0_p1": true, "privacy_security_reviewed": true, "accessibility_reviewed": true, "ai_purpose_documented": true, "human_oversight_defined": true, "ai_provenance_captured": true, "negative_impact_considered": true, "owner_release_authority_preserved": true, "owner_release_approved": false},
+  "exceptions": ["This receipt validates the gate-adoption mechanism only; it does not approve a Z-Girl voice model, response behavior, faith/values pack, reviewer state, or public release."]
+}
