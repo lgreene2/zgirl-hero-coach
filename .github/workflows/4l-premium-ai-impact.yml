@@ -43,7 +43,7 @@ jobs:
 
       - name: Apply central 4L Premium + AI Impact gate
         id: premium_gate
-        uses: lgreene2/the4lessons-orchestrator/.github/actions/premium-ai-impact@staging
+        uses: lgreene2/the4lessons-orchestrator-template/.github/actions/premium-ai-impact@56d5b0f83bcd8840b283e627b8bc78dd9f9f7664
         with:
           receipt: governance/premium-ai-impact/receipts/current.json
           mode: candidate
