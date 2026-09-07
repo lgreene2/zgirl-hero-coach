@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "test -z \"$(git diff --name-only HEAD^ HEAD | grep -Ev '^(docs/|governance/|\\.github/|.*\\.md$)')\"",
   "git": {
     "deploymentEnabled": {
       "zgirl-v3.5-identity-rbac-sso-foundation": false,
