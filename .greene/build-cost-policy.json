@@ -1,0 +1,10 @@
+{
+  "contract": "greene.build-cost-policy-ref.v1",
+  "canonical": "lgreene2/the4lessons-orchestrator/governance/build-cost/build-cost-policy-v1.json",
+  "project": "lgreene2/zgirl-hero-coach",
+  "controls": {
+    "vercel_ignore_command": true,
+    "media_production_in_automatic_build": false,
+    "owner_release_gate_preserved": true
+  }
+}
