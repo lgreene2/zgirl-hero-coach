@@ -14,14 +14,15 @@ export default function SiteHeader() {
           <nav aria-label="Primary navigation" className="hidden items-center gap-3 text-xs font-bold text-slate-300 md:flex lg:gap-5 lg:text-sm">
             <Link href="/reflect" className="transition hover:text-white">Reflect</Link>
             <Link href="/support" className="transition hover:text-white">Support Handoff</Link>
+            <Link href="/support/adaptive" className="hidden transition hover:text-white xl:inline">Adaptive Support</Link>
             <Link href="/support/share" className="transition hover:text-white">Secure Share</Link>
             <Link href="/journey" className="transition hover:text-white">7-Day Journey</Link>
             <Link href="/faith" className="transition hover:text-white">Faith &amp; Values</Link>
             <Link href="/athletes" className="transition hover:text-white">Athletes</Link>
             <Link href="/store" className="transition hover:text-white">Store</Link>
             <Link href="/institutions" className="transition hover:text-white">Institutions</Link>
-            <Link href="/edu" className="hidden transition hover:text-white xl:inline">Z-Girl EDU</Link>
-            <Link href="/safety" className="hidden transition hover:text-white xl:inline">Trust &amp; Safety</Link>
+            <Link href="/edu" className="hidden transition hover:text-white 2xl:inline">Z-Girl EDU</Link>
+            <Link href="/safety" className="hidden transition hover:text-white 2xl:inline">Trust &amp; Safety</Link>
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             <Link href="/support/share" className="rounded-full border border-[#49d8c2]/45 bg-[#49d8c2]/10 px-3 py-2.5 text-[11px] font-black text-[#9af3e4] transition hover:border-[#76ead6] hover:bg-[#49d8c2]/15 md:hidden" aria-label="Create secure supporter handoff">Share</Link>
