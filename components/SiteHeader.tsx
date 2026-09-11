@@ -13,6 +13,7 @@ export default function SiteHeader() {
           </Link>
           <nav aria-label="Primary navigation" className="hidden items-center gap-3 text-xs font-bold text-slate-300 md:flex lg:gap-5 lg:text-sm">
             <Link href="/reflect" className="transition hover:text-white">Reflect</Link>
+            <Link href="/support" className="transition hover:text-white">Support Handoff</Link>
             <Link href="/journey" className="transition hover:text-white">7-Day Journey</Link>
             <Link href="/faith" className="transition hover:text-white">Faith &amp; Values</Link>
             <Link href="/athletes" className="transition hover:text-white">Athletes</Link>
