@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
@@ -17,7 +17,7 @@ type Handoff = {
   expires_at: string;
 };
 
-export default function SupportFollowUpPage() {
+function FollowUpContent() {
   const params = useSearchParams();
   const token = params.get("token") || "";
   const [handoff, setHandoff] = useState<Handoff | null>(null);
@@ -77,4 +77,8 @@ export default function SupportFollowUpPage() {
       </div>}
     </div>
   </main>;
+}
+
+export default function SupportFollowUpPage() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#061521] text-white"><SiteHeader /><div className="mx-auto max-w-4xl px-4 py-12 text-slate-400">Opening private follow-up…</div></main>}><FollowUpContent /></Suspense>;
 }
