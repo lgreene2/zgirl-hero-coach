@@ -14,6 +14,7 @@ export default function SiteHeader() {
           <nav aria-label="Primary navigation" className="hidden items-center gap-3 text-xs font-bold text-slate-300 md:flex lg:gap-5 lg:text-sm">
             <Link href="/reflect" className="transition hover:text-white">Reflect</Link>
             <Link href="/support" className="transition hover:text-white">Support Handoff</Link>
+            <Link href="/support/share" className="transition hover:text-white">Secure Share</Link>
             <Link href="/journey" className="transition hover:text-white">7-Day Journey</Link>
             <Link href="/faith" className="transition hover:text-white">Faith &amp; Values</Link>
             <Link href="/athletes" className="transition hover:text-white">Athletes</Link>
@@ -23,7 +24,8 @@ export default function SiteHeader() {
             <Link href="/safety" className="hidden transition hover:text-white xl:inline">Trust &amp; Safety</Link>
           </nav>
           <div className="flex shrink-0 items-center gap-2">
-            <Link href="/support" className="rounded-full border border-[#49d8c2]/45 bg-[#49d8c2]/10 px-3 py-2.5 text-[11px] font-black text-[#9af3e4] transition hover:border-[#76ead6] hover:bg-[#49d8c2]/15 md:hidden" aria-label="Open Support Handoff">Support</Link>
+            <Link href="/support/share" className="rounded-full border border-[#49d8c2]/45 bg-[#49d8c2]/10 px-3 py-2.5 text-[11px] font-black text-[#9af3e4] transition hover:border-[#76ead6] hover:bg-[#49d8c2]/15 md:hidden" aria-label="Create secure supporter handoff">Share</Link>
+            <Link href="/support" className="hidden rounded-full border border-white/15 px-3 py-2.5 text-[11px] font-black text-slate-200 sm:inline-flex md:hidden" aria-label="Open Support Handoff">Support</Link>
             <Link href="/reflect" className="rounded-full bg-[#49d8c2] px-3 py-2.5 text-[11px] font-black text-[#04151c] transition hover:bg-[#76ead6] sm:px-4 sm:text-sm"><span className="sm:hidden">Reflect</span><span className="hidden sm:inline">Start reflection</span></Link>
           </div>
         </div>
