@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
@@ -19,7 +19,7 @@ type Handoff = {
 
 const roleLabels: Record<string,string> = { parent:"Parent / Guardian", coach:"Coach", educator:"Teacher / Educator", therapist:"Therapist / Counselor", faith:"Faith Leader", mentor:"Mentor / Trusted Adult" };
 
-export default function SupportReceivePage() {
+function ReceiveContent() {
   const params = useSearchParams();
   const token = params.get("token") || "";
   const [handoff, setHandoff] = useState<Handoff | null>(null);
@@ -84,4 +84,8 @@ export default function SupportReceivePage() {
       <div className="mt-6"><Link href="/safety" className="text-sm font-bold text-slate-400 hover:text-white">Trust &amp; Safety →</Link></div>
     </div>
   </main>;
+}
+
+export default function SupportReceivePage() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#061521] text-white"><SiteHeader /><div className="mx-auto max-w-4xl px-4 py-12 text-slate-400">Opening secure handoff…</div></main>}><ReceiveContent /></Suspense>;
 }
