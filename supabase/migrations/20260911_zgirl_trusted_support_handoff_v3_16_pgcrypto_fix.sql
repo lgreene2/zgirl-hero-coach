@@ -1,0 +1,9 @@
+-- Applied after v3.16 handoff migration QA.
+-- Supabase exposes pgcrypto functions through the `extensions` schema in this project.
+-- Production RPC definitions therefore use:
+--   extensions.gen_random_bytes(...)
+--   extensions.digest(...)
+-- and set search_path = public, extensions.
+--
+-- This file is a provenance receipt for the applied migration named:
+-- zgirl_trusted_support_handoff_v3_16_pgcrypto_fix
