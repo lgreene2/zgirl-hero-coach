@@ -14,16 +14,21 @@ export async function POST(req: NextRequest) {
   try {
     if (!model) return NextResponse.json({ error: "AI brief polishing is temporarily unavailable." }, { status: 503 });
 
-    const body = await req.json();
-    const role = allowedRoles.includes(body.role) ? body.role as SupportRole : "mentor";
-    const ageBand = allowedAgeBands.includes(body.ageBand) ? body.ageBand as AgeBand : "adult";
-    const selected = Array.isArray(body.selected) ? body.selected.filter((f: unknown): f is ShareField => typeof f === "string" && allowedFields.includes(f as ShareField)) : [];
-    const values = typeof body.values === "object" && body.values ? body.values as Partial<Record<ShareField, string>> : {};
-    const supporterName = typeof body.supporterName === "string" ? body.supporterName.slice(0, 100) : "";
+    const body: unknown = await req.json();
+    const payload = body && typeof body === "object" ? body as Record<string, unknown> : {};
+    const role = typeof payload.role === "string" && allowedRoles.includes(payload.role as SupportRole) ? payload.role as SupportRole : "mentor";
+    const ageBand = typeof payload.ageBand === "string" && allowedAgeBands.includes(payload.ageBand as AgeBand) ? payload.ageBand as AgeBand : "adult";
+    const selected: ShareField[] = Array.isArray(payload.selected)
+      ? payload.selected.filter((field): field is ShareField => typeof field === "string" && allowedFields.includes(field as ShareField))
+      : [];
+    const values: Partial<Record<ShareField, string>> = payload.values && typeof payload.values === "object"
+      ? payload.values as Partial<Record<ShareField, string>>
+      : {};
+    const supporterName = typeof payload.supporterName === "string" ? payload.supporterName.slice(0, 100) : "";
 
     const selectedContent = selected
-      .map((field) => `${field}: ${String(values[field] || "").slice(0, 1600)}`)
-      .filter((line) => line.split(": ")[1]?.trim())
+      .map((field: ShareField) => `${field}: ${String(values[field] || "").slice(0, 1600)}`)
+      .filter((line: string) => line.split(": ")[1]?.trim())
       .join("\n");
 
     if (!selectedContent.trim()) return NextResponse.json({ error: "Choose at least one non-empty item to share." }, { status: 400 });
