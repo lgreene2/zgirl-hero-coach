@@ -3,22 +3,27 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { HUMAN_SUPPORT_SCENARIOS } from "@/lib/human-support-system";
 
-const sceneVisuals: Record<string,string> = {
-  "parent-listens":"/visuals/human-scenes/family.svg",
-  "coach-checkin":"/visuals/human-scenes/athlete.svg",
-  "educator-support":"/visuals/human-scenes/institution.svg",
-  "counselor-prep":"/visuals/human-scenes/partner.svg",
-  "faith-values":"/visuals/human-scenes/faith.svg",
-  "mentor-walk":"/visuals/human-scenes/partner.svg",
-  "family-circle":"/visuals/human-scenes/family.svg",
-  "self-reflection":"/visuals/human-scenes/institution.svg",
-};
-
 const roleColor: Record<string,string> = {parent:"#ff4db8",coach:"#4d9cff",educator:"#54d98c",therapist:"#a96cff",faith:"#ffd34e",mentor:"#ff8a42"};
 const supportNodes = [
   ["Parent","#ff4db8","Home support"],["Coach","#4d9cff","Encouragement"],["Educator","#54d98c","Learning support"],
   ["Counselor","#a96cff","Safe space"],["Faith Leader","#ffd34e","Values & perspective"],["Mentor","#ff8a42","Guidance"]
 ] as const;
+
+const sprite: Record<string,{x:number;y:number}> = {
+  "parent-listens":{x:0,y:0},
+  "coach-checkin":{x:1,y:0},
+  "educator-support":{x:2,y:0},
+  "counselor-prep":{x:3,y:0},
+  "faith-values":{x:0,y:1},
+  "mentor-walk":{x:1,y:1},
+  "family-circle":{x:2,y:1},
+  "self-reflection":{x:3,y:1},
+};
+
+function RoleScene({id,alt}:{id:string;alt:string}){
+  const p=sprite[id] || sprite["mentor-walk"];
+  return <div role="img" aria-label={alt} className="absolute inset-0 bg-[url('/visuals/human-scenes/role-sprite.jpg')] bg-no-repeat" style={{backgroundSize:"400% 200%",backgroundPosition:`${p.x*33.333333}% ${p.y*100}%`}}/>;
+}
 
 export default function HumanSupportVisualSystemPage(){
   return <main className="min-h-screen overflow-x-hidden bg-[#03111d] text-white">
@@ -26,7 +31,7 @@ export default function HumanSupportVisualSystemPage(){
     <div className="mx-auto max-w-[1440px] px-3 pb-10 pt-3 sm:px-6 sm:pt-6 lg:px-8">
       <section className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/40 sm:rounded-[2rem]">
         <div className="relative min-h-[460px] sm:min-h-[520px] lg:min-h-[560px]">
-          <img src="/visuals/human-scenes/family.svg" alt="Young person and trusted family member in a calm supportive conversation." className="absolute inset-0 h-full w-full object-cover object-center" />
+          <div className="absolute inset-0 bg-[url('/visuals/human-scenes/role-sprite.jpg')] bg-cover bg-no-repeat" style={{backgroundSize:"400% 200%",backgroundPosition:"100% 100%"}} aria-hidden="true" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#03111d] via-[#03111d]/78 to-[#03111d]/10" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#03111d]/90 via-transparent to-[#03111d]/20" />
           <div className="relative z-10 flex min-h-[460px] max-w-2xl flex-col justify-end p-6 sm:min-h-[520px] sm:p-10 lg:min-h-[560px] lg:justify-center lg:p-12">
@@ -64,8 +69,8 @@ export default function HumanSupportVisualSystemPage(){
             const accent=roleColor[scene.role] || "#49d8c2";
             const label=scene.role === "therapist" ? "Counselor" : scene.title === "Family reflection" ? "Family" : scene.title === "Private reflection first" ? "Private reflection" : scene.role;
             return <article key={scene.id} className="group relative h-[360px] w-[calc(100vw-3.25rem)] max-w-[390px] shrink-0 snap-start overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#0b2030] shadow-xl shadow-black/25 sm:h-auto sm:aspect-[4/3] sm:w-auto sm:max-w-none" style={{boxShadow:`inset 0 -4px 0 ${accent}`}}>
-              <img src={sceneVisuals[scene.id] || "/visuals/human-scenes/partner.svg"} alt={scene.alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/30 to-transparent" />
+              <RoleScene id={scene.id} alt={scene.alt}/>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/28 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <div className="mb-2 inline-flex rounded-full border border-white/20 bg-[#03111d]/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.15em] backdrop-blur" style={{color:accent}}>{label}</div>
                 <h3 className="text-2xl font-black leading-tight drop-shadow-lg">{scene.title}</h3>
