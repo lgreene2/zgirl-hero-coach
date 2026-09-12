@@ -6,7 +6,12 @@ const PROTECTED_PREFIXES = [
   "/support/follow-up",
   "/admin",
   "/review",
+  "/credentials/ops",
+  "/institutions/ops",
+  "/institutions/governance-evidence",
   "/api/trusted-support",
+  "/api/credentials/ops",
+  "/api/institutions/ops",
 ];
 
 function isProtected(pathname: string) {
@@ -22,17 +27,27 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json(
-      { ok: false, error: "This live-data capability is disabled in the public Z-Girl demo." },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
+      { ok: false, code: "DEMO_ACCESS_REQUIRED", error: "This live-data capability is disabled in the public Z-Girl demo." },
+      { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 
   const url = request.nextUrl.clone();
   url.pathname = "/demo-access";
   url.searchParams.set("from", pathname);
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(url, 307);
 }
 
 export const config = {
-  matcher: ["/support/:path*", "/admin/:path*", "/review/:path*", "/api/trusted-support/:path*"],
+  matcher: [
+    "/support/:path*",
+    "/admin/:path*",
+    "/review/:path*",
+    "/credentials/ops/:path*",
+    "/institutions/ops/:path*",
+    "/institutions/governance-evidence/:path*",
+    "/api/trusted-support/:path*",
+    "/api/credentials/ops/:path*",
+    "/api/institutions/ops/:path*",
+  ],
 };
