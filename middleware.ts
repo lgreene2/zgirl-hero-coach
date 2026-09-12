@@ -4,9 +4,13 @@ const DEMO_BLOCKED_PREFIXES = [
   "/support/share",
   "/support/receive",
   "/support/follow-up",
+  "/coach",
   "/admin",
   "/review",
   "/api/trusted-support",
+  "/api/chat",
+  "/api/zgirl",
+  "/api/voice",
 ];
 
 function isDemoBlocked(pathname: string) {
@@ -21,7 +25,7 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json(
-      { ok: false, code: "DEMO_ACCESS_REQUIRED", error: "This live-data capability is disabled in the public Z-Girl demo." },
+      { ok: false, code: "DEMO_ACCESS_REQUIRED", error: "This live-data or metered AI capability is disabled in the public Z-Girl demo." },
       { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
@@ -35,8 +39,12 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/support/:path*",
+    "/coach/:path*",
     "/admin/:path*",
     "/review/:path*",
     "/api/trusted-support/:path*",
+    "/api/chat/:path*",
+    "/api/zgirl/:path*",
+    "/api/voice/:path*",
   ],
 };
