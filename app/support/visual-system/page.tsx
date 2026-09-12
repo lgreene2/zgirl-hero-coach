@@ -3,26 +3,26 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { HUMAN_SUPPORT_SCENARIOS } from "@/lib/human-support-system";
 
+const sceneVisuals: Record<string,string> = {
+  "parent-listens":"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb?auto=format&fit=crop&w=1800&q=95",
+  "coach-checkin":"https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1800&q=95",
+  "educator-support":"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1800&q=95",
+  "counselor-prep":"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1800&q=95",
+  "faith-values":"https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=1800&q=95",
+  "mentor-walk":"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=95",
+  "family-circle":"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1800&q=95",
+  "self-reflection":"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=95",
+};
+
 const roleColor: Record<string,string> = {parent:"#ff4db8",coach:"#4d9cff",educator:"#54d98c",therapist:"#a96cff",faith:"#ffd34e",mentor:"#ff8a42"};
 const supportNodes = [
   ["Parent","#ff4db8","Home support"],["Coach","#4d9cff","Encouragement"],["Educator","#54d98c","Learning support"],
   ["Counselor","#a96cff","Safe space"],["Faith Leader","#ffd34e","Values & perspective"],["Mentor","#ff8a42","Guidance"]
 ] as const;
 
-const sprite: Record<string,{x:number;y:number}> = {
-  "parent-listens":{x:0,y:0},
-  "coach-checkin":{x:1,y:0},
-  "educator-support":{x:2,y:0},
-  "counselor-prep":{x:3,y:0},
-  "faith-values":{x:0,y:1},
-  "mentor-walk":{x:1,y:1},
-  "family-circle":{x:2,y:1},
-  "self-reflection":{x:3,y:1},
-};
-
 function RoleScene({id,alt}:{id:string;alt:string}){
-  const p=sprite[id] || sprite["mentor-walk"];
-  return <div role="img" aria-label={alt} className="absolute inset-0 bg-[url('/visuals/human-scenes/role-sprite.jpg')] bg-no-repeat" style={{backgroundSize:"400% 200%",backgroundPosition:`${p.x*33.333333}% ${p.y*100}%`}}/>;
+  const src=sceneVisuals[id] || sceneVisuals["mentor-walk"];
+  return <img src={src} alt={alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />;
 }
 
 export default function HumanSupportVisualSystemPage(){
@@ -31,7 +31,7 @@ export default function HumanSupportVisualSystemPage(){
     <div className="mx-auto max-w-[1440px] px-3 pb-10 pt-3 sm:px-6 sm:pt-6 lg:px-8">
       <section className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/40 sm:rounded-[2rem]">
         <div className="relative min-h-[460px] sm:min-h-[520px] lg:min-h-[560px]">
-          <div className="absolute inset-0 bg-[url('/visuals/human-scenes/role-sprite.jpg')] bg-cover bg-no-repeat" style={{backgroundSize:"400% 200%",backgroundPosition:"100% 100%"}} aria-hidden="true" />
+          <img src={sceneVisuals["self-reflection"]} alt="Young person reflecting privately in a warm everyday setting." loading="eager" decoding="async" className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#03111d] via-[#03111d]/78 to-[#03111d]/10" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#03111d]/90 via-transparent to-[#03111d]/20" />
           <div className="relative z-10 flex min-h-[460px] max-w-2xl flex-col justify-end p-6 sm:min-h-[520px] sm:p-10 lg:min-h-[560px] lg:justify-center lg:p-12">
