@@ -4,14 +4,14 @@ import SiteHeader from "@/components/SiteHeader";
 import { HUMAN_SUPPORT_SCENARIOS } from "@/lib/human-support-system";
 
 const sceneVisuals: Record<string,string> = {
-  "parent-listens":"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb?auto=format&fit=crop&w=1400&q=88",
-  "coach-checkin":"https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1400&q=88",
-  "educator-support":"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1400&q=88",
-  "counselor-prep":"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1400&q=88",
-  "faith-values":"https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=1400&q=88",
-  "mentor-walk":"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1400&q=88",
-  "family-circle":"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1400&q=88",
-  "self-reflection":"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=88",
+  "parent-listens":"/visuals/human-scenes/family.svg",
+  "coach-checkin":"/visuals/human-scenes/athlete.svg",
+  "educator-support":"/visuals/human-scenes/institution.svg",
+  "counselor-prep":"/visuals/human-scenes/partner.svg",
+  "faith-values":"/visuals/human-scenes/faith.svg",
+  "mentor-walk":"/visuals/human-scenes/partner.svg",
+  "family-circle":"/visuals/human-scenes/family.svg",
+  "self-reflection":"/visuals/human-scenes/institution.svg",
 };
 
 const roleColor: Record<string,string> = {parent:"#ff4db8",coach:"#4d9cff",educator:"#54d98c",therapist:"#a96cff",faith:"#ffd34e",mentor:"#ff8a42"};
@@ -26,7 +26,7 @@ export default function HumanSupportVisualSystemPage(){
     <div className="mx-auto max-w-[1440px] px-3 pb-10 pt-3 sm:px-6 sm:pt-6 lg:px-8">
       <section className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/40 sm:rounded-[2rem]">
         <div className="relative min-h-[460px] sm:min-h-[520px] lg:min-h-[560px]">
-          <Image src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=2000&q=90" alt="Young person in a warm everyday setting with supportive people nearby." fill priority className="object-cover object-center" sizes="100vw" />
+          <img src="/visuals/human-scenes/family.svg" alt="Young person and trusted family member in a calm supportive conversation." className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#03111d] via-[#03111d]/78 to-[#03111d]/10" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#03111d]/90 via-transparent to-[#03111d]/20" />
           <div className="relative z-10 flex min-h-[460px] max-w-2xl flex-col justify-end p-6 sm:min-h-[520px] sm:p-10 lg:min-h-[560px] lg:justify-center lg:p-12">
@@ -46,19 +46,11 @@ export default function HumanSupportVisualSystemPage(){
             <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">Z-Girl adapts to your age, goals, and situation. You choose who can help, what to share, and what happens next.</p>
             <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-bold text-slate-200 sm:grid-cols-4"><span>① Reflect</span><span>② Choose</span><span>③ Prepare</span><span>④ Connect</span></div>
           </div>
-          <div className="border-t border-white/10 p-5 lg:border-l lg:border-t-0 sm:p-7">
+          <div className="border-t border-white/10 p-5 sm:p-7 lg:border-l lg:border-t-0">
             <div className="relative mx-auto max-w-2xl rounded-[1.5rem] border border-white/10 bg-[#041521] p-4 sm:p-6">
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                {supportNodes.slice(0,3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}
-              </div>
-              <div className="my-4 flex items-center justify-center">
-                <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-[#ff5ac8] bg-[#10283a] shadow-[0_0_35px_rgba(255,90,200,.28)] sm:h-32 sm:w-32">
-                  <Image src="/icons/zgirl-icon-1024.png" alt="You at the center of your support circle" fill className="object-cover" sizes="128px" />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                {supportNodes.slice(3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}
-              </div>
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">{supportNodes.slice(0,3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}</div>
+              <div className="my-4 flex items-center justify-center"><div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-[#ff5ac8] bg-[#10283a] shadow-[0_0_35px_rgba(255,90,200,.28)] sm:h-32 sm:w-32"><Image src="/icons/zgirl-icon-1024.png" alt="You at the center of your support circle" fill className="object-cover" sizes="128px" /></div></div>
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">{supportNodes.slice(3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}</div>
               <p className="mt-5 text-center text-xs font-bold text-[#75ead7]">Your story. Your control.</p>
             </div>
           </div>
@@ -67,14 +59,15 @@ export default function HumanSupportVisualSystemPage(){
 
       <section className="mt-7">
         <div className="mb-4"><p className="text-xs font-black uppercase tracking-[.22em] text-[#75ead7]">Choose who can help</p><h2 className="mt-1 font-display text-2xl font-black sm:text-4xl">Different roles. A stronger you.</h2></div>
-        <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+        <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
           {HUMAN_SUPPORT_SCENARIOS.map((scene)=>{
             const accent=roleColor[scene.role] || "#49d8c2";
-            return <article key={scene.id} className="group relative aspect-[4/3] min-h-[230px] w-[82vw] shrink-0 snap-center overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#0b2030] shadow-xl shadow-black/25 sm:w-auto" style={{boxShadow:`inset 0 -4px 0 ${accent}`}}>
-              <Image src={sceneVisuals[scene.id] || sceneVisuals["mentor-walk"]} alt={scene.alt} fill className="object-cover transition duration-500 group-hover:scale-[1.035]" sizes="(max-width:640px) 82vw,(max-width:1024px) 50vw,25vw" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/25 to-transparent" />
+            const label=scene.role === "therapist" ? "Counselor" : scene.title === "Family reflection" ? "Family" : scene.title === "Private reflection first" ? "Private reflection" : scene.role;
+            return <article key={scene.id} className="group relative h-[360px] w-[calc(100vw-3.25rem)] max-w-[390px] shrink-0 snap-start overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#0b2030] shadow-xl shadow-black/25 sm:h-auto sm:aspect-[4/3] sm:w-auto sm:max-w-none" style={{boxShadow:`inset 0 -4px 0 ${accent}`}}>
+              <img src={sceneVisuals[scene.id] || "/visuals/human-scenes/partner.svg"} alt={scene.alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5">
-                <div className="mb-2 inline-flex rounded-full border border-white/20 bg-[#03111d]/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.15em] backdrop-blur" style={{color:accent}}>{scene.role === "therapist" ? "Counselor" : scene.title === "Family reflection" ? "Family" : scene.title === "Private reflection first" ? "Private reflection" : scene.role}</div>
+                <div className="mb-2 inline-flex rounded-full border border-white/20 bg-[#03111d]/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.15em] backdrop-blur" style={{color:accent}}>{label}</div>
                 <h3 className="text-2xl font-black leading-tight drop-shadow-lg">{scene.title}</h3>
                 <p className="mt-1 text-sm leading-5 text-slate-100 drop-shadow">{scene.moment}</p>
                 <span className="sr-only">{scene.safetyBoundary}</span>
@@ -82,6 +75,7 @@ export default function HumanSupportVisualSystemPage(){
             </article>
           })}
         </div>
+        <p className="mt-2 text-xs text-slate-500 sm:hidden">Swipe to explore every support role →</p>
       </section>
 
       <section className="mt-6 grid gap-5 rounded-[1.6rem] border border-[#49d8c2]/20 bg-[#071a29] p-6 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
