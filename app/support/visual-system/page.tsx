@@ -1,92 +1,28 @@
-import Image from "next/image";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import { HUMAN_SUPPORT_SCENARIOS } from "@/lib/human-support-system";
 
-const sceneVisuals: Record<string,string> = {
-  "parent-listens":"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb?auto=format&fit=crop&w=1800&q=95",
-  "coach-checkin":"https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1800&q=95",
-  "educator-support":"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1800&q=95",
-  "counselor-prep":"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1800&q=95",
-  "faith-values":"https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=1800&q=95",
-  "mentor-walk":"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=95",
-  "family-circle":"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1800&q=95",
-  "self-reflection":"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=95",
-};
-
-const roleColor: Record<string,string> = {parent:"#ff4db8",coach:"#4d9cff",educator:"#54d98c",therapist:"#a96cff",faith:"#ffd34e",mentor:"#ff8a42"};
-const supportNodes = [
-  ["Parent","#ff4db8","Home support"],["Coach","#4d9cff","Encouragement"],["Educator","#54d98c","Learning support"],
-  ["Counselor","#a96cff","Safe space"],["Faith Leader","#ffd34e","Values & perspective"],["Mentor","#ff8a42","Guidance"]
-] as const;
-
-function RoleScene({id,alt}:{id:string;alt:string}){
-  const src=sceneVisuals[id] || sceneVisuals["mentor-walk"];
-  return <img src={src} alt={alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />;
-}
+const roles = [
+  {id:"parent",label:"Parent",title:"Parent listens first",copy:"A calm, supportive conversation after a difficult day.",accent:"#ff4db8",img:"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb?auto=format&fit=crop&w=1800&q=95"},
+  {id:"coach",label:"Coach",title:"Coach builds confidence",copy:"Encouragement before the next game or practice.",accent:"#4d9cff",img:"https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1800&q=95"},
+  {id:"educator",label:"Educator",title:"Teacher creates space",copy:"A safe place to ask questions and keep learning.",accent:"#54d98c",img:"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1800&q=95"},
+  {id:"counselor",label:"Counselor",title:"Counselor offers guidance",copy:"A trusted space to talk through challenges.",accent:"#c179ff",img:"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1800&q=95"},
+  {id:"faith",label:"Faith Leader",title:"Faith leader brings hope",copy:"Real talk about life, values, purpose, and next steps.",accent:"#ffd34e",img:"https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=1800&q=95"},
+  {id:"mentor",label:"Mentor",title:"Mentor walks alongside",copy:"Guidance, perspective, and real-world encouragement.",accent:"#ff8a42",img:"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=95"},
+  {id:"family",label:"Family",title:"Family stays connected",copy:"Stronger conversations. Stronger tomorrows.",accent:"#ff4d83",img:"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1800&q=95"},
+  {id:"yourself",label:"Yourself",title:"Private reflection",copy:"A safe space just for you before deciding what to share.",accent:"#49d8c2",img:"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=95"},
+];
 
 export default function HumanSupportVisualSystemPage(){
-  return <main className="min-h-screen overflow-x-hidden bg-[#03111d] text-white">
-    <SiteHeader />
-    <div className="mx-auto max-w-[1440px] px-3 pb-10 pt-3 sm:px-6 sm:pt-6 lg:px-8">
-      <section className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/40 sm:rounded-[2rem]">
-        <div className="relative min-h-[460px] sm:min-h-[520px] lg:min-h-[560px]">
-          <img src={sceneVisuals["self-reflection"]} alt="Young person reflecting privately in a warm everyday setting." loading="eager" decoding="async" className="absolute inset-0 h-full w-full object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#03111d] via-[#03111d]/78 to-[#03111d]/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#03111d]/90 via-transparent to-[#03111d]/20" />
-          <div className="relative z-10 flex min-h-[460px] max-w-2xl flex-col justify-end p-6 sm:min-h-[520px] sm:p-10 lg:min-h-[560px] lg:justify-center lg:p-12">
-            <p className="text-xs font-black uppercase tracking-[.2em] text-[#75ead7]">Real conversations. Brighter tomorrows.</p>
-            <h1 className="mt-3 font-display text-[2.45rem] font-black leading-[.98] tracking-tight sm:text-6xl lg:text-7xl">You’re not alone.<br/><span className="text-[#ff5ac8]">Real people.<br/>Real support.<br/>A brighter you.</span></h1>
-            <p className="mt-5 max-w-lg text-base leading-7 text-slate-200 sm:text-lg">Reflect, prepare, and connect with the people who support you—without giving up control of your story.</p>
-            <div className="mt-6 flex gap-3"><Link href="/reflect" className="button-primary !min-h-0">Reflect</Link><Link href="/support/adaptive" className="button-secondary !min-h-0">Connect</Link></div>
-          </div>
-        </div>
-      </section>
+  const parent=roles[0];
+  return <main className="min-h-screen overflow-x-hidden bg-[#03111d] text-white"><SiteHeader/>
+    <section className="relative isolate border-b border-white/10"><img src={roles[7].img} alt="Young person reflecting privately before deciding whether to share." className="absolute inset-0 -z-20 h-full w-full object-cover"/><div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#03111d_0%,rgba(3,17,29,.94)_40%,rgba(3,17,29,.35)_100%)]"/><div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#03111d] via-transparent to-[#03111d]/20"/><div className="mx-auto flex min-h-[610px] max-w-7xl items-center px-5 py-12 sm:px-8 lg:px-12"><div className="max-w-2xl"><p className="text-xs font-black uppercase tracking-[.24em] text-[#75ead7]">Real conversations. Brighter tomorrows.</p><h1 className="mt-4 font-display text-5xl font-black leading-[.95] tracking-[-.04em] sm:text-6xl">You’re not alone.<br/><span className="text-[#ff5ac8]">Real people.<br/>Real support.<br/>A brighter you.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-200">Reflect, prepare, and connect with the people who support you—without giving up control of your story.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/reflect" className="button-primary">Start a reflection →</Link><Link href="/support/adaptive" className="button-secondary">Open AI-Adaptive Support</Link></div></div></div></section>
 
-      <section className="mt-4 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#071a29] shadow-xl shadow-black/20">
-        <div className="grid lg:grid-cols-[.8fr_1.2fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <p className="text-xs font-black uppercase tracking-[.2em] text-[#75ead7]">AI-powered reflection. Human support.</p>
-            <h2 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">A circle of support. You at the center.</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">Z-Girl adapts to your age, goals, and situation. You choose who can help, what to share, and what happens next.</p>
-            <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-bold text-slate-200 sm:grid-cols-4"><span>① Reflect</span><span>② Choose</span><span>③ Prepare</span><span>④ Connect</span></div>
-          </div>
-          <div className="border-t border-white/10 p-5 sm:p-7 lg:border-l lg:border-t-0">
-            <div className="relative mx-auto max-w-2xl rounded-[1.5rem] border border-white/10 bg-[#041521] p-4 sm:p-6">
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">{supportNodes.slice(0,3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}</div>
-              <div className="my-4 flex items-center justify-center"><div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-[#ff5ac8] bg-[#10283a] shadow-[0_0_35px_rgba(255,90,200,.28)] sm:h-32 sm:w-32"><Image src="/icons/zgirl-icon-1024.png" alt="You at the center of your support circle" fill className="object-cover" sizes="128px" /></div></div>
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">{supportNodes.slice(3).map(([name,color,sub])=><div key={name} className="text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-black shadow-lg" style={{borderColor:color,color,boxShadow:`0 0 24px ${color}33`}}>{name[0]}</div><p className="mt-2 text-xs font-black">{name}</p><p className="hidden text-[10px] text-slate-500 sm:block">{sub}</p></div>)}</div>
-              <p className="mt-5 text-center text-xs font-bold text-[#75ead7]">Your story. Your control.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+    <section className="mx-auto max-w-[1500px] px-3 py-10 sm:px-6 lg:px-8"><div className="mb-5"><p className="text-xs font-black uppercase tracking-[.23em] text-[#75ead7]">Choose who can help</p><h2 className="mt-2 font-display text-3xl font-black sm:text-5xl">Different roles. A stronger you.</h2></div><div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-8 lg:overflow-visible">{roles.map((r)=><a id={r.id} key={r.id} href={`#${r.id}-detail`} className="group relative h-[390px] w-[76vw] max-w-[285px] shrink-0 snap-start overflow-hidden rounded-[1.4rem] border border-white/10 bg-[#0b2030] shadow-xl shadow-black/25 lg:h-[365px] lg:w-auto" style={{boxShadow:`inset 0 -4px 0 ${r.accent}`}}><img src={r.img} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"/><div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/62 to-transparent"/><div className="absolute inset-x-0 bottom-0 p-4"><span className="inline-flex rounded-full border border-white/20 bg-[#03111d]/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.12em] backdrop-blur" style={{color:r.accent}}>{r.label}</span><h3 className="mt-2 text-xl font-black leading-tight">{r.title}</h3><p className="mt-1 text-sm leading-5 text-slate-100">{r.copy}</p><span className="mt-3 inline-flex h-9 w-9 items-center justify-center rounded-full border text-lg" style={{borderColor:r.accent,color:r.accent}}>→</span></div></a>)}</div><p className="mt-2 text-xs text-slate-500 lg:hidden">Swipe to explore every support role →</p></section>
 
-      <section className="mt-7">
-        <div className="mb-4"><p className="text-xs font-black uppercase tracking-[.22em] text-[#75ead7]">Choose who can help</p><h2 className="mt-1 font-display text-2xl font-black sm:text-4xl">Different roles. A stronger you.</h2></div>
-        <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-          {HUMAN_SUPPORT_SCENARIOS.map((scene)=>{
-            const accent=roleColor[scene.role] || "#49d8c2";
-            const label=scene.role === "therapist" ? "Counselor" : scene.title === "Family reflection" ? "Family" : scene.title === "Private reflection first" ? "Private reflection" : scene.role;
-            return <article key={scene.id} className="group relative h-[360px] w-[calc(100vw-3.25rem)] max-w-[390px] shrink-0 snap-start overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#0b2030] shadow-xl shadow-black/25 sm:h-auto sm:aspect-[4/3] sm:w-auto sm:max-w-none" style={{boxShadow:`inset 0 -4px 0 ${accent}`}}>
-              <RoleScene id={scene.id} alt={scene.alt}/>
-              <div className="absolute inset-0 bg-gradient-to-t from-[#03111d] via-[#03111d]/28 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <div className="mb-2 inline-flex rounded-full border border-white/20 bg-[#03111d]/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.15em] backdrop-blur" style={{color:accent}}>{label}</div>
-                <h3 className="text-2xl font-black leading-tight drop-shadow-lg">{scene.title}</h3>
-                <p className="mt-1 text-sm leading-5 text-slate-100 drop-shadow">{scene.moment}</p>
-                <span className="sr-only">{scene.safetyBoundary}</span>
-              </div>
-            </article>
-          })}
-        </div>
-        <p className="mt-2 text-xs text-slate-500 sm:hidden">Swipe to explore every support role →</p>
-      </section>
+    <section id="parent-detail" className="mx-auto max-w-7xl px-5 pb-10 sm:px-8 lg:px-12"><div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#071a29] shadow-2xl shadow-black/25 lg:grid lg:grid-cols-[.95fr_1.05fr]"><div className="relative min-h-[390px] lg:min-h-[520px]"><img src={parent.img} alt="A parent and young person sharing a calm supportive conversation." className="absolute inset-0 h-full w-full object-cover"/><div className="absolute inset-0 bg-gradient-to-t from-[#03111d]/70 via-transparent to-transparent"/></div><div className="p-6 sm:p-8 lg:p-10"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff7fd1]">Parent · A safe place at home</p><h2 className="mt-2 font-display text-3xl font-black">Parent listens first.</h2></div><a href="#coach" className="rounded-full border border-white/15 px-4 py-2 text-xs font-black text-slate-200">Choose a different role</a></div><p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">Get help preparing for a calm, supportive conversation with a parent or guardian. Practice what to say, explore different scenarios, and build confidence without forcing disclosure.</p><div className="mt-6 flex flex-wrap gap-3"><Link href="/support/adaptive?role=parent" className="button-primary">Start a conversation →</Link><Link href="/reflect" className="button-secondary">Reflect privately first</Link></div><div className="mt-7 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-white/10 bg-white/[.035] p-4"><p className="font-black text-[#ff7fd1]">Conversation practice</p><p className="mt-1 text-sm text-slate-400">Rehearse what you want to say in your own words.</p></div><div className="rounded-2xl border border-white/10 bg-white/[.035] p-4"><p className="font-black text-[#75ead7]">Sample questions</p><p className="mt-1 text-sm text-slate-400">Use prompts that make listening easier for both people.</p></div><div className="rounded-2xl border border-white/10 bg-white/[.035] p-4"><p className="font-black text-[#75ead7]">Tips & strategies</p><p className="mt-1 text-sm text-slate-400">Choose timing, tone, and one realistic next step.</p></div><div className="rounded-2xl border border-white/10 bg-white/[.035] p-4"><p className="font-black text-[#ff7fd1]">Real-life scenarios</p><p className="mt-1 text-sm text-slate-400">School, routines, confidence, goals, and everyday family moments.</p></div></div><blockquote className="mt-6 rounded-2xl border border-white/10 bg-slate-950/35 p-4 text-sm italic text-slate-300">“You don’t have to be perfect to have a real conversation.”</blockquote></div></div></section>
 
-      <section className="mt-6 grid gap-5 rounded-[1.6rem] border border-[#49d8c2]/20 bg-[#071a29] p-6 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
-        <div><p className="text-xs font-black uppercase tracking-[.2em] text-[#75ead7]">Human first</p><h2 className="mt-2 font-display text-2xl font-black sm:text-3xl">AI in service of the relationship.</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Z-Girl helps you prepare, communicate, and take positive next steps. Trusted people remain in charge of the human relationship.</p></div>
-        <Link href="/support/adaptive" className="button-primary !min-h-0 w-full text-center md:w-auto">Open AI-Adaptive Support →</Link>
-      </section>
-    </div>
+    <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-8 lg:px-12"><div className="grid gap-6 rounded-[2rem] border border-[#49d8c2]/20 bg-[#071a29] p-6 shadow-xl shadow-black/20 sm:p-8 lg:grid-cols-[1.3fr_.7fr] lg:items-center"><div><p className="text-xs font-black uppercase tracking-[.22em] text-[#75ead7]">Human first</p><h2 className="mt-2 font-display text-3xl font-black sm:text-4xl">AI in service of the relationship.</h2><p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">Z-Girl helps you prepare, communicate, and take positive next steps. Trusted people remain in charge of the human relationship.</p><Link href="/support/adaptive" className="button-primary mt-6 w-full justify-center text-center sm:w-auto">Open AI-Adaptive Support →</Link><p className="mt-4 text-xs text-slate-500">Your privacy matters. You choose what to share and when.</p></div><div className="space-y-4"><div><p className="font-black text-[#75ead7]">Real conversations</p><p className="text-sm text-slate-400">Built around real life.</p></div><div><p className="font-black text-[#ff7fd1]">Safe & supportive</p><p className="text-sm text-slate-400">A positive, judgment-free space.</p></div><div><p className="font-black text-[#75ead7]">Positive next steps</p><p className="text-sm text-slate-400">Tools, not labels.</p></div><div><p className="font-black text-[#ff7fd1]">Your privacy matters</p><p className="text-sm text-slate-400">No partner gets your private reflection.</p></div></div></div></section>
+
+    <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:px-8 md:grid-cols-3 lg:px-12"><Link href="/institutions" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For schools</p><h3 className="mt-2 text-2xl font-black">Stronger students. Brighter futures.</h3></Link><Link href="/for-adults" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For families</p><h3 className="mt-2 text-2xl font-black">Real support. Real connection.</h3></Link><Link href="/partners/channels" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For communities</p><h3 className="mt-2 text-2xl font-black">Real people. Real impact.</h3></Link></section>
   </main>
 }
