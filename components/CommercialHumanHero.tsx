@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 type Variant = "athlete" | "faith" | "institution" | "family" | "partner";
@@ -54,7 +53,15 @@ export default function CommercialHumanHero({ variant, ctaHref, ctaLabel, classN
     <section className={`overflow-hidden rounded-[2.2rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/25 ${className}`}>
       <div className="grid lg:grid-cols-[1.04fr_.96fr] lg:items-stretch">
         <div className="relative min-h-[330px] overflow-hidden border-b border-white/10 bg-[#071a29] sm:min-h-[390px] lg:min-h-[470px] lg:border-b-0 lg:border-r">
-          <Image src={visual.src} alt={visual.alt} fill sizes="(min-width: 1024px) 52vw, 100vw" className="object-cover" style={{objectPosition: visual.position}} priority={variant === "institution"} />
+          <img
+            src={visual.src}
+            alt={visual.alt}
+            loading={variant === "institution" ? "eager" : "lazy"}
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: visual.position }}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#061521]/80 via-transparent to-[#061521]/10" aria-hidden="true" />
           <div className="absolute bottom-5 left-5 rounded-full border border-white/15 bg-[#061521]/80 px-4 py-2 text-xs font-black uppercase tracking-[.16em] text-white backdrop-blur-md">{visual.label}</div>
         </div>
