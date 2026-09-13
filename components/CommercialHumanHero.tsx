@@ -3,63 +3,60 @@ import Link from "next/link";
 
 type Variant = "athlete" | "faith" | "institution" | "family" | "partner";
 
-type Props = {
-  variant: Variant;
-  ctaHref?: string;
-  ctaLabel?: string;
-  className?: string;
-};
+type Props = { variant: Variant; ctaHref?: string; ctaLabel?: string; className?: string };
 
-const VISUALS: Record<Variant, { src: string; label: string; headline: string; copy: string; alt: string }> = {
+const VISUALS: Record<Variant, { src: string; label: string; headline: string; copy: string; alt: string; position?: string }> = {
   athlete: {
-    src: "/visuals/human-scenes/athlete.svg",
+    src: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1800&q=90",
     label: "Athlete + Coach",
     headline: "Better resets. Better conversations. Stronger team culture.",
     copy: "Hero Within supports private athlete reflection and more useful human conversations with coaches, teammates, and family.",
-    alt: "Illustration of an athlete and coach talking together after practice",
+    alt: "Athletes connecting in a real-world team setting",
+    position: "center",
   },
   faith: {
-    src: "/visuals/human-scenes/faith.svg",
+    src: "https://images.unsplash.com/photo-1520857014576-2c4f4c972b57?auto=format&fit=crop&w=1800&q=90",
     label: "Faith + Community",
     headline: "Values become real through people, practice, and reflection.",
     copy: "A private reflection tool that can prepare a better conversation with family, mentors, ministry leaders, and trusted community.",
-    alt: "Illustration of a family and faith community sharing a warm conversation",
+    alt: "People connecting in a supportive community setting",
+    position: "center",
   },
   institution: {
-    src: "/visuals/human-scenes/institution.svg",
+    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1800&q=90",
     label: "Schools + Youth Programs",
     headline: "A human-support layer for the moments between programs and conversations.",
     copy: "Z-Girl helps learners prepare, reflect, and choose a next step while educators and facilitators keep their real-world roles.",
-    alt: "Illustration of an educator and student having a supportive conversation",
+    alt: "Students learning and connecting together",
+    position: "center",
   },
   family: {
-    src: "/visuals/human-scenes/family.svg",
+    src: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=90",
     label: "Family + Trusted Support",
     headline: "Private first. Human when invited.",
     copy: "Reflection stays with the participant unless they choose to bring a specific question or next step to someone they trust.",
-    alt: "Illustration of a family member listening supportively to a young person",
+    alt: "People sharing a supportive real-world moment",
+    position: "center",
   },
   partner: {
-    src: "/visuals/human-scenes/partner.svg",
+    src: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1800&q=90",
     label: "Partners + Access",
     headline: "Help more communities reach the right kind of support.",
     copy: "Founding partners can help expand access, sponsor implementation, and open doors without becoming the support authority.",
-    alt: "Illustration of community partners collaborating around a table",
+    alt: "Community partners collaborating together",
+    position: "center",
   },
 };
 
 export default function CommercialHumanHero({ variant, ctaHref, ctaLabel, className = "" }: Props) {
   const visual = VISUALS[variant];
-
   return (
     <section className={`overflow-hidden rounded-[2.2rem] border border-white/10 bg-[#0b2030] shadow-2xl shadow-black/25 ${className}`}>
-      <div className="grid lg:grid-cols-[.94fr_1.06fr] lg:items-stretch">
-        <div className="relative min-h-[300px] overflow-hidden border-b border-white/10 bg-[#071a29] sm:min-h-[360px] lg:min-h-[440px] lg:border-b-0 lg:border-r">
-          <Image src={visual.src} alt={visual.alt} fill sizes="(min-width: 1024px) 46vw, 100vw" className="object-cover" priority={variant === "institution"} />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#061521]/55 via-transparent to-transparent" aria-hidden="true" />
-          <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/10 bg-[#061521]/75 px-4 py-3 text-xs font-bold leading-5 text-slate-200 backdrop-blur-md">
-            Original Greene-controlled illustration · no third-party photography
-          </div>
+      <div className="grid lg:grid-cols-[1.04fr_.96fr] lg:items-stretch">
+        <div className="relative min-h-[330px] overflow-hidden border-b border-white/10 bg-[#071a29] sm:min-h-[390px] lg:min-h-[470px] lg:border-b-0 lg:border-r">
+          <Image src={visual.src} alt={visual.alt} fill sizes="(min-width: 1024px) 52vw, 100vw" className="object-cover" style={{objectPosition: visual.position}} priority={variant === "institution"} />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#061521]/80 via-transparent to-[#061521]/10" aria-hidden="true" />
+          <div className="absolute bottom-5 left-5 rounded-full border border-white/15 bg-[#061521]/80 px-4 py-2 text-xs font-black uppercase tracking-[.16em] text-white backdrop-blur-md">{visual.label}</div>
         </div>
         <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-12">
           <p className="text-xs font-black uppercase tracking-[.22em] text-[#76ead6]">{visual.label}</p>
