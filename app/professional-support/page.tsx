@@ -2,92 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
-export const metadata: Metadata = {
-  title: "Professional Support | Z-Girl",
-  description: "A governed pathway connecting qualified human professionals with Z-Girl training, credentialing, and participant-controlled support handoffs.",
-};
+export const metadata: Metadata = { title: "Professional Support Network | Z-Girl", description: "Join the founding Z-Girl professional network: AI-prepared, human-led, professionally governed support." };
 
-const pathway = [
-  ["1", "Verify", "Confirm identity and applicable independent professional qualification."],
-  ["2", "Learn", "Complete role-specific Z-Girl human-first, privacy, safeguarding, AI-boundary, and handoff training."],
-  ["3", "Demonstrate", "Pass knowledge checks and a scenario-based competency practicum."],
-  ["4", "Authorize", "Receive Z-Girl program authorization only after the required operational approval gates."],
-  ["5", "Support", "Receive participant-initiated, minimum-necessary handoffs inside the governed professional workspace."],
-  ["6", "Renew", "Maintain qualification, calibration, policy learning, and Z-Girl credential status."],
-];
+const pathway = [["01","VERIFY","Professional identity and applicable independent qualification."],["02","LEARN","Human-first practice, privacy, safeguarding, AI boundaries, and participant-controlled handoff."],["03","DEMONSTRATE","Knowledge checks plus scenario-based competency."],["04","AUTHORIZE","Z-Girl program authorization after required approval gates."],["05","SUPPORT","Participant-initiated, minimum-necessary human handoffs."],["06","RENEW","Qualification, calibration, continuing learning, and credential renewal."]];
+const audiences = ["Licensed counselors & therapists","School counselors & psychologists","Social workers & youth professionals","Counseling practices & virtual-care organizations"];
 
-const modules = [
-  "Human-first doctrine and role boundaries",
-  "Participant-controlled reflection and handoff",
-  "Privacy and clinical-record separation",
-  "Youth, guardian, institutional, and safeguarding boundaries",
-  "AI limitations, transparency, and appropriate reliance",
-  "Crisis and emergency escalation boundaries",
-  "Receiving participant-generated conversation briefs",
-  "Consent withdrawal and minimum-necessary sharing",
-];
-
-export default function ProfessionalSupportPage() {
-  return (
-    <main className="min-h-screen bg-[#04151c] text-white">
-      <SiteHeader />
-      <section className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
-        <p className="text-sm font-black uppercase tracking-[.28em] text-[#64dfd0]">Human professional support</p>
-        <h1 className="mt-5 max-w-5xl font-display text-5xl font-black leading-[.96] tracking-[-.045em] sm:text-7xl">
-          Z-Girl prepares the conversation. Qualified people provide the professional care.
-        </h1>
-        <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300">
-          Extend Z-Girl into counseling, school support, social work, psychology, and other approved professional settings without turning AI into the provider. Participants remain in control of what they share and with whom.
-        </p>
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link href="/institutions/train-the-trainer" className="rounded-full bg-[#49d8c2] px-6 py-3 font-black text-[#04151c]">Explore training pathway</Link>
-          <Link href="/credentials/verify" className="rounded-full border border-[#49d8c2]/50 px-6 py-3 font-bold text-[#8af0e3]">Verify a credential</Link>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="grid gap-5 md:grid-cols-3">
-          {pathway.map(([n, title, body]) => (
-            <article key={n} className="rounded-[2rem] border border-[#49d8c2]/20 bg-[#0a202b] p-7">
-              <div className="text-sm font-black text-[#ff4bb5]">{n.padStart(2, "0")}</div>
-              <h2 className="mt-3 text-2xl font-black">{title}</h2>
-              <p className="mt-3 leading-7 text-slate-300">{body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-20 lg:grid-cols-2">
-        <article className="rounded-[2rem] border border-white/10 bg-[#0a202b] p-8">
-          <p className="text-sm font-black uppercase tracking-[.24em] text-[#64dfd0]">Professional specialization</p>
-          <h2 className="mt-4 text-4xl font-black">Z-Girl Professional Support Certified User</h2>
-          <p className="mt-5 leading-8 text-slate-300">A Z-Girl product-competency specialization for independently qualified professionals. The professional qualification and the Z-Girl credential are verified and displayed as separate records.</p>
-          <div className="mt-7 rounded-2xl border border-amber-300/25 bg-amber-200/5 p-5 text-sm leading-6 text-amber-100">
-            Z-Girl authorization is a program credential—not professional licensure, clinical qualification, academic accreditation, or government certification.
-          </div>
-        </article>
-        <article className="rounded-[2rem] border border-white/10 bg-[#0a202b] p-8">
-          <p className="text-sm font-black uppercase tracking-[.24em] text-[#ff4bb5]">Required learning</p>
-          <h2 className="mt-4 text-4xl font-black">Built for responsible handoff.</h2>
-          <ul className="mt-6 space-y-3 text-slate-300">
-            {modules.map((item) => <li key={item} className="flex gap-3"><span className="font-black text-[#49d8c2]">✓</span><span>{item}</span></li>)}
-          </ul>
-        </article>
-      </section>
-
-      <section className="border-y border-white/10 bg-[#071b25]">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-sm font-black uppercase tracking-[.24em] text-[#64dfd0]">Participant-controlled handoff</p>
-          <h2 className="mt-4 max-w-4xl text-4xl font-black">Reflect → Prepare → Choose what to share → Choose a person → Consent → Human support</h2>
-          <p className="mt-5 max-w-3xl leading-8 text-slate-300">Credentialing never unlocks a participant's private journal by default. A professional receives only the participant-authorized handoff content permitted by the governed workflow.</p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <p className="text-sm font-black uppercase tracking-[.24em] text-[#64dfd0]">Commercial pathway</p>
-        <h2 className="mt-4 text-4xl font-black">One ecosystem. Multiple recurring-value layers.</h2>
-        <p className="mt-5 max-w-4xl leading-8 text-slate-300">Training, competency assessment, credential administration, professional workspace access, institutional implementation, continuing Z-Girl education, renewal, and approved Train-the-Trainer expansion can operate as governed product layers. Public credential activation and paid launch remain owner-gated.</p>
-      </section>
-    </main>
-  );
-}
+export default function ProfessionalSupportPage(){return <main className="min-h-screen bg-[#03131b] text-white"><SiteHeader/>
+<section className="relative overflow-hidden border-b border-white/10"><div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_15%,rgba(255,75,181,.24),transparent_30%),radial-gradient(circle_at_15%_70%,rgba(73,216,194,.18),transparent_34%)]"/><div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:py-20 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:py-24"><div><div className="inline-flex rounded-full border border-[#ff4bb5]/40 bg-[#ff4bb5]/10 px-4 py-2 text-xs font-black uppercase tracking-[.22em] text-[#ff7bc8]">Founding Professional Network · Pre-Activation</div><p className="mt-7 text-sm font-black uppercase tracking-[.28em] text-[#72ead9]">AI-prepared · Human-led · Professionally governed</p><h1 className="mt-4 max-w-4xl font-display text-4xl font-black leading-[1.02] tracking-[-.035em] sm:text-6xl lg:text-7xl">Help shape a new human-support layer around Z-Girl.</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">A selective pathway for qualified professionals and institutions who want to help young people arrive at important conversations more prepared—while human professionals retain professional authority, judgment, care, and accountability.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/support/professional/provider#interest" className="rounded-full bg-[#ff4bb5] px-6 py-4 font-black text-[#08131b] shadow-[0_0_40px_rgba(255,75,181,.2)]">Apply to the Founding Network →</Link><Link href="/institutions/train-the-trainer" className="rounded-full border border-[#72ead9]/50 px-6 py-4 font-black text-[#9af3e7]">Explore Credential Pathway</Link></div></div><div className="rounded-[2.4rem] border border-white/10 bg-white/[.045] p-7 shadow-2xl backdrop-blur sm:p-9"><p className="text-xs font-black uppercase tracking-[.22em] text-[#72ead9]">The opportunity</p><h2 className="mt-3 text-3xl font-black">Better prepared people. Better human conversations.</h2><div className="mt-6 space-y-4">{["Participant-controlled preparation before the conversation","Clear separation between AI assistance and professional care","Credential differentiation inside the Z-Girl ecosystem","Institutional implementation and continuing-learning pathways"].map(x=><div key={x} className="flex gap-3 border-t border-white/10 pt-4"><span className="text-[#ff4bb5]">✦</span><span className="font-semibold text-slate-200">{x}</span></div>)}</div></div></div></section>
+<section className="mx-auto max-w-7xl px-6 py-14"><p className="text-sm font-black uppercase tracking-[.25em] text-[#72ead9]">Who we are inviting</p><h2 className="mt-3 max-w-4xl text-3xl font-black sm:text-5xl">Professionals who believe technology should strengthen—not replace—the human relationship.</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{audiences.map((x,i)=><article key={x} className="rounded-[1.7rem] border border-white/10 bg-[#0a202b] p-6"><div className="text-2xl">{["◉","◇","✦","◎"][i]}</div><h3 className="mt-4 text-xl font-black">{x}</h3></article>)}</div></section>
+<section className="border-y border-white/10 bg-[#071b25]"><div className="mx-auto max-w-7xl px-6 py-14"><div className="flex flex-wrap items-end justify-between gap-5"><div><p className="text-sm font-black uppercase tracking-[.25em] text-[#ff65bd]">Professional credential journey</p><h2 className="mt-3 text-3xl font-black sm:text-5xl">Earn authorization. Maintain the standard.</h2></div><Link href="/credentials/verify" className="font-black text-[#72ead9]">Verify a credential →</Link></div><div className="mt-9 grid gap-4 md:grid-cols-3">{pathway.map(([n,t,b])=><article key={n} className="rounded-[1.7rem] border border-[#72ead9]/15 bg-[#0a202b] p-6"><span className="text-xs font-black text-[#ff65bd]">{n}</span><h3 className="mt-2 text-2xl font-black">{t}</h3><p className="mt-3 leading-7 text-slate-300">{b}</p></article>)}</div></div></section>
+<section className="mx-auto grid max-w-7xl gap-6 px-6 py-14 lg:grid-cols-2"><article className="rounded-[2rem] border border-[#ff4bb5]/25 bg-[radial-gradient(circle_at_top_right,rgba(255,75,181,.15),transparent_40%),#0a202b] p-8"><p className="text-xs font-black uppercase tracking-[.22em] text-[#ff65bd]">Professional distinction</p><h2 className="mt-3 text-3xl font-black">Z-Girl Professional Support Certified User</h2><p className="mt-4 leading-8 text-slate-300">A governed Z-Girl product-competency specialization for independently qualified professionals. Professional qualification and Z-Girl program credential remain separately verified.</p><p className="mt-6 rounded-2xl border border-amber-200/20 bg-amber-200/5 p-4 text-sm text-amber-100">Z-Girl authorization is a program credential—not professional licensure, clinical qualification, academic accreditation, or government certification.</p></article><article className="rounded-[2rem] border border-[#72ead9]/20 bg-[#0a202b] p-8"><p className="text-xs font-black uppercase tracking-[.22em] text-[#72ead9]">Participant-controlled handoff</p><h2 className="mt-3 text-3xl font-black">Reflection → Preparation → Consent → Human support.</h2><p className="mt-4 leading-8 text-slate-300">A credential never unlocks a participant’s private journal by default. Participants choose what to share, with whom, through an approved minimum-necessary workflow.</p></article></section>
+<section className="mx-auto max-w-7xl px-6 pb-20"><div className="rounded-[2.2rem] border border-white/10 bg-[linear-gradient(120deg,rgba(255,75,181,.13),rgba(73,216,194,.12)),#091e29] p-8 sm:p-12"><p className="text-sm font-black uppercase tracking-[.24em] text-[#72ead9]">Founding cohort</p><h2 className="mt-3 max-w-4xl text-4xl font-black sm:text-5xl">Help establish the standard before the network opens.</h2><p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">We are recruiting qualified professionals, practices, school programs, and institutional collaborators for the pre-activation phase. Provider matching, booking, clinical records, and paid network functions remain gated until approved.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/support/professional/provider#interest" className="rounded-full bg-[#49d8c2] px-6 py-4 font-black text-[#04151c]">Express Founding Interest →</Link><Link href="/support/professional" className="rounded-full border border-white/20 px-6 py-4 font-black">See Participant Gateway</Link></div></div></section></main>;}
