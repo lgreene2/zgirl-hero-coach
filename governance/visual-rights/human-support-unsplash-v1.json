@@ -2,7 +2,7 @@
   "asset_pack": "Z-Girl Human Support Photography v1",
   "status": "candidate-commercial-use-review",
   "license_basis": "Unsplash License as represented by Unsplash for free photos; final production release remains owner-governed.",
-  "usage": "Human Support hero and role cards only",
+  "usage": "Human Support home/role experiences plus Professional Support Network, Professional Support Gateway, and Founding Provider recruitment candidate surfaces.",
   "sources": [
     {"role":"Parent","url":"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb","delivery":"?auto=format&fit=crop&w=1800&q=95"},
     {"role":"Coach","url":"https://images.unsplash.com/photo-1768349027535-da4842dab8ba","delivery":"?auto=format&fit=crop&w=1800&q=95"},
@@ -13,9 +13,11 @@
     {"role":"Family","url":"https://images.unsplash.com/photo-1609220136736-443140cffec6","delivery":"?auto=format&fit=crop&w=1800&q=95"},
     {"role":"Private Reflection","url":"https://images.unsplash.com/photo-1516321318423-f06f85e504b3","delivery":"?auto=format&fit=crop&w=1800&q=95"}
   ],
+  "professional_support_routes": ["/professional-support","/support/professional","/support/professional/provider"],
   "notes": [
     "Images are rendered directly in the browser rather than through Next.js image optimization to avoid the prior mobile remote-optimizer failure.",
     "This manifest records provenance; it does not override final owner approval or any model/property-release review required for a specific commercial campaign.",
+    "Professional Support candidate pages reuse the existing governed Human Support image pack rather than adding a parallel visual source set.",
     "Future Greene-controlled generated masters may replace these sources without changing the Human-Centered Visual System architecture."
   ]
 }
