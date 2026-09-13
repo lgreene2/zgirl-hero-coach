@@ -1,0 +1,17 @@
+{
+  "asset_group": "Z-Girl v3.18 Human-Centered Commercial Scenes",
+  "status": "RELEASE_CANDIDATE",
+  "created_at": "2026-09-12",
+  "owner": "Greene-controlled Z-Girl / The 4 Lessons production",
+  "assets": [
+    {"path":"public/visuals/human-scenes/athlete.svg","scene":"athlete and coach supportive sideline conversation","source":"original vector geometry created for this release candidate","third_party_assets":false,"identity_or_likeness":false,"commercial_rights_status":"Greene-controlled original"},
+    {"path":"public/visuals/human-scenes/faith.svg","scene":"faith/community circle in conversation","source":"original vector geometry created for this release candidate","third_party_assets":false,"identity_or_likeness":false,"commercial_rights_status":"Greene-controlled original"},
+    {"path":"public/visuals/human-scenes/institution.svg","scene":"educator and learner supportive conversation","source":"original vector geometry created for this release candidate","third_party_assets":false,"identity_or_likeness":false,"commercial_rights_status":"Greene-controlled original"},
+    {"path":"public/visuals/human-scenes/family.svg","scene":"young person and trusted family member listening together","source":"original vector geometry created for this release candidate","third_party_assets":false,"identity_or_likeness":false,"commercial_rights_status":"Greene-controlled original"},
+    {"path":"public/visuals/human-scenes/partner.svg","scene":"community partners collaborating around a table","source":"original vector geometry created for this release candidate","third_party_assets":false,"identity_or_likeness":false,"commercial_rights_status":"Greene-controlled original"}
+  ],
+  "ai_contribution": "AI-assisted production of original SVG composition/code under Greene Media Studio direction; no external image generation model output, stock photography, scraped imagery, or celebrity/real-person likeness used.",
+  "human_oversight": "Owner public-release authority remains required. Scene roles and language are illustrative and do not confer professional authority on Z-Girl.",
+  "rights_notes": "These assets replace the five external Unsplash photographs previously referenced by PR #48. No remote image licensing is required for these replacement scenes.",
+  "approval": {"visual_asset_source_clear": true, "public_release_approved": false}
+}

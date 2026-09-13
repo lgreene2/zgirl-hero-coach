@@ -1,50 +1,37 @@
-import Image from "next/image";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import { HUMAN_SUPPORT_SCENARIOS } from "@/lib/human-support-system";
+import HumanSupportRoleExperience, { type SupportRole } from "@/components/HumanSupportRoleExperience";
+
+const baseTools = {
+  parent:[{title:"Conversation practice",copy:"Rehearse what you want to say in your own words."},{title:"Sample questions",copy:"Use prompts that make listening easier for both people."},{title:"Tips & strategies",copy:"Choose timing, tone, and one realistic next step."},{title:"Real-life scenarios",copy:"School, routines, confidence, goals, and everyday family moments."}],
+  coach:[{title:"Pregame / postgame talk",copy:"Prepare for a supportive conversation beyond the score."},{title:"Confidence reset",copy:"Separate one mistake from the whole performance."},{title:"Coachability prompts",copy:"Name what you want to learn, practice, or ask."},{title:"Next-practice focus",copy:"Leave with one clear, realistic action."}],
+  educator:[{title:"Ask for help",copy:"Put the learning need into clear, respectful words."},{title:"Classroom scenarios",copy:"Prepare for belonging, focus, workload, or communication moments."},{title:"Support request",copy:"Identify one practical support step to discuss."},{title:"Return to learning",copy:"Choose what can make the next class period more workable."}],
+  counselor:[{title:"Session preparation",copy:"Organize what you want to bring into the conversation."},{title:"Themes & questions",copy:"Notice patterns without asking Z-Girl to diagnose them."},{title:"Between-session reflection",copy:"Capture what you want to remember or revisit."},{title:"Your agenda",copy:"Choose what matters most to discuss with the professional."}],
+  faith:[{title:"Values reflection",copy:"Connect the moment to values, meaning, or service."},{title:"Conversation prep",copy:"Prepare what you want to ask or share with a trusted faith leader."},{title:"Practice & purpose",copy:"Choose one value-aligned action to carry forward."},{title:"Healthy boundaries",copy:"Faith support complements—not replaces—qualified professional care."}],
+  mentor:[{title:"Goal clarity",copy:"Turn a broad concern into one practical next step."},{title:"Decision practice",copy:"Talk through options before the real conversation."},{title:"Accountability",copy:"Choose what you want to do before the next check-in."},{title:"Growth reflection",copy:"Notice what you are learning about yourself."}],
+  family:[{title:"Shared goal",copy:"Choose one family goal without forcing private disclosure."},{title:"Listening prompts",copy:"Make room for each person to speak and be heard."},{title:"Family next step",copy:"Agree on one action everyone understands."},{title:"Check-in later",copy:"Return to what worked, what changed, and what needs adjusting."}],
+  yourself:[{title:"Private reflection",copy:"Think first without deciding immediately whether to share."},{title:"Name the moment",copy:"Put clear words to what happened and what matters."},{title:"Choose your support",copy:"Decide whether a trusted person would help."},{title:"Your next move",copy:"Take one realistic step while keeping control of your story."}],
+};
+
+const roles: SupportRole[] = [
+  {id:"parent",label:"Parent",title:"Parent listens first",copy:"A calm, supportive conversation after a difficult day.",accent:"#ff4db8",img:"https://images.unsplash.com/photo-1752652016199-a9ca574e08cb?auto=format&fit=crop&w=1800&q=95",detailLabel:"Parent · A safe place at home",detailTitle:"Parent listens first.",detailCopy:"Get help preparing for a calm, supportive conversation with a parent or guardian. Practice what to say, explore different scenarios, and build confidence without forcing disclosure.",tools:baseTools.parent},
+  {id:"coach",label:"Coach",title:"Coach builds confidence",copy:"Encouragement before the next game or practice.",accent:"#4d9cff",img:"https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1800&q=95",detailLabel:"Coach · Support beyond the score",detailTitle:"Coach builds confidence.",detailCopy:"Prepare to talk about effort, pressure, mistakes, confidence, leadership, or the next practice without reducing the conversation to wins and losses.",tools:baseTools.coach},
+  {id:"educator",label:"Educator",title:"Teacher creates space",copy:"A safe place to ask questions and keep learning.",accent:"#54d98c",img:"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1800&q=95",detailLabel:"Educator · A safe place to ask",detailTitle:"Teacher creates space.",detailCopy:"Prepare to explain what is getting in the way of learning, belonging, participation, or communication and identify one practical support step to discuss.",tools:baseTools.educator},
+  {id:"counselor",label:"Counselor",title:"Counselor offers guidance",copy:"A trusted space to talk through challenges.",accent:"#c179ff",img:"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1800&q=95",detailLabel:"Counselor · Prepared for the conversation",detailTitle:"Counselor offers guidance.",detailCopy:"Use Z-Girl to organize what you want to bring into a counseling or therapy conversation. Z-Girl helps you prepare; the professional remains responsible for clinical judgment.",tools:baseTools.counselor},
+  {id:"faith",label:"Faith Leader",title:"Faith leader brings hope",copy:"Real talk about life, values, purpose, and next steps.",accent:"#ffd34e",img:"https://images.unsplash.com/photo-1473177104440-ffee2f376098?auto=format&fit=crop&w=1800&q=95",detailLabel:"Faith leader · Values and purpose",detailTitle:"Faith leader brings hope.",detailCopy:"Prepare a values-centered conversation about meaning, purpose, service, forgiveness, gratitude, or a next step while preserving appropriate professional and safety boundaries.",tools:baseTools.faith},
+  {id:"mentor",label:"Mentor",title:"Mentor walks alongside",copy:"Guidance, perspective, and real-world encouragement.",accent:"#ff8a42",img:"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=95",detailLabel:"Mentor · Perspective and follow-through",detailTitle:"Mentor walks alongside.",detailCopy:"Turn reflection into one clear conversation, one practical decision, and one follow-through step with someone you trust for encouragement and perspective.",tools:baseTools.mentor},
+  {id:"family",label:"Family",title:"Family stays connected",copy:"Stronger conversations. Stronger tomorrows.",accent:"#ff4d83",img:"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1800&q=95",detailLabel:"Family · Stronger together",detailTitle:"Family stays connected.",detailCopy:"Use a shared reflection to make a family conversation clearer and more constructive without turning private thoughts into required disclosure.",tools:baseTools.family},
+  {id:"yourself",label:"Yourself",title:"Private reflection",copy:"A safe space just for you before deciding what to share.",accent:"#49d8c2",img:"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=95",detailLabel:"Yourself · Your story, your control",detailTitle:"Private reflection first.",detailCopy:"Reflect privately, understand the moment, and decide whether you want another person involved. Sharing is your choice unless an existing real-world safety obligation applies.",tools:baseTools.yourself},
+];
 
 export default function HumanSupportVisualSystemPage(){
-  return <main className="min-h-screen bg-[#061521] text-white">
-    <SiteHeader />
-    <div className="mx-auto max-w-7xl px-4 py-7 sm:px-7 lg:py-12">
-      <p className="section-kicker">Z-Girl Human-Centered Visual System</p>
-      <h1 className="mt-2 max-w-4xl font-display text-3xl font-black tracking-tight sm:text-5xl">Human support stays at the center.</h1>
-      <p className="mt-4 max-w-4xl text-base leading-7 text-slate-300 sm:text-lg">Z-Girl helps a participant prepare for a real conversation with a trusted person. The participant controls what is shared; AI supports the relationship rather than replacing it.</p>
+  return <main className="min-h-screen overflow-x-hidden bg-[#03111d] text-white"><SiteHeader/>
+    <section className="relative isolate border-b border-white/10"><img src={roles[7].img} alt="Young person reflecting privately before deciding whether to share." className="absolute inset-0 -z-20 h-full w-full object-cover"/><div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#03111d_0%,rgba(3,17,29,.94)_40%,rgba(3,17,29,.35)_100%)]"/><div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#03111d] via-transparent to-[#03111d]/20"/><div className="mx-auto flex min-h-[610px] max-w-7xl items-center px-5 py-12 sm:px-8 lg:px-12"><div className="max-w-2xl"><p className="text-xs font-black uppercase tracking-[.24em] text-[#75ead7]">Real conversations. Brighter tomorrows.</p><h1 className="mt-4 font-display text-5xl font-black leading-[.95] tracking-[-.04em] sm:text-6xl">You’re not alone.<br/><span className="text-[#ff5ac8]">Real people.<br/>Real support.<br/>A brighter you.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-200">Reflect, prepare, and connect with the people who support you—without giving up control of your story.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/reflect" className="button-primary">Start a reflection →</Link><Link href="/support/adaptive" className="button-secondary">Open AI-Adaptive Support</Link></div></div></div></section>
 
-      <section className="mt-7 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0b2030]/80 shadow-2xl shadow-black/25 sm:rounded-[2rem]">
-        <div className="relative aspect-[16/9] w-full">
-          <Image src="/visuals/zgirl-human-centered-system.svg" alt="Z-Girl human-centered support system showing a participant connected with a parent, coach, educator, counselor, faith leader, and mentor." fill priority className="object-contain" sizes="(max-width: 1280px) 100vw, 1280px" />
-        </div>
-        <div className="border-t border-white/10 p-5 sm:p-7">
-          <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">How it works</p>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">You remain in control. Choose the trusted person who fits the moment, prepare what you want to say, and use Z-Girl to make the next human conversation clearer and more useful.</p>
-          <Link href="/support/adaptive" className="button-primary mt-5 !min-h-0 w-full text-center sm:w-auto">Open AI-Adaptive Support</Link>
-        </div>
-      </section>
+    <HumanSupportRoleExperience roles={roles}/>
 
-      <section className="mt-7">
-        <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">Choose who can help</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {HUMAN_SUPPORT_SCENARIOS.map((scene)=><article key={scene.id} className="rounded-[1.5rem] border border-white/10 bg-[#0b2030]/80 p-5">
-            <div className="flex items-start gap-4">
-              <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-[#49d8c2] shadow-[0_0_18px_rgba(73,216,194,.55)]" />
-              <div>
-                <p className="text-xs font-black uppercase tracking-[.14em] text-[#9af3e4]">{scene.role}</p>
-                <h2 className="mt-1 text-xl font-black">{scene.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{scene.moment}</p>
-                <p className="mt-3 text-xs leading-5 text-slate-500">{scene.safetyBoundary}</p>
-              </div>
-            </div>
-          </article>)}
-        </div>
-      </section>
+    <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-8 lg:px-12"><div className="grid gap-6 rounded-[2rem] border border-[#49d8c2]/20 bg-[#071a29] p-6 shadow-xl shadow-black/20 sm:p-8 lg:grid-cols-[1.3fr_.7fr] lg:items-center"><div><p className="text-xs font-black uppercase tracking-[.22em] text-[#75ead7]">Human first</p><h2 className="mt-2 font-display text-3xl font-black sm:text-4xl">AI in service of the relationship.</h2><p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">Z-Girl helps you prepare, communicate, and take positive next steps. Trusted people remain in charge of the human relationship.</p><Link href="/support/adaptive" className="button-primary mt-6 w-full justify-center text-center sm:w-auto">Open AI-Adaptive Support →</Link><p className="mt-4 text-xs text-slate-500">Your privacy matters. You choose what to share and when.</p></div><div className="space-y-4"><div><p className="font-black text-[#75ead7]">Real conversations</p><p className="text-sm text-slate-400">Built around real life.</p></div><div><p className="font-black text-[#ff7fd1]">Safe & supportive</p><p className="text-sm text-slate-400">A positive, judgment-free space.</p></div><div><p className="font-black text-[#75ead7]">Positive next steps</p><p className="text-sm text-slate-400">Tools, not labels.</p></div><div><p className="font-black text-[#ff7fd1]">Your privacy matters</p><p className="text-sm text-slate-400">No partner gets your private reflection.</p></div></div></div></section>
 
-      <section className="mt-7 rounded-[1.75rem] border border-[#49d8c2]/20 bg-[#49d8c2]/[.045] p-5 sm:p-8">
-        <p className="text-xs font-black uppercase tracking-[.18em] text-[#76ead6]">Z-Girl promise</p>
-        <h2 className="mt-2 font-display text-2xl font-black sm:text-3xl">Human first. AI in service of the relationship.</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">Z-Girl does not diagnose, monitor, discipline, or replace a parent, coach, educator, counselor, faith leader, mentor, or other qualified human support.</p>
-        <Link href="/support" className="button-secondary mt-5 !min-h-0 w-full text-center sm:w-auto">Open Support Handoff</Link>
-      </section>
-    </div>
+    <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:px-8 md:grid-cols-3 lg:px-12"><Link href="/institutions" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For schools</p><h3 className="mt-2 text-2xl font-black">Stronger students. Brighter futures.</h3></Link><Link href="/for-adults" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For families</p><h3 className="mt-2 text-2xl font-black">Real support. Real connection.</h3></Link><Link href="/partners/channels" className="rounded-[1.5rem] border border-white/10 bg-white/[.035] p-6"><p className="text-xs font-black uppercase tracking-[.18em] text-[#ff75cf]">For communities</p><h3 className="mt-2 text-2xl font-black">Real people. Real impact.</h3></Link></section>
   </main>
 }
