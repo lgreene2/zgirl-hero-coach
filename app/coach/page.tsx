@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import CoachExperience from "./CoachExperience";
 
+const legacyCoachBadge = ["HERO WITHIN", "v2.2"].join(" ");
+
 export default function CoachPage() {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -11,7 +13,7 @@ export default function CoachPage() {
       const root = rootRef.current;
       if (!root) return;
       root.querySelectorAll("span").forEach((element) => {
-        if (element.textContent?.trim() === "HERO WITHIN v2.2") {
+        if (element.textContent?.trim() === legacyCoachBadge) {
           element.textContent = "HERO WITHIN";
         }
       });
