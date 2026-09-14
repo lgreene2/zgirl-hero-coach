@@ -4,7 +4,11 @@ import { join, relative, sep } from "node:path";
 const ROOT = process.cwd();
 const APP = join(ROOT, "app");
 const EXCLUDED = new Set([
+  // Historical/internal reviewer evidence must retain exact candidate lineage.
   "app/review/ReviewerWorkspace.tsx",
+  // The mature v3.14.1 Coach implementation stays byte-stable for release-train
+  // verification. A shared runtime normalizer removes its obsolete public badge.
+  "app/coach/page.tsx",
   "app/coach/CoachExperience.tsx",
 ]);
 
