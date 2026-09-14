@@ -9,6 +9,7 @@ import AppFooter from "@/components/AppFooter";
 import PWAClient from "@/components/PWAClient";
 import HomeMarketLanes from "@/components/HomeMarketLanes";
 import LegacyResourceLinks from "@/components/LegacyResourceLinks";
+import VoiceToTextEnhancer from "@/components/VoiceToTextEnhancer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zgirlinitiative.org"),
@@ -56,6 +57,7 @@ export default function RootLayout({
 
         <ConditionalPilotCTA />
         <LegacyResourceLinks />
+        <VoiceToTextEnhancer />
         <PWAClient />
         <Analytics />
       </body>
