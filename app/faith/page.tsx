@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Faith-aligned Z-Girl reflection resources for youth, families, congregations, and organizations using approved content profiles.",
 };
 
-const FAITH_IMAGE = "https://images.unsplash.com/photo-1520857014576-2c4f4c972b57?auto=format&fit=crop&w=1800&q=90";
+const FAITH_IMAGE = "https://images.unsplash.com/photo-1651514645933-c26e0eb4ace3?auto=format&fit=crop&w=1800&q=92";
 
 const pathways = [
   { title: "Faith & Values", label: "Open to many traditions", copy: "Reflect on courage, forgiveness, gratitude, service, patience, compassion, responsibility, and hope.", href: "/faith/start", cta: "Start a sample" },
@@ -41,9 +41,9 @@ export default function FaithHubPage() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row"><Link href="/faith/start" className="rounded-full bg-amber-300 px-6 py-3.5 text-sm font-black text-[#201400] transition hover:bg-amber-200">Start a faith-aligned reflection →</Link><Link href="/faith/congregations" className="button-secondary">Use with a congregation</Link></div>
           </div>
 
-          <aside className="overflow-hidden rounded-[2.1rem] border border-amber-300/20 bg-[#0a2030]/95 shadow-2xl shadow-black/30">
+          <aside className="overflow-hidden rounded-[2.1rem] border border-amber-300/20 bg-[#0a2030]/95 shadow-2xl shadow-black/30" data-visual-intent="faith-community-conversation-and-encouragement">
             <div className="relative min-h-[330px] sm:min-h-[390px]">
-              <img src={FAITH_IMAGE} alt="People connecting in a supportive faith and community setting" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
+              <img src={FAITH_IMAGE} alt="People encouraging one another in a faith-community conversation" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#061521]/95 via-[#061521]/20 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5">
                 <span className="rounded-full border border-amber-200/30 bg-[#061521]/80 px-4 py-2 text-xs font-black uppercase tracking-[.16em] text-amber-100 backdrop-blur">Faith + Community</span>
