@@ -1,31 +1,63 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const heroPath = new URL('../components/CommercialHumanHero.tsx', import.meta.url);
-const source = fs.readFileSync(heroPath, 'utf8');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const heroPath = path.join(repoRoot, 'components', 'CommercialHumanHero.tsx');
+const heroSource = fs.readFileSync(heroPath, 'utf8');
 
 const requiredVariants = ['athlete', 'faith', 'institution', 'family', 'partner'];
 const forbiddenAssets = [
-  'photo-1517466787929-bc90951d0974', // rejected: isolated soccer action did not communicate coach-athlete support
-  'photo-1520857014576-2c4f4c972b57', // retired: generic community visual did not clearly communicate faith/values conversation
+  'photo-1517466787929-bc90951d0974',
+  'photo-1520857014576-2c4f4c972b57',
 ];
-
-const requiredPhrases = [
-  'semanticIntent:',
-  'sourceNote:',
-  'data-semantic-intent=',
+const approvedMarketAssets = [
   'photo-1768349027535-da4842dab8ba',
   'photo-1651514645933-c26e0eb4ace3',
 ];
-
+const requiredPhrases = ['semanticIntent:', 'sourceNote:', 'data-semantic-intent='];
+const scanRoots = ['app', 'components'];
+const textExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.md']);
 const failures = [];
-for (const variant of requiredVariants) {
-  if (!source.includes(`${variant}: {`)) failures.push(`Missing governed visual variant: ${variant}`);
+
+function walk(dir) {
+  if (!fs.existsSync(dir)) return [];
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else if (textExtensions.has(path.extname(entry.name))) out.push(full);
+  }
+  return out;
 }
-for (const asset of forbiddenAssets) {
-  if (source.includes(asset)) failures.push(`Rejected visual asset reintroduced: ${asset}`);
+
+for (const variant of requiredVariants) {
+  if (!heroSource.includes(`${variant}: {`)) failures.push(`Missing governed visual variant: ${variant}`);
 }
 for (const phrase of requiredPhrases) {
-  if (!source.includes(phrase)) failures.push(`Missing visual-conformance marker: ${phrase}`);
+  if (!heroSource.includes(phrase)) failures.push(`Missing visual-conformance marker: ${phrase}`);
+}
+for (const asset of approvedMarketAssets) {
+  if (!heroSource.includes(asset)) failures.push(`Missing approved market visual: ${asset}`);
+}
+
+const scannedFiles = scanRoots.flatMap((root) => walk(path.join(repoRoot, root)));
+for (const file of scannedFiles) {
+  const source = fs.readFileSync(file, 'utf8');
+  for (const asset of forbiddenAssets) {
+    if (source.includes(asset)) {
+      failures.push(`Rejected visual asset found in rendered-code path: ${path.relative(repoRoot, file)} -> ${asset}`);
+    }
+  }
+}
+
+const contextPath = path.join(repoRoot, 'components', 'HumanContextStrip.tsx');
+if (!fs.existsSync(contextPath)) failures.push('Missing HumanContextStrip.tsx');
+else {
+  const contextSource = fs.readFileSync(contextPath, 'utf8');
+  for (const asset of approvedMarketAssets) {
+    if (!contextSource.includes(asset)) failures.push(`HumanContextStrip missing approved market visual: ${asset}`);
+  }
 }
 
 if (failures.length) {
@@ -34,4 +66,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Visual conformance gate PASS: market-lane visuals carry semantic intent and rejected assets remain blocked.');
+console.log(`Visual conformance gate PASS: scanned ${scannedFiles.length} rendered-code files; rejected athlete/faith assets are absent and approved semantic visuals are present.`);
