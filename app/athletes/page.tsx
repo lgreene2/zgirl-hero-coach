@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "A guided reflection and character-performance system for youth athletes, families, coaches, teams, schools, and leagues.",
 };
 
-const ATHLETE_IMAGE = "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1800&q=90";
+const ATHLETE_IMAGE = "https://images.unsplash.com/photo-1768349027535-da4842dab8ba?auto=format&fit=crop&w=1800&q=92";
 
 const challenges = [
   ["Pregame pressure", "Turn nervous energy into a clear job and one next play."],
@@ -41,13 +41,13 @@ export default function AthletesHubPage() {
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-400"><span className="inline-flex items-center gap-2"><span className="trust-dot" /> 3–5 minutes</span><span className="inline-flex items-center gap-2"><span className="trust-dot" /> No player scoring</span><span className="inline-flex items-center gap-2"><span className="trust-dot" /> Accessible options</span></div>
           </div>
 
-          <aside className="overflow-hidden rounded-[2.1rem] border border-[#49d8c2]/20 bg-[#0a2030]/95 shadow-2xl shadow-black/30">
+          <aside className="overflow-hidden rounded-[2.1rem] border border-[#49d8c2]/20 bg-[#0a2030]/95 shadow-2xl shadow-black/30" data-visual-intent="coach-athlete-support-after-pressure">
             <div className="relative min-h-[330px] sm:min-h-[390px]">
-              <img src={ATHLETE_IMAGE} alt="Athletes connecting in a real-world team setting" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
+              <img src={ATHLETE_IMAGE} alt="Coach speaking directly with an athlete during a pressure moment" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#061521]/95 via-[#061521]/20 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5">
                 <span className="rounded-full border border-[#76ead6]/30 bg-[#061521]/80 px-4 py-2 text-xs font-black uppercase tracking-[.16em] text-[#76ead6] backdrop-blur">Athlete + Coach</span>
-                <h2 className="mt-4 font-display text-3xl font-black leading-tight">Better resets. Better conversations. Stronger team culture.</h2>
+                <h2 className="mt-4 font-display text-3xl font-black leading-tight">Reset with support. Return with purpose.</h2>
               </div>
             </div>
             <div className="border-t border-white/10 p-5 sm:p-6">
