@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node --check scripts/create-vercel-activation-bundle.mjs && node --check scripts/verify-review-activation.mjs && node scripts/self-test-activation-tools.mjs && node scripts/verify-release-train.mjs",
+    "prebuild": "node --check scripts/create-vercel-activation-bundle.mjs && node --check scripts/verify-review-activation.mjs && node scripts/self-test-activation-tools.mjs && node scripts/verify-release-train.mjs && node scripts/verify-visual-conformance.mjs && node scripts/verify-public-version-labels.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -14,7 +14,9 @@
     "review:activation-bundle": "node scripts/create-vercel-activation-bundle.mjs",
     "review:activation-self-test": "node scripts/self-test-activation-tools.mjs",
     "review:verify-assets": "node scripts/verify-review-assets.mjs",
-    "review:verify-activation": "node scripts/verify-review-activation.mjs"
+    "review:verify-activation": "node scripts/verify-review-activation.mjs",
+    "review:verify-visuals": "node scripts/verify-visual-conformance.mjs",
+    "review:verify-public-versions": "node scripts/verify-public-version-labels.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",
