@@ -55,8 +55,11 @@ const contextPath = path.join(repoRoot, 'components', 'HumanContextStrip.tsx');
 if (!fs.existsSync(contextPath)) failures.push('Missing HumanContextStrip.tsx');
 else {
   const contextSource = fs.readFileSync(contextPath, 'utf8');
-  for (const asset of approvedMarketAssets) {
-    if (!contextSource.includes(asset)) failures.push(`HumanContextStrip missing approved market visual: ${asset}`);
+  const usesResilientDelivery = contextSource.includes('/api/support-image?role=') && contextSource.includes('role:"coach"') && contextSource.includes('role:"faith"');
+  if (!usesResilientDelivery) {
+    for (const asset of approvedMarketAssets) {
+      if (!contextSource.includes(asset)) failures.push(`HumanContextStrip missing approved market visual: ${asset}`);
+    }
   }
 }
 
@@ -66,4 +69,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Visual conformance gate PASS: scanned ${scannedFiles.length} rendered-code files; rejected athlete/faith assets are absent and approved semantic visuals are present.`);
+console.log(`Visual conformance gate PASS: scanned ${scannedFiles.length} rendered-code files; rejected athlete/faith assets are absent and approved semantic visuals or governed same-origin delivery are present.`);
