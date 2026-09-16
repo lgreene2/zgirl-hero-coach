@@ -71,7 +71,16 @@ export default function FaithHubPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
-        <div className="rounded-[2rem] border border-amber-300/20 bg-gradient-to-br from-[#173044] to-[#0b2130] p-7 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-12"><div className="max-w-3xl"><p className="text-xs font-black uppercase tracking-[.2em] text-amber-200">Start simple</p><h2 className="mt-2 font-display text-3xl font-black sm:text-4xl">Use the public sampler now. Add institutional customization only when demand requires it.</h2><p className="mt-4 leading-7 text-slate-300">This keeps the product moving while preserving a clear path to congregation, school, and multi-site licensing.</p></div><Link href="/faith/start" className="mt-7 shrink-0 rounded-full bg-amber-300 px-6 py-3.5 text-sm font-black text-[#201400] transition hover:bg-amber-200 lg:mt-0">Try the sampler →</Link></div>
+        <div className="rounded-[2rem] border border-amber-300/20 bg-gradient-to-br from-[#173044] to-[#0b2130] p-7 sm:p-10">
+          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[.2em] text-amber-200">Start simple</p>
+              <h2 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">Use the public sampler now. Add institutional customization when your community is ready.</h2>
+              <p className="mt-4 max-w-3xl leading-7 text-slate-300">Start with the ready-to-use experience, then add congregation, school, or multi-site customization as your program grows.</p>
+            </div>
+            <Link href="/faith/start" className="inline-flex w-full items-center justify-center rounded-full bg-amber-300 px-6 py-3.5 text-sm font-black text-[#201400] transition hover:bg-amber-200 sm:w-auto lg:justify-self-end">Try the sampler →</Link>
+          </div>
+        </div>
       </section>
     </main>
   );
