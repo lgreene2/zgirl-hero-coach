@@ -3,7 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = { title: "Professional Support Network | Z-Girl", description: "Join the founding Z-Girl professional network: AI-prepared, human-led, professionally governed support." };
-const IMG={counselor:"https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1800&q=95",educator:"https://images.unsplash.com/photo-1758270705696-ec9caffc73dd?auto=format&fit=crop&w=1800&q=95",family:"https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1800&q=95",mentor:"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1800&q=95"};
+const IMG={counselor:"/api/visual/counselor",educator:"/api/visual/educator",family:"/api/visual/family",mentor:"/api/visual/mentor"};
 const pathway=[["01","VERIFY","Professional identity and applicable independent qualification."],["02","LEARN","Human-first practice, privacy, safeguarding, AI boundaries, and participant-controlled handoff."],["03","DEMONSTRATE","Knowledge checks plus scenario-based competency."],["04","AUTHORIZE","Z-Girl program authorization after required approval gates."],["05","SUPPORT","Participant-initiated, minimum-necessary human handoffs."],["06","RENEW","Qualification, calibration, continuing learning, and credential renewal."]];
 const audiences=["Licensed counselors & therapists","School counselors & psychologists","Social workers & youth professionals","Counseling practices & virtual-care organizations"];
 export default function ProfessionalSupportPage(){return <main className="min-h-screen bg-[#03131b] text-white"><SiteHeader/>
