@@ -1,13 +1,35 @@
 {
   "contract": "greene.ecosystem-alignment-lock.v1",
   "version": "1.0",
+  "generated": "Lock-governed fields are derived; other fields are this repository's own governance and are preserved.",
   "canonicalSource": "lgreene2/lead-with-greene/governance/ecosystem-alignment-lock-v1.json",
+  "lockDigest": "bf9670c51fb1cf358c4783803e4555f07b225da3b430d48ef7467c9943337506",
   "systemId": "z-girl",
   "classification": "active",
-  "role": "specialized-the4lessons-leap-application-profile",
-  "owns": ["z-girl-application-experience", "z-girl-reflection-workflows"],
-  "consumes": ["leap-master-definition", "the4lessons-character-canon", "the4lessons-approved-asset-identities"],
-  "mustNotClaim": ["greene-principles", "lead-cycle", "leap-master-definition", "the4lessons-character-canon", "gls-credentialing", "cross-system-routing"],
+  "role": "specialized The 4 Lessons / LEAP application profile",
+  "owns": [],
+  "consumes": [
+    "leap-master-definition",
+    "the4lessons-character-canon",
+    "the4lessons-approved-asset-identities"
+  ],
+  "mustNotClaim": [
+    "greene-principles",
+    "lead-cycle",
+    "leap-master-definition",
+    "the4lessons-character-canon",
+    "gls-credentialing",
+    "institutional-commercial-lifecycle",
+    "institutional-commercial-renewal-authority",
+    "cross-system-routing"
+  ],
+  "humanApprovalRequiredForPublicRelease": true,
   "frameworkRule": "Z-Girl may specialize approved GLS/T4L concepts but may not become a new umbrella framework.",
-  "humanApprovalRequiredForPublicRelease": true
+  "locallyAssertedOwns": {
+    "note": "Claimed by this repository but not granted by the Alignment Lock. Add to the Lock upstream if genuinely owned.",
+    "claims": [
+      "z-girl-application-experience",
+      "z-girl-reflection-workflows"
+    ]
+  }
 }
